@@ -60,7 +60,7 @@ export class AdminService {
 
     return this.prisma.order.update({
         where: { folio },
-        data: { status },
+        data: { status: status as any },
     });
   }
 

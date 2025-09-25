@@ -78,7 +78,7 @@ export class PublicService {
     // This should ideally be in a transaction
     await this.prisma.raffle.update({
         where: { id: orderData.raffleId },
-        data: { sold: { increment: orderData.tickets.length } },
+        data: { sold: { increment: Array.isArray(orderData.tickets) ? orderData.tickets.length : 0 } },
     });
 
     return newOrder;
