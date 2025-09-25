@@ -4,9 +4,9 @@
   "description": "Backend for Lucky Snap",
   "private": true,
   "scripts": {
-    "build": "nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
+    "build": "npx nest build",
+    "start": "npx nest start",
+    "start:dev": "npx nest start --watch",
     "start:prod": "node dist/main",
     "postinstall": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate deploy",
