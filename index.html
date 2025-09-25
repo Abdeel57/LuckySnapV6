@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lucky Snap</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.1",
+    "date-fns": "https://aistudiocdn.com/date-fns@^4.1.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.544.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.15",
+    "react-hook-form": "https://aistudiocdn.com/react-hook-form@^7.62.0",
+    "date-fns/": "https://aistudiocdn.com/date-fns@^4.1.0/",
+    "@prisma/client": "https://aistudiocdn.com/@prisma/client@^6.16.2",
+    "@nestjs/common": "https://aistudiocdn.com/@nestjs/common@^11.1.6",
+    "@nestjs/core": "https://aistudiocdn.com/@nestjs/core@^11.1.6"
+  }
+}
+</script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'background-primary': 'rgb(var(--color-background-primary) / <alpha-value>)',
+            'background-secondary': 'rgb(var(--color-background-secondary) / <alpha-value>)',
+            'accent': 'rgb(var(--color-accent) / <alpha-value>)',
+            'action': 'rgb(var(--color-action) / <alpha-value>)',
+          },
+          boxShadow: {
+            'neon-accent': '0 0 5px rgb(var(--color-accent)), 0 0 10px rgb(var(--color-accent))',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Simple scrollbar for webkit browsers */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgb(var(--color-background-secondary));
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgb(var(--color-accent));
+      border-radius: 10px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+  </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-background-primary">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

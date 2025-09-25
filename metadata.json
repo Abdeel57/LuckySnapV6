@@ -1,0 +1,5 @@
+{
+  "name": "Lucky Snap",
+  "description": "A modern, animated web application for browsing and purchasing raffle tickets. This is a frontend-only demonstration of the public-facing portion of a full-stack raffle system, built with React, TypeScript, and Tailwind CSS.",
+  "requestFramePermissions": []
+}
