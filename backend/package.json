@@ -4,7 +4,8 @@
   "description": "Backend for Lucky Snap",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "node build.js",
+    "build:simple": "tsc",
     "start": "node dist/main",
     "start:dev": "tsc && node dist/main",
     "start:prod": "node dist/main",
