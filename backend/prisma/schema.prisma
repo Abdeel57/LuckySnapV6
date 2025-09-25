@@ -19,6 +19,7 @@ model User {
 
   tickets Ticket[]
   winners Winner[]
+  orders  Order[]
 
   @@map("users")
 }
@@ -33,11 +34,14 @@ model Raffle {
   soldTickets Int      @default(0)
   endDate     DateTime
   isActive    Boolean  @default(true)
+  status      String   @default("active")
+  slug        String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   tickets Ticket[]
   winners Winner[]
+  orders  Order[]
 
   @@map("raffles")
 }
@@ -56,6 +60,22 @@ model Ticket {
   @@map("tickets")
 }
 
+model Order {
+  id        String   @id @default(cuid())
+  folio     String   @unique
+  raffleId  String
+  userId    String
+  tickets   Int[]
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  raffle Raffle @relation(fields: [raffleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
 model Winner {
   id        String   @id @default(cuid())
   raffleId  String
@@ -68,4 +88,32 @@ model Winner {
   ticket Ticket @relation(fields: [ticketId], references: [id])
 
   @@map("winners")
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
 }
