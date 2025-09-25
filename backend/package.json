@@ -4,7 +4,8 @@
   "description": "Backend for Lucky Snap",
   "private": true,
   "scripts": {
-    "build": "npx nest build",
+    "build": "npx tsc",
+    "build:nest": "npx nest build",
     "start": "npx nest start",
     "start:dev": "npx nest start --watch",
     "start:prod": "node dist/main",
