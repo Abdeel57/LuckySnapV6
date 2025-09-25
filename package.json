@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:backend": "node build-backend.js",
     "preview": "vite preview"
   },
   "dependencies": {
