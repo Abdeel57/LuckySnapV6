@@ -9,17 +9,21 @@ try {
   console.log('📦 Instalando dependencias...');
   execSync('npm install', { stdio: 'inherit' });
 
-  // 2. Generar Prisma
+  // 2. Instalar TypeScript específicamente
+  console.log('🔧 Instalando TypeScript...');
+  execSync('npm install typescript', { stdio: 'inherit' });
+
+  // 3. Generar Prisma
   console.log('🗄️ Generando cliente de Prisma...');
   execSync('npx prisma generate', { stdio: 'inherit' });
 
-  // 3. Crear directorio dist si no existe
+  // 4. Crear directorio dist si no existe
   const distDir = path.join(__dirname, 'dist');
   if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
   }
 
-  // 4. Compilar TypeScript manualmente
+  // 5. Compilar TypeScript manualmente
   console.log('🔨 Compilando TypeScript...');
   execSync('npx tsc', { stdio: 'inherit' });
 
