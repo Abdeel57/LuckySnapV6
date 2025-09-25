@@ -26,11 +26,20 @@ try {
   // 5. Compilar TypeScript manualmente
   console.log('🔨 Compilando TypeScript...');
   
-  // Buscar el ejecutable de TypeScript
-  const tscPath = require.resolve('typescript/bin/tsc');
-  console.log('📍 TypeScript encontrado en:', tscPath);
+  // Usar el compilador de TypeScript directamente
+  const ts = require('typescript');
+  const tsconfig = require('./tsconfig.json');
   
-  execSync(`node "${tscPath}"`, { stdio: 'inherit' });
+  console.log('📍 Compilando con TypeScript API...');
+  
+  const program = ts.createProgram(['src/**/*.ts'], tsconfig.compilerOptions);
+  const emitResult = program.emit();
+  
+  if (emitResult.emitSkipped) {
+    throw new Error('TypeScript compilation failed');
+  }
+  
+  console.log('✅ TypeScript compilado exitosamente');
 
   console.log('✅ Build completado exitosamente!');
 } catch (error) {
