@@ -13,6 +13,11 @@ import {
 // En producción: se toma de la variable de entorno VITE_API_URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
+// Debug: Log the API URL being used
+console.log('🔗 API URL being used:', API_URL);
+console.log('🌍 Environment:', import.meta.env.MODE);
+console.log('📋 All env vars:', import.meta.env);
+
 /**
  * A robust response handler for fetch requests.
  */

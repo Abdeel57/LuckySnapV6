@@ -4,7 +4,18 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors(); // Enable Cross-Origin Resource Sharing
+  
+  // Enable CORS with specific configuration
+  app.enableCors({
+    origin: [
+      'http://localhost:5173', // Vite dev server
+      'https://lucksnap-frontend.onrender.com', // Production frontend
+      'https://*.onrender.com' // Any Render subdomain
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  });
   
   // Add a simple root route before setting the global prefix
   app.getHttpAdapter().get('/', (req, res) => {
@@ -16,6 +27,15 @@ async function bootstrap() {
         api: '/api',
         health: '/api/health'
       }
+    });
+  });
+
+  // Add health check endpoint
+  app.getHttpAdapter().get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
     });
   });
   
