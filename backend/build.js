@@ -25,7 +25,7 @@ try {
 
   // 5. Compilar TypeScript manualmente
   console.log('🔨 Compilando TypeScript...');
-  execSync('npx tsc', { stdio: 'inherit' });
+  execSync('./node_modules/.bin/tsc', { stdio: 'inherit' });
 
   console.log('✅ Build completado exitosamente!');
 } catch (error) {
