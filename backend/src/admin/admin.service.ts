@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
-import { OrderStatus, type Prisma, type Raffle, type Winner } from '@prisma/client';
+import { type Prisma, type Raffle, type Winner } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -15,13 +15,13 @@ export class AdminService {
     const todaySales = await this.prisma.order.aggregate({
       _sum: { total: true },
       where: {
-        status: OrderStatus.PAID,
+        status: 'PAID',
         createdAt: { gte: today },
       },
     });
 
     const pendingOrders = await this.prisma.order.count({
-      where: { status: OrderStatus.PENDING },
+      where: { status: 'PENDING' },
     });
 
     const activeRaffles = await this.prisma.raffle.count({
@@ -42,7 +42,7 @@ export class AdminService {
     });
   }
   
-  async updateOrderStatus(folio: string, status: OrderStatus) {
+  async updateOrderStatus(folio: string, status: string) {
     const order = await this.prisma.order.findUnique({ where: { folio } });
     if (!order) {
         throw new NotFoundException('Order not found');
@@ -51,7 +51,7 @@ export class AdminService {
     if (order.status === status) return order;
 
     // Handle ticket count adjustment if order is cancelled
-    if (status === OrderStatus.CANCELLED && order.status !== OrderStatus.CANCELLED) {
+    if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
         await this.prisma.raffle.update({
             where: { id: order.raffleId },
             data: { sold: { decrement: order.tickets.length } },
@@ -92,7 +92,7 @@ export class AdminService {
   
   async drawWinner(raffleId: string) {
     const paidOrders = await this.prisma.order.findMany({
-        where: { raffleId, status: OrderStatus.PAID }
+        where: { raffleId, status: 'PAID' }
     });
     
     if (paidOrders.length === 0) {
@@ -166,7 +166,6 @@ export class AdminService {
           create: faqs.map(({ id, ...faq }) => faq),
         },
       },
-       include: { paymentAccounts: true, faqs: true }
     });
   }
 }

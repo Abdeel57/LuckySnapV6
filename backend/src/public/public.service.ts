@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for Prisma namespace and a value import for the OrderStatus enum.
-import { OrderStatus, type Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import { add } from 'date-fns';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class PublicService {
     const orders = await this.prisma.order.findMany({
       where: {
         raffleId,
-        status: { in: [OrderStatus.PAID, OrderStatus.PENDING] },
+        status: { in: ['PAID', 'PENDING'] },
       },
       select: { tickets: true },
     });
@@ -41,7 +41,6 @@ export class PublicService {
   async getSettings() {
     const settings = await this.prisma.settings.findUnique({
       where: { id: 'main_settings' },
-      include: { paymentAccounts: true, faqs: true },
     });
      if (!settings) {
       // Create default settings if they don't exist
@@ -49,20 +48,12 @@ export class PublicService {
         data: {
           id: 'main_settings',
           siteName: 'Lucky Snap',
-          logoAnimation: 'rotate',
-          colors: {
-            backgroundPrimary: '#111827',
-            backgroundSecondary: '#1f2937',
-            accent: '#ec4899',
-            action: '#0ea5e9',
+          paymentAccounts: {
+            bankAccounts: [],
+            cryptoWallets: [],
           },
-          whatsapp: '5215512345678',
-          email: 'contacto@luckysnap.com',
-          facebookUrl: 'https://facebook.com',
-          instagramUrl: 'https://instagram.com',
-          twitterUrl: 'https://twitter.com',
+          faqs: [],
         },
-        include: { paymentAccounts: true, faqs: true },
       });
     }
     return settings;
@@ -78,7 +69,7 @@ export class PublicService {
         data: {
             ...orderData,
             folio: `LKSNP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-            status: OrderStatus.PENDING,
+            status: 'PENDING',
             createdAt: new Date(),
             expiresAt: add(new Date(), { hours: 24 }),
         }

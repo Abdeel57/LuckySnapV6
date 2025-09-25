@@ -31,7 +31,7 @@ model Raffle {
   imageUrl    String?
   price       Float
   totalTickets Int
-  soldTickets Int      @default(0)
+  sold        Int      @default(0)
   endDate     DateTime
   isActive    Boolean  @default(true)
   status      String   @default("active")
@@ -61,13 +61,14 @@ model Ticket {
 }
 
 model Order {
-  id        String   @id @default(cuid())
-  folio     String   @unique
+  id        String      @id @default(cuid())
+  folio     String      @unique
   raffleId  String
   userId    String
   tickets   Int[]
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
+  total     Float
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
   expiresAt DateTime
 
   raffle Raffle @relation(fields: [raffleId], references: [id])
@@ -102,11 +103,12 @@ model AdminUser {
 }
 
 model Settings {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  siteName        String   @default("Lucky Snap")
+  paymentAccounts Json?
+  faqs            Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("settings")
 }

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
-import { OrderStatus, type Raffle, type Winner, type Prisma } from '@prisma/client';
+import { type Raffle, type Winner, type Prisma } from '@prisma/client';
 
 @Controller('admin')
 export class AdminController {
@@ -20,7 +20,7 @@ export class AdminController {
   }
   
   @Patch('orders/:folio/status')
-  updateOrderStatus(@Param('folio') folio: string, @Body('status') status: OrderStatus) {
+  updateOrderStatus(@Param('folio') folio: string, @Body('status') status: string) {
     return this.adminService.updateOrderStatus(folio, status);
   }
 
