@@ -4,18 +4,19 @@ services:
     name: lucksnap-backend
     env: node
     plan: free
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build
-    startCommand: cd backend && npm run start:prod
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start:prod
     envVars:
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://postgres:soOPSwrlxnEjSmXKXzsFZJNrgfLQqzyC@centerbeam.proxy.rlwy.net:27393/railway
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
 
   # Frontend Service
-  - type: web
+  - type: static
     name: lucksnap-frontend
     env: static
     plan: free
@@ -23,4 +24,4 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        sync: false
+        value: https://lucksnap-backend.onrender.com/api
