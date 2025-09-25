@@ -25,7 +25,12 @@ try {
 
   // 5. Compilar TypeScript manualmente
   console.log('🔨 Compilando TypeScript...');
-  execSync('./node_modules/.bin/tsc', { stdio: 'inherit' });
+  
+  // Buscar el ejecutable de TypeScript
+  const tscPath = require.resolve('typescript/bin/tsc');
+  console.log('📍 TypeScript encontrado en:', tscPath);
+  
+  execSync(`node "${tscPath}"`, { stdio: 'inherit' });
 
   console.log('✅ Build completado exitosamente!');
 } catch (error) {
