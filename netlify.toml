@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  VITE_API_URL = "https://lucky-snap-djy0.onrender.com/api"
 
 [[redirects]]
   from = "/api/*"
