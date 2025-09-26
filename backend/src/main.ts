@@ -10,7 +10,8 @@ async function bootstrap() {
     origin: [
       /^http:\/\/localhost:5173$/, // Vite dev server
       /\.onrender\.com$/, // Any Render subdomain
-      /\.netlify\.app$/ // Any Netlify subdomain
+      /\.netlify\.app$/, // Any Netlify subdomain
+      /dashboard\.render\.com$/ // Render dashboard
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
