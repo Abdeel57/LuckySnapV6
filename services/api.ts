@@ -9,9 +9,9 @@ import {
 
 // --- IMPORTANTE ---
 // Esta URL se configura automáticamente según el entorno
-// En desarrollo: http://localhost:3001/api
+// En desarrollo: http://localhost:3000/api (con proxy de Vite)
 // En producción: se toma de la variable de entorno VITE_API_URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Debug: Log the API URL being used
 console.log('🔗 API URL being used:', API_URL);

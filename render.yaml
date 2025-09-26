@@ -1,27 +1,29 @@
 services:
   # Backend Service
   - type: web
-    name: lucksnap-backend
+    name: lucky-snap-backend
     env: node
     plan: free
     rootDir: backend
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
     envVars:
-      - key: DATABASE_URL
-        value: postgresql://postgres:soOPSwrlxnEjSmXKXzsFZJNrgfLQqzyC@centerbeam.proxy.rlwy.net:27393/railway
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: PORT
+        value: 3000
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
+      - key: DATABASE_URL
+        sync: false
 
   # Frontend Service
   - type: static
-    name: lucksnap-frontend
+    name: lucky-snap-frontend
     env: static
     plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    buildCommand: npm install && npm run build:frontend
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://lucky-snap-djy0.onrender.com/api
+        value: https://lucky-snap-backend.onrender.com/api
