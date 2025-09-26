@@ -9,7 +9,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       /^http:\/\/localhost:5173$/, // Vite dev server
-      /\.onrender\.com$/ // Any Render subdomain
+      /\.onrender\.com$/, // Any Render subdomain
+      /\.netlify\.app$/ // Any Netlify subdomain
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
