@@ -22,7 +22,8 @@ services:
     name: lucky-snap-frontend
     env: static
     plan: free
-    buildCommand: npm install && npm run build:frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
