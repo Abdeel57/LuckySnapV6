@@ -147,24 +147,14 @@ export class AdminService {
       where: { id: 'main_settings' },
       update: {
         ...mainSettings,
-        paymentAccounts: {
-          deleteMany: {}, // Clear old ones
-          create: paymentAccounts.map(({ id, ...pa }) => pa), // Create new ones
-        },
-        faqs: {
-          deleteMany: {}, // Clear old ones
-          create: faqs.map(({ id, ...faq }) => faq), // Create new ones
-        },
+        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
+        faqs: faqs ? JSON.stringify(faqs) : null,
       },
       create: {
         ...mainSettings,
-        id: 'main_settings', // Ensure ID is set on creation
-        paymentAccounts: {
-          create: paymentAccounts.map(({ id, ...pa }) => pa),
-        },
-        faqs: {
-          create: faqs.map(({ id, ...faq }) => faq),
-        },
+        id: 'main_settings',
+        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
+        faqs: faqs ? JSON.stringify(faqs) : null,
       },
     });
   }
