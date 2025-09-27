@@ -200,7 +200,12 @@ app.get('/api/admin/raffles', (req, res) => {
 
 app.post('/api/admin/raffles', (req, res) => {
   try {
-    console.log('📝 Creating raffle:', req.body.title);
+    console.log('📝 Creating raffle:', {
+      title: req.body.title,
+      hasHeroImage: !!req.body.heroImage,
+      heroImageType: req.body.heroImage ? (req.body.heroImage.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE',
+      galleryCount: req.body.gallery?.length || 0
+    });
     
     const raffle = {
       id: Date.now().toString(),

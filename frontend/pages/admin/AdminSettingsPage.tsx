@@ -6,6 +6,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Spinner from '../../components/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
+import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
 
 const SectionWrapper: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -65,15 +66,39 @@ const AdminSettingsPage = () => {
                         </div>
                         
                         <div>
-                            <label className={labelClasses}>Logo del Sitio (URL)</label>
-                            <input {...register('appearance.logo')} className={inputClasses} placeholder="https://ejemplo.com/logo.png" />
-                            <p className="text-xs text-gray-500 mt-1">Pega la URL de tu logo aquí</p>
+                            <label className={labelClasses}>Logo del Sitio</label>
+                            <Controller
+                                name="appearance.logo"
+                                control={control}
+                                render={({ field }) => (
+                                    <ImageUploaderAdvanced
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Seleccionar logo del sitio"
+                                        maxWidth={200}
+                                        maxHeight={200}
+                                        quality={0.9}
+                                    />
+                                )}
+                            />
                         </div>
                         
                         <div>
-                            <label className={labelClasses}>Favicon (URL)</label>
-                            <input {...register('appearance.favicon')} className={inputClasses} placeholder="https://ejemplo.com/favicon.ico" />
-                            <p className="text-xs text-gray-500 mt-1">Pega la URL de tu favicon aquí</p>
+                            <label className={labelClasses}>Favicon</label>
+                            <Controller
+                                name="appearance.favicon"
+                                control={control}
+                                render={({ field }) => (
+                                    <ImageUploaderAdvanced
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Seleccionar favicon"
+                                        maxWidth={32}
+                                        maxHeight={32}
+                                        quality={0.8}
+                                    />
+                                )}
+                            />
                         </div>
                         
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

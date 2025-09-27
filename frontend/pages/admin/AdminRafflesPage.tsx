@@ -6,7 +6,7 @@ import { Raffle } from '../../types';
 import { Plus, Trash2, X } from 'lucide-react';
 import Spinner from '../../components/Spinner';
 import { format } from 'date-fns';
-import ImageUploader from '../../components/admin/ImageUploader';
+import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
 
 // FIX: Define a type for the form values to handle bonuses as an array of objects,
 // which is more compatible with react-hook-form's useFieldArray.
@@ -77,10 +77,14 @@ const RaffleFormModal = ({ raffle, onClose, onSave }: { raffle: Partial<Raffle> 
                             control={control}
                             rules={{ required: 'La imagen es requerida' }}
                             render={({ field }) => (
-                                <ImageUploader
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                />
+                                            <ImageUploaderAdvanced
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="Seleccionar imagen principal"
+                                                maxWidth={800}
+                                                maxHeight={600}
+                                                quality={0.8}
+                                            />
                             )}
                         />
                         {errors.heroImage && <p className="text-red-500 text-xs mt-1">{errors.heroImage.message as React.ReactNode}</p>}

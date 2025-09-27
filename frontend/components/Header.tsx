@@ -30,8 +30,17 @@ const Header = () => {
         <header className="bg-background-secondary/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-700/50">
             <div className="container mx-auto px-4">
                 <div className="flex justify-between items-center h-20">
-                    <Link to="/" className="text-2xl font-bold text-white">
-{appearance?.siteName || 'Lucky Snap'}
+                    <Link to="/" className="flex items-center space-x-3">
+                        {appearance?.logo && (
+                            <img 
+                                src={appearance.logo} 
+                                alt="Logo" 
+                                className="h-10 w-10 object-contain"
+                            />
+                        )}
+                        <span className="text-2xl font-bold text-white">
+                            {appearance?.siteName || 'Lucky Snap'}
+                        </span>
                     </Link>
                     
                     {/* Desktop Nav */}
