@@ -29,6 +29,7 @@ let settings = {
   id: 'main_settings',
   siteName: 'Lucky Snap',
   appearance: {
+    siteName: 'Lucky Snap',
     colors: {
       backgroundPrimary: '#1a1a1a',
       backgroundSecondary: '#2d2d2d',
@@ -52,18 +53,21 @@ let settings = {
   },
   paymentAccounts: [
     {
-      name: 'Banco Principal',
+      id: '1',
+      bank: 'Banco Principal',
       accountNumber: '1234567890',
       accountHolder: 'Lucky Snap',
-      type: 'bank'
+      clabe: '123456789012345678'
     }
   ],
   faqs: [
     {
+      id: '1',
       question: '¿Cómo funcionan las rifas?',
       answer: 'Las rifas funcionan comprando boletos y participando en sorteos.'
     },
     {
+      id: '2',
       question: '¿Cuándo se realizan los sorteos?',
       answer: 'Los sorteos se realizan en las fechas especificadas en cada rifa.'
     }
@@ -147,7 +151,11 @@ app.post('/api/admin/settings', (req, res) => {
     settings = {
       ...settings,
       siteName: req.body.siteName || settings.siteName,
-      appearance: req.body.appearance || settings.appearance,
+      appearance: {
+        ...settings.appearance,
+        ...req.body.appearance,
+        siteName: req.body.appearance?.siteName || req.body.siteName || settings.appearance.siteName
+      },
       contactInfo: req.body.contactInfo || settings.contactInfo,
       socialLinks: req.body.socialLinks || settings.socialLinks,
       paymentAccounts: req.body.paymentAccounts || settings.paymentAccounts,
@@ -156,6 +164,8 @@ app.post('/api/admin/settings', (req, res) => {
     };
 
     console.log('✅ Settings updated successfully');
+    console.log('🎨 New colors:', settings.appearance.colors);
+    console.log('🏷️ New site name:', settings.appearance.siteName);
     res.json(settings);
   } catch (error) {
     console.error('❌ Error updating settings:', error);

@@ -6,6 +6,7 @@ interface ThemeContextType {
   appearance: AppearanceSettings;
   setAppearance: React.Dispatch<React.SetStateAction<AppearanceSettings>>;
   isLoading: boolean;
+  updateAppearance: (newAppearance: AppearanceSettings) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -32,10 +33,21 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [appearance, setAppearance] = useState<AppearanceSettings>(defaultAppearance);
   const [isLoading, setIsLoading] = useState(true);
 
+  const updateAppearance = (newAppearance: AppearanceSettings) => {
+    console.log('🎨 Updating appearance:', newAppearance);
+    setAppearance(newAppearance);
+  };
+
   useEffect(() => {
     getSettings().then(settings => {
-      // Use default appearance since local data doesn't have appearance structure
-      setAppearance(defaultAppearance);
+      console.log('🎨 Loading settings for theme:', settings);
+      if (settings.appearance) {
+        console.log('✅ Using backend appearance settings');
+        setAppearance(settings.appearance);
+      } else {
+        console.log('⚠️ No appearance settings, using defaults');
+        setAppearance(defaultAppearance);
+      }
       setIsLoading(false);
     }).catch(err => {
       console.error("Failed to load settings, using defaults", err);
@@ -55,7 +67,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }, [appearance, isLoading]);
 
   return (
-    <ThemeContext.Provider value={{ appearance, setAppearance, isLoading }}>
+    <ThemeContext.Provider value={{ appearance, setAppearance, isLoading, updateAppearance }}>
       {children}
     </ThemeContext.Provider>
   );

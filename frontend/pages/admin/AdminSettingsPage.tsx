@@ -5,6 +5,7 @@ import { Settings, AppearanceSettings } from '../../types';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Spinner from '../../components/Spinner';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const SectionWrapper: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -19,6 +20,7 @@ const labelClasses = "text-sm font-medium text-gray-600";
 const AdminSettingsPage = () => {
     const { register, control, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm<Settings>();
     const [loading, setLoading] = useState(true);
+    const { updateAppearance } = useTheme();
 
     const { fields: paymentFields, append: appendPayment, remove: removePayment } = useFieldArray({ control, name: "paymentAccounts" });
     const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
@@ -34,6 +36,12 @@ const AdminSettingsPage = () => {
         try {
             const result = await adminUpdateSettings(data);
             reset(result); // Reset form with data from server to clear dirty state
+            
+            // Actualizar el tema inmediatamente si hay cambios de apariencia
+            if (result.appearance) {
+                updateAppearance(result.appearance);
+            }
+            
             alert('Configuración guardada con éxito');
         } catch (error) {
             alert('Error al guardar la configuración');
@@ -55,6 +63,19 @@ const AdminSettingsPage = () => {
                             <label className={labelClasses}>Nombre del Sitio</label>
                             <input {...register('appearance.siteName', { required: true })} className={inputClasses} />
                         </div>
+                        
+                        <div>
+                            <label className={labelClasses}>Logo del Sitio (URL)</label>
+                            <input {...register('appearance.logo')} className={inputClasses} placeholder="https://ejemplo.com/logo.png" />
+                            <p className="text-xs text-gray-500 mt-1">Pega la URL de tu logo aquí</p>
+                        </div>
+                        
+                        <div>
+                            <label className={labelClasses}>Favicon (URL)</label>
+                            <input {...register('appearance.favicon')} className={inputClasses} placeholder="https://ejemplo.com/favicon.ico" />
+                            <p className="text-xs text-gray-500 mt-1">Pega la URL de tu favicon aquí</p>
+                        </div>
+                        
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {(Object.keys(defaultAppearance.colors) as Array<keyof AppearanceSettings['colors']>).map(colorKey => (
                                 <div key={colorKey}>
