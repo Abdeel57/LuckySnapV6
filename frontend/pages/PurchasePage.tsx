@@ -117,43 +117,43 @@ const PurchasePage = () => {
              <div className="container mx-auto px-4 py-12 max-w-2xl">
                 <h1 className="text-3xl font-bold text-center text-white mb-2">Confirmar Compra</h1>
                 <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
-                 <div className="bg-background-secondary p-8 rounded-lg border border-slate-700/50 shadow-lg">
+                 <div className="bg-background-secondary p-4 md:p-8 rounded-lg border border-slate-700/50 shadow-lg">
                     <img 
                         src={raffle.heroImage} 
                         alt={raffle.title} 
-                        className="w-full h-48 object-cover rounded-lg mb-6"
+                        className="w-full h-40 md:h-48 object-cover rounded-lg mb-4 md:mb-6"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
                         }}
                     />
-                    <div className="mb-6">
-                        <h3 className="text-lg font-bold text-white">Boletos Seleccionados</h3>
+                    <div className="mb-4 md:mb-6">
+                        <h3 className="text-base md:text-lg font-bold text-white">Boletos Seleccionados</h3>
                         <div className="flex flex-wrap gap-2 mt-2">
-                            {initialTickets.map(t => <span key={t} className="bg-background-primary px-3 py-1 rounded-full text-sm font-mono">{t}</span>)}
+                            {initialTickets.map(t => <span key={t} className="bg-background-primary px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-mono">{t}</span>)}
                         </div>
                     </div>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <h3 className="text-lg font-bold text-white border-t border-slate-700/50 pt-6">Completa tus datos</h3>
+                        <h3 className="text-base md:text-lg font-bold text-white border-t border-slate-700/50 pt-4 md:pt-6">Completa tus datos</h3>
                          <div>
                             <label htmlFor="name" className="block text-sm font-medium text-white mb-1">Nombre Completo</label>
-                            <input id="name" {...register('name', { required: 'El nombre es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 text-white focus:ring-accent focus:border-accent" />
+                            <input id="name" {...register('name', { required: 'El nombre es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
                             {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Teléfono (8 dígitos)</label>
-                            <input id="phone" type="tel" {...register('phone', { required: 'El teléfono es requerido', pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 text-white focus:ring-accent focus:border-accent" />
+                            <input id="phone" type="tel" {...register('phone', { required: 'El teléfono es requerido', pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
                             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
                         </div>
                         <div>
                             <label htmlFor="district" className="block text-sm font-medium text-white mb-1">Distrito</label>
-                            <input id="district" {...register('district', { required: 'El distrito es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 text-white focus:ring-accent focus:border-accent" />
+                            <input id="district" {...register('district', { required: 'El distrito es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
                             {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district.message}</p>}
                         </div>
-                         <div className="mt-8 pt-6 border-t border-slate-700 text-center">
-                            <p className="text-2xl font-bold text-white">Total a Pagar: LPS {total.toFixed(2)}</p>
-                            <p className="text-slate-400">Por {initialTickets.length} boleto(s)</p>
-                            <button type="submit" disabled={isSubmitting || initialTickets.length === 0} className="mt-4 w-full bg-action text-white font-bold py-3 px-12 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+                         <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-slate-700 text-center">
+                            <p className="text-xl md:text-2xl font-bold text-white">Total a Pagar: LPS {total.toFixed(2)}</p>
+                            <p className="text-slate-400 text-sm md:text-base">Por {initialTickets.length} boleto(s)</p>
+                            <button type="submit" disabled={isSubmitting || initialTickets.length === 0} className="mt-4 w-full bg-action text-white font-bold py-4 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base md:text-base">
                                 {isSubmitting ? 'Apartando...' : 'Generar Folio para Pagar'}
                             </button>
                         </div>

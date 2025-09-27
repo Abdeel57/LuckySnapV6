@@ -39,17 +39,17 @@ const HomePage = () => {
             {loading ? (
                 <div className="py-20 flex justify-center"><Spinner /></div>
             ) : mainRaffle ? (
-                <div className="container mx-auto px-4 pt-16 text-center">
-                    <div className="max-w-4xl mx-auto bg-background-secondary rounded-lg p-6 md:p-8 border border-slate-700/50 shadow-lg shadow-neon-accent">
-                        <h2 className="text-3xl font-bold text-white mb-6">Próximo Gran Sorteo</h2>
-                        <img src={mainRaffle.heroImage} alt={mainRaffle.title} className="w-full h-64 md:h-96 object-cover rounded-lg mb-6"/>
-                        <h3 className="text-2xl md:text-4xl font-bold text-white mb-4">{mainRaffle.title}</h3>
-                        <div className="mb-8">
+                <div className="container mx-auto px-4 pt-8 md:pt-16 text-center">
+                    <div className="max-w-4xl mx-auto bg-background-secondary rounded-lg p-4 md:p-6 lg:p-8 border border-slate-700/50 shadow-lg shadow-neon-accent">
+                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6">Próximo Gran Sorteo</h2>
+                        <img src={mainRaffle.heroImage} alt={mainRaffle.title} className="w-full h-48 md:h-64 lg:h-96 object-cover rounded-lg mb-4 md:mb-6"/>
+                        <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-white mb-4">{mainRaffle.title}</h3>
+                        <div className="mb-6 md:mb-8">
                             <CountdownTimer targetDate={mainRaffle.drawDate} />
                         </div>
                         <Link
                             to={`/sorteo/${mainRaffle.slug}`}
-                            className="inline-block bg-action text-white font-bold py-3 px-12 rounded-lg hover:opacity-90 transition-opacity text-lg"
+                            className="inline-block bg-action text-white font-bold py-3 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity text-sm md:text-lg"
                         >
                             ¡Participa Ahora!
                         </Link>

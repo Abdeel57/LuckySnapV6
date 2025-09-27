@@ -15,14 +15,14 @@ const StatCard = ({ icon: Icon, title, value, color }: { icon: React.ElementType
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white p-6 rounded-lg shadow-md flex items-center"
+        className="bg-white p-4 md:p-6 rounded-lg shadow-md flex items-center"
     >
-        <div className={`p-3 rounded-full mr-4 ${color}`}>
-            <Icon className="h-6 w-6 text-white" />
+        <div className={`p-2 md:p-3 rounded-full mr-3 md:mr-4 ${color}`}>
+            <Icon className="h-5 w-5 md:h-6 md:w-6 text-white" />
         </div>
         <div>
-            <p className="text-sm text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-800">{value}</p>
+            <p className="text-xs md:text-sm text-gray-500">{title}</p>
+            <p className="text-lg md:text-2xl font-bold text-gray-800">{value}</p>
         </div>
     </motion.div>
 );
@@ -47,8 +47,8 @@ const AdminDashboardPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Inicio</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 md:mb-6">Inicio</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 <StatCard
                     icon={DollarSign}
                     title="Ventas de Hoy"

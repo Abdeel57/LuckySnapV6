@@ -29,16 +29,16 @@ const Header = () => {
     return (
         <header className="bg-background-secondary/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-700/50">
             <div className="container mx-auto px-4">
-                <div className="flex justify-between items-center h-20">
-                    <Link to="/" className="flex items-center space-x-3">
+                <div className="flex justify-between items-center h-16 md:h-20">
+                    <Link to="/" className="flex items-center space-x-2 md:space-x-3">
                         {appearance?.logo && (
                             <img 
                                 src={appearance.logo} 
                                 alt="Logo" 
-                                className="h-10 w-10 object-contain"
+                                className="h-8 w-8 md:h-10 md:w-10 object-contain"
                             />
                         )}
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-lg md:text-2xl font-bold text-white truncate max-w-[150px] md:max-w-none">
                             {appearance?.siteName || 'Lucky Snap'}
                         </span>
                     </Link>
@@ -60,8 +60,12 @@ const Header = () => {
 
                     {/* Mobile Menu Button */}
                     <div className="md:hidden">
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white p-2">
-                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                            className="text-white p-2 rounded-lg hover:bg-slate-700/50 transition-colors"
+                            aria-label="Toggle menu"
+                        >
+                            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
                     </div>
                 </div>
@@ -77,14 +81,14 @@ const Header = () => {
                         exit="exit"
                         className="md:hidden bg-background-secondary border-t border-slate-700/50"
                     >
-                         <div className="flex flex-col items-center py-4">
+                         <div className="flex flex-col py-2">
                              {navLinks.map(link => (
                                  <motion.div variants={linkVariants} key={link.to} className="w-full">
                                      <NavLink
                                          to={link.to}
                                          onClick={() => setIsMenuOpen(false)}
                                          className={({ isActive }) =>
-                                             `block py-3 text-center text-lg w-full transition-colors ${isActive ? 'text-accent bg-accent/10' : 'text-slate-300'}`
+                                             `block py-4 px-6 text-center text-base w-full transition-colors border-b border-slate-700/30 last:border-b-0 ${isActive ? 'text-accent bg-accent/10' : 'text-slate-300 hover:bg-slate-700/30'}`
                                          }
                                      >
                                          {link.text}

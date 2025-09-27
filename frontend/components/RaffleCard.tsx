@@ -17,21 +17,21 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5 }}
-            className="bg-background-secondary rounded-lg overflow-hidden shadow-lg shadow-black/30 border border-slate-700/50 flex flex-col"
+            className="bg-background-secondary rounded-lg overflow-hidden shadow-lg shadow-black/30 border border-slate-700/50 flex flex-col h-full"
         >
             <Link to={`/sorteo/${raffle.slug}`}>
                 <img 
                     src={raffle.heroImage} 
                     alt={raffle.title} 
-                    className="w-full h-48 object-cover"
+                    className="w-full h-40 md:h-48 object-cover"
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
                     }}
                 />
             </Link>
-            <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-white mb-2 flex-grow">{raffle.title}</h3>
+            <div className="p-4 md:p-6 flex flex-col flex-grow">
+                <h3 className="text-lg md:text-xl font-bold text-white mb-2 flex-grow line-clamp-2">{raffle.title}</h3>
                 <div className="my-4">
                     <div className="w-full bg-slate-700 rounded-full h-2.5">
                         <div className="bg-accent h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
@@ -40,7 +40,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 </div>
                 <Link
                     to={`/sorteo/${raffle.slug}`}
-                    className="block w-full text-center bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity mt-auto"
+                    className="block w-full text-center bg-action text-white font-bold py-3 md:py-3 px-4 md:px-6 rounded-lg hover:opacity-90 transition-opacity mt-auto text-sm md:text-base"
                 >
                     Ver Sorteo
                 </Link>
