@@ -88,6 +88,19 @@ export class PublicController {
     };
   }
 
+  @Get('config')
+  getConfig() {
+    // Alternative endpoint for settings
+    return {
+      id: 'main_settings',
+      siteName: 'Lucky Snap',
+      paymentAccounts: [],
+      faqs: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   @Get('test-db')
   async testDatabase() {
     try {
