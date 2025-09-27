@@ -63,100 +63,47 @@ const parseWinnerDates = (winner: any) => parseDates(winner, ['drawDate']);
 // --- Public API Calls ---
 
 export const getActiveRaffles = async (): Promise<Raffle[]> => {
-    try {
-        const data = await handleResponse(await fetch(`${API_URL}/public/raffles/active`));
-        return data.map(parseRaffleDates);
-    } catch (error) {
-        console.log('Backend failed, using local data for active raffles');
-        const { localApi } = await import('./localApi');
-        return localApi.getRaffles();
-    }
+    console.log('Using local data for active raffles (backend disabled)');
+    const { localApi } = await import('./localApi');
+    return localApi.getRaffles();
 };
 
 export const getRaffleBySlug = async (slug: string): Promise<Raffle | undefined> => {
-    try {
-        const data = await handleResponse(await fetch(`${API_URL}/public/raffles/slug/${slug}`));
-        return data ? parseRaffleDates(data) : undefined;
-    } catch (error) {
-        console.log('Backend failed, using local data for raffle by slug');
-        const { localApi } = await import('./localApi');
-        const raffles = await localApi.getRaffles();
-        return raffles.find(r => r.slug === slug);
-    }
+    console.log('Using local data for raffle by slug (backend disabled)');
+    const { localApi } = await import('./localApi');
+    const raffles = await localApi.getRaffles();
+    return raffles.find(r => r.slug === slug);
 };
 
 export const getOccupiedTickets = async (raffleId: string): Promise<number[]> => {
-    try {
-        return handleResponse(await fetch(`${API_URL}/public/raffles/${raffleId}/occupied-tickets`));
-    } catch (error) {
-        console.log('Backend failed, using local data for occupied tickets');
-        // Return empty array for local data (no occupied tickets)
-        return [];
-    }
+    console.log('Using local data for occupied tickets (backend disabled)');
+    // Return empty array for local data (no occupied tickets)
+    return [];
 };
 
 export const getPastWinners = async (): Promise<Winner[]> => {
-    try {
-        const data = await handleResponse(await fetch(`${API_URL}/public/winners`));
-        return data.map(parseWinnerDates);
-    } catch (error) {
-        console.log('Backend failed, using local data for winners');
-        const { localApi } = await import('./localApi');
-        return localApi.getWinners();
-    }
+    console.log('Using local data for winners (backend disabled)');
+    const { localApi } = await import('./localApi');
+    return localApi.getWinners();
 };
 
 export const getSettings = async (): Promise<Settings> => {
-    // EMERGENCY: Use local data if backend fails
-    try {
-        const response = await fetch(`${API_URL}/public/working`);
-        if (response.ok) {
-            const data = await response.json();
-            return data.data; // Extract data from the working endpoint response
-        }
-    } catch (error) {
-        console.log('Backend failed, using local data');
-    }
-    
-    // Fallback to local data
+    // EMERGENCY: Always use local data for now
+    console.log('Using local data for settings (backend disabled)');
     const { localApi } = await import('./localApi');
     return localApi.getSettings();
 };
 
 export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
-    // EMERGENCY: Use local data if backend fails
-    try {
-        const response = await fetch(`${API_URL}/admin/settings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings),
-        });
-        if (response.ok) {
-            return await response.json();
-        }
-    } catch (error) {
-        console.log('Backend failed, using local data for update');
-    }
-    
-    // Fallback to local data
+    console.log('Using local data for update settings (backend disabled)');
     const { localApi } = await import('./localApi');
     return localApi.updateSettings(settings);
 };
 
 export const createOrder = async (orderData: Omit<Order, 'folio' | 'status' | 'createdAt' | 'expiresAt' | 'id'>): Promise<Order> => {
-    try {
-        const response = await fetch(`${API_URL}/public/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData),
-        });
-        const data = await handleResponse(response);
-        return parseOrderDates(data);
-    } catch (error) {
-        console.log('Backend failed, using local data for create order');
-        const { localApi } = await import('./localApi');
-        return localApi.createOrder(orderData);
-    }
+    console.log('Using local data for create order (backend disabled)');
+    const { localApi } = await import('./localApi');
+    return localApi.createOrder(orderData);
 };
 
 export const getOrderbyFolio = async (folio: string): Promise<Order | undefined> => {
