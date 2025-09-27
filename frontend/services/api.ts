@@ -63,8 +63,14 @@ const parseWinnerDates = (winner: any) => parseDates(winner, ['drawDate']);
 // --- Public API Calls ---
 
 export const getActiveRaffles = async (): Promise<Raffle[]> => {
-    const data = await handleResponse(await fetch(`${API_URL}/public/raffles/active`));
-    return data.map(parseRaffleDates);
+    try {
+        const data = await handleResponse(await fetch(`${API_URL}/public/raffles/active`));
+        return data.map(parseRaffleDates);
+    } catch (error) {
+        console.log('Backend failed, using local data for active raffles');
+        const { localApi } = await import('./localApi');
+        return localApi.getRaffles();
+    }
 };
 
 export const getRaffleBySlug = async (slug: string): Promise<Raffle | undefined> => {
@@ -82,7 +88,7 @@ export const getPastWinners = async (): Promise<Winner[]> => {
 };
 
 export const getSettings = async (): Promise<Settings> => {
-    // Try the working endpoint first, fallback to settings
+    // EMERGENCY: Use local data if backend fails
     try {
         const response = await fetch(`${API_URL}/public/working`);
         if (response.ok) {
@@ -90,11 +96,12 @@ export const getSettings = async (): Promise<Settings> => {
             return data.data; // Extract data from the working endpoint response
         }
     } catch (error) {
-        console.log('Working endpoint failed, trying settings endpoint');
+        console.log('Backend failed, using local data');
     }
     
-    // Fallback to original settings endpoint
-    return handleResponse(await fetch(`${API_URL}/public/settings`));
+    // Fallback to local data
+    const { localApi } = await import('./localApi');
+    return localApi.getSettings();
 };
 
 export const createOrder = async (orderData: Omit<Order, 'folio' | 'status' | 'createdAt' | 'expiresAt' | 'id'>): Promise<Order> => {
