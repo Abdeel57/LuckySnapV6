@@ -157,8 +157,16 @@ export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'up
         console.log('Payload preview:', {
             title: raffle.title,
             gallery: raffle.gallery?.length || 0,
-            packs: raffle.packs?.length || 0
+            packs: raffle.packs?.length || 0,
+            heroImage: raffle.heroImage ? (raffle.heroImage.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE'
         });
+        
+        // Verificar si hay imágenes base64
+        const hasBase64Images = raffle.heroImage?.startsWith('data:') || 
+                               raffle.gallery?.some(img => img.startsWith('data:'));
+        if (hasBase64Images) {
+            console.log('⚠️ ADVERTENCIA: Se detectaron imágenes base64 que pueden causar error 413');
+        }
         
         const response = await fetch(`${API_URL}/admin/raffles`, {
             method: 'POST',

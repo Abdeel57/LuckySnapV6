@@ -84,6 +84,9 @@ const RaffleFormModal = ({ raffle, onClose, onSave }: { raffle: Partial<Raffle> 
                             )}
                         />
                         {errors.heroImage && <p className="text-red-500 text-xs mt-1">{errors.heroImage.message as React.ReactNode}</p>}
+                        <p className="text-xs text-gray-500 mt-1">
+                            💡 Las imágenes se procesan automáticamente para evitar errores de tamaño
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,11 +184,32 @@ const AdminRafflesPage: React.FC = () => {
 
     // Función para limpiar datos antes de enviar
     const cleanRaffleData = (data: Raffle) => {
+        // Función para procesar imágenes y evitar base64
+        const processImage = (imageUrl: string) => {
+            if (!imageUrl) return '';
+            
+            // Si es base64, usar una imagen placeholder
+            if (imageUrl.startsWith('data:image/')) {
+                console.log('⚠️ Imagen base64 detectada, usando placeholder');
+                return 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+            }
+            
+            // Si es una URL válida, usarla
+            return imageUrl;
+        };
+
+        // Función para procesar galería
+        const processGallery = (gallery: string[]) => {
+            if (!gallery || !Array.isArray(gallery)) return [];
+            
+            return gallery.map(img => processImage(img)).filter(img => img !== '');
+        };
+
         return {
             title: data.title,
             description: data.description,
-            heroImage: data.heroImage,
-            gallery: data.gallery || [],
+            heroImage: processImage(data.heroImage || ''),
+            gallery: processGallery(data.gallery || []),
             tickets: data.tickets,
             drawDate: data.drawDate,
             packs: data.packs || [],
