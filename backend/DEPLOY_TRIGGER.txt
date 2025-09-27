@@ -1,0 +1,4 @@
+Deploy trigger - Force Render to redeploy
+Timestamp: 2025-01-26 18:40:00
+Version: 2.0.0
+Status: URGENT - Fix 500 error in settings endpoint
