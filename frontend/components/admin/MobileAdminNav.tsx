@@ -1,12 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, LogOut } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface MobileAdminNavProps {
     navLinks: { to: string; text: string; icon: LucideIcon }[];
 }
 
 const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
+    const { logout } = useAuth();
+    
     return (
         <footer className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
             <nav className="flex justify-around items-center h-16">
@@ -27,6 +30,13 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                         <span>{text}</span>
                     </NavLink>
                 ))}
+                <button
+                    onClick={logout}
+                    className="flex flex-col items-center justify-center w-full h-full text-xs text-gray-500 hover:text-red-600 transition-colors"
+                >
+                    <LogOut className="w-6 h-6 mb-1" />
+                    <span>Salir</span>
+                </button>
             </nav>
         </footer>
     );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Home, Ticket, Calendar, Cog, Users, LogOut, Trophy } from 'lucide-react';
 import MobileAdminNav from './MobileAdminNav';
 
@@ -15,15 +15,22 @@ export const navLinks = [
 ];
 
 const AdminLayout = () => {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
 
     return (
         <div className="min-h-screen bg-gray-100 text-gray-800 flex">
             {/* Sidebar for Desktop */}
             <aside className="w-64 bg-white p-4 border-r border-gray-200 hidden md:flex flex-col shadow-md">
-                <Link to="/admin" className="text-2xl font-bold text-gray-800 mb-8 text-center">
+                <Link to="/admin" className="text-2xl font-bold text-gray-800 mb-4 text-center">
                     Lucky Snap <span className="text-blue-600">Admin</span>
                 </Link>
+                {user && (
+                    <div className="mb-6 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600">Conectado como:</p>
+                        <p className="font-medium text-gray-800">{user.name}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                )}
                 <nav className="flex flex-col gap-2 flex-grow">
                     {navLinks.map(({ to, text, icon: Icon }) => (
                          <NavLink
