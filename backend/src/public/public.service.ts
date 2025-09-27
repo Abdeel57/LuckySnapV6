@@ -39,27 +39,47 @@ export class PublicService {
   }
 
   async getSettings() {
-    const settings = await this.prisma.settings.findUnique({
-      where: { id: 'main_settings' },
-    });
-     if (!settings) {
-      // Create default settings if they don't exist
-      return this.prisma.settings.create({
-        data: {
-          id: 'main_settings',
-          siteName: 'Lucky Snap',
-          paymentAccounts: JSON.stringify([]),
-          faqs: JSON.stringify([]),
-        },
+    try {
+      const settings = await this.prisma.settings.findUnique({
+        where: { id: 'main_settings' },
       });
+      
+      if (!settings) {
+        // Create default settings if they don't exist
+        const newSettings = await this.prisma.settings.create({
+          data: {
+            id: 'main_settings',
+            siteName: 'Lucky Snap',
+            paymentAccounts: JSON.stringify([]),
+            faqs: JSON.stringify([]),
+          },
+        });
+        
+        return {
+          ...newSettings,
+          paymentAccounts: [],
+          faqs: [],
+        };
+      }
+      
+      // Parse JSON fields for frontend
+      return {
+        ...settings,
+        paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
+        faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
+      };
+    } catch (error) {
+      console.error('Error getting settings:', error);
+      // Return default settings if there's an error
+      return {
+        id: 'main_settings',
+        siteName: 'Lucky Snap',
+        paymentAccounts: [],
+        faqs: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     }
-    
-    // Parse JSON fields for frontend
-    return {
-      ...settings,
-      paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
-      faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
-    };
   }
 
   async createOrder(orderData: Prisma.OrderUncheckedCreateInput) {

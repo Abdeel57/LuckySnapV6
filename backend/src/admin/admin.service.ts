@@ -151,21 +151,26 @@ export class AdminService {
 
   // Settings
   async updateSettings(data: any) {
-    const { paymentAccounts, faqs, siteName } = data;
-    
-    return this.prisma.settings.upsert({
-      where: { id: 'main_settings' },
-      update: {
-        siteName: siteName || 'Lucky Snap',
-        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
-        faqs: faqs ? JSON.stringify(faqs) : null,
-      },
-      create: {
-        id: 'main_settings',
-        siteName: siteName || 'Lucky Snap',
-        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
-        faqs: faqs ? JSON.stringify(faqs) : null,
-      },
-    });
+    try {
+      const { paymentAccounts, faqs, siteName } = data;
+      
+      return await this.prisma.settings.upsert({
+        where: { id: 'main_settings' },
+        update: {
+          siteName: siteName || 'Lucky Snap',
+          paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
+          faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
+        },
+        create: {
+          id: 'main_settings',
+          siteName: siteName || 'Lucky Snap',
+          paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
+          faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
+        },
+      });
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      throw new Error('Failed to update settings');
+    }
   }
 }
