@@ -4,6 +4,21 @@ import { LucideIcon, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// CSS para animación pulse
+const pulseStyle = `
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+`;
+
+// Inyectar CSS
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.textContent = pulseStyle;
+    document.head.appendChild(style);
+}
+
 interface MobileAdminNavProps {
     navLinks: { to: string; text: string; icon: LucideIcon }[];
 }
@@ -20,15 +35,24 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
         <>
             {/* Botón flotante principal */}
             <motion.button
-                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg z-50 flex items-center justify-center"
+                className="lg:hidden fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-xl z-50 flex items-center justify-center border-4 border-white"
                 onClick={() => setIsOpen(!isOpen)}
                 whileTap={{ scale: 0.95 }}
                 animate={{ rotate: isOpen ? 45 : 0 }}
                 transition={{ duration: 0.2 }}
                 aria-label="Abrir menú de navegación"
+                style={{ 
+                    boxShadow: '0 8px 25px rgba(37, 99, 235, 0.4)',
+                    animation: 'pulse 2s infinite'
+                }}
             >
-                {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
             </motion.button>
+            
+            {/* Indicador de que es la nueva navegación */}
+            <div className="lg:hidden fixed bottom-6 left-6 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold z-50">
+                NUEVA NAV
+            </div>
 
             {/* Menú expandible */}
             <AnimatePresence>
