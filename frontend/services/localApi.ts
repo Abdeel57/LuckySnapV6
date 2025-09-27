@@ -35,8 +35,8 @@ const HARDCODED_RAFFLES: Raffle[] = [
     id: '1',
     title: 'iPhone 15 Pro Max',
     description: 'El último iPhone con todas las características premium',
-    heroImage: 'https://via.placeholder.com/400x300?text=iPhone+15+Pro+Max',
-    gallery: ['https://via.placeholder.com/400x300?text=Gallery+1'],
+    heroImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop',
+    gallery: ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'],
     tickets: 100,
     sold: 25,
     drawDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días desde ahora

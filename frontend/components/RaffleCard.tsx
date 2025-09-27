@@ -20,7 +20,15 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
             className="bg-background-secondary rounded-lg overflow-hidden shadow-lg shadow-black/30 border border-slate-700/50 flex flex-col"
         >
             <Link to={`/sorteo/${raffle.slug}`}>
-                <img src={raffle.heroImage} alt={raffle.title} className="w-full h-48 object-cover" />
+                <img 
+                    src={raffle.heroImage} 
+                    alt={raffle.title} 
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+                    }}
+                />
             </Link>
             <div className="p-6 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-white mb-2 flex-grow">{raffle.title}</h3>

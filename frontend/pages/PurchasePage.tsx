@@ -118,7 +118,15 @@ const PurchasePage = () => {
                 <h1 className="text-3xl font-bold text-center text-white mb-2">Confirmar Compra</h1>
                 <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
                  <div className="bg-background-secondary p-8 rounded-lg border border-slate-700/50 shadow-lg">
-                    <img src={raffle.heroImage} alt={raffle.title} className="w-full h-48 object-cover rounded-lg mb-6" />
+                    <img 
+                        src={raffle.heroImage} 
+                        alt={raffle.title} 
+                        className="w-full h-48 object-cover rounded-lg mb-6"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+                        }}
+                    />
                     <div className="mb-6">
                         <h3 className="text-lg font-bold text-white">Boletos Seleccionados</h3>
                         <div className="flex flex-wrap gap-2 mt-2">
