@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { adminGetRaffles, adminCreateRaffle, adminUpdateRaffle, adminDeleteRaffle } from '../../services/api';
+import { getRaffles, createRaffle, updateRaffle, deleteRaffle } from '../../services/api';
 import { Raffle } from '../../types';
 import { Plus, Trash2, X } from 'lucide-react';
 import Spinner from '../../components/Spinner';
@@ -160,7 +160,7 @@ const AdminRafflesPage: React.FC = () => {
 
     const fetchRaffles = async () => {
         setLoading(true);
-        const data = await adminGetRaffles();
+        const data = await getRaffles();
         setRaffles(data);
         setLoading(false);
     };
@@ -182,10 +182,10 @@ const AdminRafflesPage: React.FC = () => {
     const handleSaveRaffle = async (data: Raffle) => {
         try {
             if (data.id) {
-                await adminUpdateRaffle(data);
+                await updateRaffle(data.id!, data);
             } else {
                 const { id, sold, ...createData } = data;
-                await adminCreateRaffle(createData as Omit<Raffle, 'id' | 'sold'>);
+                await createRaffle(createData as Omit<Raffle, 'id' | 'sold'>);
             }
             fetchRaffles();
             handleCloseModal();
@@ -198,7 +198,7 @@ const AdminRafflesPage: React.FC = () => {
     const handleDeleteRaffle = async (raffleId: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar esta rifa? Esto no se puede deshacer.')) {
             try {
-                await adminDeleteRaffle(raffleId);
+                await deleteRaffle(raffleId);
                 fetchRaffles();
             } catch (error) {
                 alert("Error al eliminar la rifa.");

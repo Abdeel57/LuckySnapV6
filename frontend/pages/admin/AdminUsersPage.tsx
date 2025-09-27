@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser } from '../../services/api';
+import { getUsers, createUser, updateUser, deleteUser } from '../../services/api';
 import { AdminUser } from '../../types';
 import { Plus, Edit, Trash2, X, User, Shield } from 'lucide-react';
 import Spinner from '../../components/Spinner';
@@ -71,7 +71,7 @@ const AdminUsersPage = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const data = await adminGetUsers();
+        const data = await getUsers();
         setUsers(data);
         setLoading(false);
     };
@@ -93,10 +93,10 @@ const AdminUsersPage = () => {
     const handleSaveUser = async (data: AdminUser) => {
         try {
             if (editingUser?.id) {
-                await adminUpdateUser({ ...editingUser, ...data });
+                await updateUser(editingUser.id!, { ...editingUser, ...data });
             } else {
                 // @ts-ignore
-                await adminCreateUser(data);
+                await createUser(data);
             }
             fetchUsers();
             handleCloseModal();
@@ -109,7 +109,7 @@ const AdminUsersPage = () => {
     const handleDeleteUser = async (userId: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
             try {
-                await adminDeleteUser(userId);
+                await deleteUser(userId);
                 fetchUsers();
             } catch (error) {
                  console.error("Failed to delete user", error);

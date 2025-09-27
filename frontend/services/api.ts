@@ -148,6 +148,194 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
     return localApi.updateSettings(settings);
 };
 
+// --- Admin API Calls ---
+
+export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>): Promise<Raffle> => {
+    try {
+        console.log('Trying backend for create raffle...');
+        const response = await fetch(`${API_URL}/admin/raffles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(raffle),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend raffle created successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for create raffle');
+    const { localApi } = await import('./localApi');
+    return localApi.createRaffle(raffle);
+};
+
+export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise<Raffle> => {
+    try {
+        console.log('Trying backend for update raffle...');
+        const response = await fetch(`${API_URL}/admin/raffles/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(raffle),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend raffle updated successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for update raffle');
+    const { localApi } = await import('./localApi');
+    return localApi.updateRaffle(id, raffle);
+};
+
+export const deleteRaffle = async (id: string): Promise<void> => {
+    try {
+        console.log('Trying backend for delete raffle...');
+        const response = await fetch(`${API_URL}/admin/raffles/${id}`, {
+            method: 'DELETE',
+        });
+        if (response.ok) {
+            console.log('✅ Backend raffle deleted successfully');
+            return;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for delete raffle');
+    const { localApi } = await import('./localApi');
+    return localApi.deleteRaffle(id);
+};
+
+export const getRaffles = async (): Promise<Raffle[]> => {
+    try {
+        console.log('Trying backend for get raffles...');
+        const response = await fetch(`${API_URL}/admin/raffles`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend raffles loaded successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for get raffles');
+    const { localApi } = await import('./localApi');
+    return localApi.getRaffles();
+};
+
+export const getUsers = async (): Promise<AdminUser[]> => {
+    try {
+        console.log('Trying backend for get users...');
+        const response = await fetch(`${API_URL}/admin/users`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend users loaded successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for get users');
+    const { localApi } = await import('./localApi');
+    return localApi.getUsers();
+};
+
+export const createUser = async (user: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdminUser> => {
+    try {
+        console.log('Trying backend for create user...');
+        const response = await fetch(`${API_URL}/admin/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend user created successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for create user');
+    const { localApi } = await import('./localApi');
+    return localApi.createUser(user);
+};
+
+export const updateUser = async (id: string, user: Partial<AdminUser>): Promise<AdminUser> => {
+    try {
+        console.log('Trying backend for update user...');
+        const response = await fetch(`${API_URL}/admin/users/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(user),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend user updated successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for update user');
+    const { localApi } = await import('./localApi');
+    return localApi.updateUser(id, user);
+};
+
+export const deleteUser = async (id: string): Promise<void> => {
+    try {
+        console.log('Trying backend for delete user...');
+        const response = await fetch(`${API_URL}/admin/users/${id}`, {
+            method: 'DELETE',
+        });
+        if (response.ok) {
+            console.log('✅ Backend user deleted successfully');
+            return;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for delete user');
+    const { localApi } = await import('./localApi');
+    return localApi.deleteUser(id);
+};
+
 export const createOrder = async (orderData: Omit<Order, 'folio' | 'status' | 'createdAt' | 'expiresAt' | 'id'>): Promise<Order> => {
     console.log('Using local data for create order (backend disabled)');
     const { localApi } = await import('./localApi');
