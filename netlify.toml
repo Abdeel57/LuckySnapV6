@@ -6,11 +6,11 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
-  VITE_API_URL = "https://backendv1-uhsl.onrender.com/api"
+  VITE_API_URL = "https://lucky-snap-backend-complete.onrender.com/api"
 
 [[redirects]]
   from = "/api/*"
-  to = "https://backendv1-uhsl.onrender.com/api/:splat"
+  to = "https://lucky-snap-backend-complete.onrender.com/api/:splat"
   status = 200
 
 [[redirects]]
