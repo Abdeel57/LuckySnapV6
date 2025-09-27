@@ -153,6 +153,13 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
 export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>): Promise<Raffle> => {
     try {
         console.log('Trying backend for create raffle...');
+        console.log('Payload size:', JSON.stringify(raffle).length, 'bytes');
+        console.log('Payload preview:', {
+            title: raffle.title,
+            gallery: raffle.gallery?.length || 0,
+            packs: raffle.packs?.length || 0
+        });
+        
         const response = await fetch(`${API_URL}/admin/raffles`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -164,6 +171,8 @@ export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'up
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);

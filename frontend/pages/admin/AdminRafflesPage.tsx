@@ -179,13 +179,30 @@ const AdminRafflesPage: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    // Función para limpiar datos antes de enviar
+    const cleanRaffleData = (data: Raffle) => {
+        return {
+            title: data.title,
+            description: data.description,
+            heroImage: data.heroImage,
+            gallery: data.gallery || [],
+            tickets: data.tickets,
+            drawDate: data.drawDate,
+            packs: data.packs || [],
+            bonuses: data.bonuses || [],
+            status: data.status || 'draft',
+            slug: data.slug
+        };
+    };
+
     const handleSaveRaffle = async (data: Raffle) => {
         try {
+            const cleanedData = cleanRaffleData(data);
+            
             if (data.id) {
-                await updateRaffle(data.id!, data);
+                await updateRaffle(data.id!, cleanedData);
             } else {
-                const { id, sold, ...createData } = data;
-                await createRaffle(createData as Omit<Raffle, 'id' | 'sold'>);
+                await createRaffle(cleanedData as Omit<Raffle, 'id' | 'sold'>);
             }
             fetchRaffles();
             handleCloseModal();
