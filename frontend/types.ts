@@ -95,6 +95,8 @@ export interface Settings {
 export interface AdminUser {
     id: string;
     name: string;
-    username: string;
-    role: 'Administrator' | 'Editor';
+    email: string;
+    password?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
 }

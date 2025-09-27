@@ -128,7 +128,17 @@ export class AdminService {
   }
 
   async createUser(data: Prisma.AdminUserCreateInput) {
-    return this.prisma.adminUser.create({ data });
+    try {
+      // Validate required fields
+      if (!data.email || !data.name || !data.password) {
+        throw new Error('Email, name, and password are required');
+      }
+      
+      return this.prisma.adminUser.create({ data });
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   async updateUser(id: string, data: Prisma.AdminUserUpdateInput) {

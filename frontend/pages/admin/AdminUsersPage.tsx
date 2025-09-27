@@ -9,7 +9,7 @@ import Spinner from '../../components/Spinner';
 // Modal for Add/Edit User
 const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | null, onClose: () => void, onSave: (data: AdminUser) => void }) => {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<AdminUser>({
-        defaultValues: user || { role: 'Editor' }
+        defaultValues: user || {}
     });
 
     const onSubmit = (data: AdminUser) => {
@@ -40,16 +40,14 @@ const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | n
                          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message as React.ReactNode}</p>}
                     </div>
                      <div>
-                        <label className="text-sm font-medium text-gray-600">Nombre de Usuario</label>
-                        <input {...register('username', { required: 'El nombre de usuario es requerido' })} className={inputClasses} />
-                        {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message as React.ReactNode}</p>}
+                        <label className="text-sm font-medium text-gray-600">Email</label>
+                        <input {...register('email', { required: 'El email es requerido', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} className={inputClasses} />
+                        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as React.ReactNode}</p>}
                     </div>
                      <div>
-                        <label className="text-sm font-medium text-gray-600">Rol</label>
-                        <select {...register('role', { required: true })} className={inputClasses}>
-                            <option value="Editor">Editor</option>
-                            <option value="Administrator">Administrator</option>
-                        </select>
+                        <label className="text-sm font-medium text-gray-600">Contraseña</label>
+                        <input {...register('password', { required: 'La contraseña es requerida', minLength: { value: 6, message: 'Mínimo 6 caracteres' } })} type="password" className={inputClasses} />
+                        {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message as React.ReactNode}</p>}
                     </div>
                     
                     <div className="flex justify-end gap-3 pt-6 border-t mt-6">
@@ -144,14 +142,10 @@ const AdminUsersPage = () => {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="font-bold text-gray-800 truncate">{user.name}</p>
-                                        <p className="text-sm text-gray-500 truncate">{user.username}</p>
+                                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-                                     <span className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-full ${user.role === 'Administrator' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                                        <Shield size={14} />
-                                        {user.role}
-                                    </span>
                                     <button
                                         onClick={() => handleOpenModal(user)}
                                         className="py-2 px-4 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600"
