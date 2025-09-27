@@ -340,13 +340,35 @@ app.post('/api/admin/winners', (req, res) => {
 
 // Estadísticas
 app.get('/api/admin/stats', (req, res) => {
-  res.json({
-    totalRaffles: raffles.length,
-    activeRaffles: raffles.filter(r => r.status === 'active').length,
-    totalOrders: orders.length,
-    totalRevenue: orders.reduce((sum, order) => sum + (order.total || 0), 0),
-    totalWinners: winners.length
-  });
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayOrders = orders.filter(order => {
+      const orderDate = new Date(order.createdAt);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    });
+    
+    const stats = {
+      todaySales: todayOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+      pendingOrders: orders.filter(order => order.status === 'PENDING').length,
+      activeRaffles: raffles.filter(r => r.status === 'active').length,
+      totalRaffles: raffles.length,
+      totalOrders: orders.length,
+      totalRevenue: orders.reduce((sum, order) => sum + (order.total || 0), 0),
+      totalWinners: winners.length
+    };
+    
+    console.log('📊 Dashboard stats:', stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('❌ Error getting stats:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
 });
 
 // Iniciar servidor

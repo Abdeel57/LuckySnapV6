@@ -52,7 +52,7 @@ const AdminDashboardPage: React.FC = () => {
                 <StatCard
                     icon={DollarSign}
                     title="Ventas de Hoy"
-                    value={`LPS ${stats?.todaySales.toFixed(2) ?? '0.00'}`}
+                    value={`LPS ${(stats?.todaySales ?? 0).toFixed(2)}`}
                     color="bg-green-500"
                 />
                 <StatCard
