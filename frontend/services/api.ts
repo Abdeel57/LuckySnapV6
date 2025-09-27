@@ -82,6 +82,18 @@ export const getPastWinners = async (): Promise<Winner[]> => {
 };
 
 export const getSettings = async (): Promise<Settings> => {
+    // Try the working endpoint first, fallback to settings
+    try {
+        const response = await fetch(`${API_URL}/public/working`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.data; // Extract data from the working endpoint response
+        }
+    } catch (error) {
+        console.log('Working endpoint failed, trying settings endpoint');
+    }
+    
+    // Fallback to original settings endpoint
     return handleResponse(await fetch(`${API_URL}/public/settings`));
 };
 

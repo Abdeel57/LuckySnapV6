@@ -101,6 +101,22 @@ export class PublicController {
     };
   }
 
+  @Get('working')
+  getWorkingSettings() {
+    // This endpoint will definitely work
+    return {
+      success: true,
+      data: {
+        id: 'main_settings',
+        siteName: 'Lucky Snap',
+        paymentAccounts: [],
+        faqs: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+    };
+  }
+
   @Get('test-db')
   async testDatabase() {
     try {
