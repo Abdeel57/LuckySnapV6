@@ -27,4 +27,4 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://lucky-snap-backend.onrender.com/api
+        value: https://backendv1-uhsl.onrender.com/api
