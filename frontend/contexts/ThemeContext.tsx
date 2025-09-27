@@ -34,12 +34,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     getSettings().then(settings => {
-      if (settings.appearance) {
-        setAppearance(settings.appearance);
-      }
+      // Use default appearance since local data doesn't have appearance structure
+      setAppearance(defaultAppearance);
       setIsLoading(false);
     }).catch(err => {
       console.error("Failed to load settings, using defaults", err);
+      setAppearance(defaultAppearance);
       setIsLoading(false);
     })
   }, []);
