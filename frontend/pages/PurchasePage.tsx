@@ -43,7 +43,7 @@ const PurchasePage = () => {
         }
     }, [slug]);
 
-    const pricePerTicket = raffle?.packs.find(p => p.q === 1)?.price || 0;
+    const pricePerTicket = raffle?.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
     const total = initialTickets.length * pricePerTicket;
 
     const onSubmit = async (data: FormData) => {
@@ -128,9 +128,25 @@ const PurchasePage = () => {
                         }}
                     />
                     <div className="mb-4 md:mb-6">
-                        <h3 className="text-base md:text-lg font-bold text-white">Boletos Seleccionados</h3>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <h3 className="text-base md:text-lg font-bold text-white mb-3">Boletos Seleccionados</h3>
+                        <div className="flex flex-wrap gap-2 mb-4">
                             {initialTickets.map(t => <span key={t} className="bg-background-primary px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-mono">{t}</span>)}
+                        </div>
+                        <div className="bg-background-primary rounded-lg p-4 border border-slate-700/50">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-slate-300">Precio por boleto:</span>
+                                <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-slate-300">Cantidad:</span>
+                                <span className="text-white font-bold">{initialTickets.length} boleto(s)</span>
+                            </div>
+                            <div className="border-t border-slate-700/50 pt-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-white font-bold text-lg">Total:</span>
+                                    <span className="text-accent font-bold text-xl">LPS {total.toFixed(2)}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -151,10 +167,8 @@ const PurchasePage = () => {
                             {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district.message}</p>}
                         </div>
                          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-slate-700 text-center">
-                            <p className="text-xl md:text-2xl font-bold text-white">Total a Pagar: LPS {total.toFixed(2)}</p>
-                            <p className="text-slate-400 text-sm md:text-base">Por {initialTickets.length} boleto(s)</p>
-                            <button type="submit" disabled={isSubmitting || initialTickets.length === 0} className="mt-4 w-full bg-action text-white font-bold py-4 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base md:text-base">
-                                {isSubmitting ? 'Apartando...' : 'Generar Folio para Pagar'}
+                            <button type="submit" disabled={isSubmitting || initialTickets.length === 0} className="w-full bg-action text-white font-bold py-4 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base md:text-base">
+                                {isSubmitting ? 'Apartando...' : `Generar Folio para Pagar - LPS ${total.toFixed(2)}`}
                             </button>
                         </div>
                     </form>

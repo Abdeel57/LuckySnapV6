@@ -48,7 +48,7 @@ const RaffleDetailPage = () => {
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
     
     const progress = (raffle.sold / raffle.tickets) * 100;
-    const pricePerTicket = raffle.packs.find(p => p.q === 1)?.price || 0;
+    const pricePerTicket = raffle.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
     const totalPrice = selectedTickets.length * pricePerTicket;
 
     return (
@@ -97,7 +97,13 @@ const RaffleDetailPage = () => {
                                     </div>
                                     <p className="text-center text-sm text-slate-300 mt-2">{progress.toFixed(2)}% vendido</p>
                                 </div>
-                                <p className="text-center text-slate-400">Selecciona tus boletos de la tabla de abajo para comenzar.</p>
+                                <div className="text-center mb-4">
+                                    <p className="text-slate-400 mb-2">Selecciona tus boletos de la tabla de abajo para comenzar.</p>
+                                    <div className="bg-background-primary rounded-lg p-3 border border-slate-700/50">
+                                        <p className="text-sm text-slate-300">Precio por boleto:</p>
+                                        <p className="text-xl font-bold text-accent">LPS {pricePerTicket.toFixed(2)}</p>
+                                    </div>
+                                </div>
                             </div>
                             
                             <TicketSelector
@@ -106,6 +112,35 @@ const RaffleDetailPage = () => {
                                 selectedTickets={selectedTickets}
                                 onTicketClick={handleTicketClick}
                             />
+                            
+                            {/* Purchase Summary */}
+                            {selectedTickets.length > 0 && (
+                                <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg">
+                                    <h3 className="text-lg font-bold text-white mb-4 text-center">Resumen de Compra</h3>
+                                    <div className="space-y-2 mb-4">
+                                        <div className="flex justify-between text-slate-300">
+                                            <span>Boletos seleccionados:</span>
+                                            <span>{selectedTickets.length}</span>
+                                        </div>
+                                        <div className="flex justify-between text-slate-300">
+                                            <span>Precio por boleto:</span>
+                                            <span>LPS {pricePerTicket.toFixed(2)}</span>
+                                        </div>
+                                        <div className="border-t border-slate-700/50 pt-2">
+                                            <div className="flex justify-between text-white font-bold text-lg">
+                                                <span>Total:</span>
+                                                <span className="text-accent">LPS {totalPrice.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        to={`/comprar/${raffle.slug}?tickets=${selectedTickets.join(',')}`}
+                                        className="block w-full text-center bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
+                                    >
+                                        Proceder al Pago
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -7,7 +7,9 @@ export enum OrderStatus {
 }
 
 export interface Pack {
-    q: number;
+    q?: number;
+    tickets?: number;
+    name?: string;
     price: number;
 }
 
