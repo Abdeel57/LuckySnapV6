@@ -61,7 +61,7 @@ const AdminLayout = () => {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col pb-20 md:pb-0">
+            <div className="flex-1 flex flex-col pb-6 lg:pb-0">
                 <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-200 md:hidden flex items-center justify-between p-4 shadow-sm">
                      <Link to="/admin" className="text-xl font-bold text-gray-800">
                         Panel de Control
