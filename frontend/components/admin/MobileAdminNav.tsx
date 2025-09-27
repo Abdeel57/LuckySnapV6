@@ -25,6 +25,7 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                 whileTap={{ scale: 0.95 }}
                 animate={{ rotate: isOpen ? 45 : 0 }}
                 transition={{ duration: 0.2 }}
+                aria-label="Abrir menú de navegación"
             >
                 {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </motion.button>
