@@ -106,9 +106,6 @@ model AdminUser {
 model Settings {
   id              String   @id @default(cuid())
   siteName        String   @default("Lucky Snap")
-  appearance      Json?
-  contactInfo     Json?
-  socialLinks     Json?
   paymentAccounts Json?
   faqs            Json?
   createdAt       DateTime @default(now())

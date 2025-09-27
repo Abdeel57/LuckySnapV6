@@ -48,26 +48,6 @@ export class PublicService {
         data: {
           id: 'main_settings',
           siteName: 'Lucky Snap',
-          appearance: JSON.stringify({
-            siteName: 'Lucky Snap',
-            logoUrl: '',
-            logoAnimation: 'none',
-            colors: {
-              backgroundPrimary: '#0f172a',
-              backgroundSecondary: '#1e293b',
-              accent: '#3b82f6',
-              action: '#10b981'
-            }
-          }),
-          contactInfo: JSON.stringify({
-            whatsapp: '',
-            email: ''
-          }),
-          socialLinks: JSON.stringify({
-            facebookUrl: '',
-            instagramUrl: '',
-            twitterUrl: ''
-          }),
           paymentAccounts: JSON.stringify([]),
           faqs: JSON.stringify([]),
         },
@@ -77,9 +57,6 @@ export class PublicService {
     // Parse JSON fields for frontend
     return {
       ...settings,
-      appearance: settings.appearance ? JSON.parse(settings.appearance as string) : null,
-      contactInfo: settings.contactInfo ? JSON.parse(settings.contactInfo as string) : null,
-      socialLinks: settings.socialLinks ? JSON.parse(settings.socialLinks as string) : null,
       paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
       faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
     };

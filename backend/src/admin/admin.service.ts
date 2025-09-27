@@ -151,24 +151,18 @@ export class AdminService {
 
   // Settings
   async updateSettings(data: any) {
-    const { paymentAccounts, faqs, appearance, contactInfo, socialLinks, siteName } = data;
+    const { paymentAccounts, faqs, siteName } = data;
     
     return this.prisma.settings.upsert({
       where: { id: 'main_settings' },
       update: {
         siteName: siteName || 'Lucky Snap',
-        appearance: appearance ? JSON.stringify(appearance) : null,
-        contactInfo: contactInfo ? JSON.stringify(contactInfo) : null,
-        socialLinks: socialLinks ? JSON.stringify(socialLinks) : null,
         paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
         faqs: faqs ? JSON.stringify(faqs) : null,
       },
       create: {
         id: 'main_settings',
         siteName: siteName || 'Lucky Snap',
-        appearance: appearance ? JSON.stringify(appearance) : null,
-        contactInfo: contactInfo ? JSON.stringify(contactInfo) : null,
-        socialLinks: socialLinks ? JSON.stringify(socialLinks) : null,
         paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : null,
         faqs: faqs ? JSON.stringify(faqs) : null,
       },
