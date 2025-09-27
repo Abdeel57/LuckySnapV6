@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: lucky-snap-backend-simple
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/simple-backend.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000

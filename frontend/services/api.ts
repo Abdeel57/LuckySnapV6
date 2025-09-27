@@ -63,7 +63,22 @@ const parseWinnerDates = (winner: any) => parseDates(winner, ['drawDate']);
 // --- Public API Calls ---
 
 export const getActiveRaffles = async (): Promise<Raffle[]> => {
-    console.log('Using local data for active raffles (backend disabled)');
+    try {
+        console.log('Trying backend for active raffles...');
+        const response = await fetch(`${API_URL}/public/raffles/active`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend raffles loaded successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for active raffles');
     const { localApi } = await import('./localApi');
     return localApi.getRaffles();
 };
@@ -88,14 +103,47 @@ export const getPastWinners = async (): Promise<Winner[]> => {
 };
 
 export const getSettings = async (): Promise<Settings> => {
-    // EMERGENCY: Always use local data for now
-    console.log('Using local data for settings (backend disabled)');
+    try {
+        console.log('Trying backend for settings...');
+        const response = await fetch(`${API_URL}/public/settings`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend settings loaded successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for settings');
     const { localApi } = await import('./localApi');
     return localApi.getSettings();
 };
 
 export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
-    console.log('Using local data for update settings (backend disabled)');
+    try {
+        console.log('Trying backend for update settings...');
+        const response = await fetch(`${API_URL}/admin/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend settings updated successfully');
+            return data;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for update settings');
     const { localApi } = await import('./localApi');
     return localApi.updateSettings(settings);
 };
