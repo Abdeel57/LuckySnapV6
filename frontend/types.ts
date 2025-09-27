@@ -35,11 +35,20 @@ export interface Winner {
     drawDate: Date;
 }
 
-export interface Order {
-    folio: string;
+export interface Customer {
+    id: string;
     name: string;
     phone: string;
-    state: string;
+    district: string;
+    totalOrders: number;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Order {
+    id: string;
+    folio: string;
+    customer: Customer;
     raffleId: string;
     raffleTitle: string;
     tickets: number[];

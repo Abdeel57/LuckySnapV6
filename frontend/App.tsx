@@ -22,6 +22,7 @@ const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminRafflesPage = lazy(() => import('./pages/admin/AdminRafflesPage'));
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
+const AdminCustomersPage = lazy(() => import('./pages/admin/AdminCustomersPage'));
 const AdminWinnersPage = lazy(() => import('./pages/admin/AdminWinnersPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
@@ -55,6 +56,7 @@ const App: React.FC = () => {
                 <Route index element={<AdminDashboardPage />} />
                 <Route path="sorteos" element={<AdminRafflesPage />} />
                 <Route path="apartados" element={<AdminOrdersPage />} />
+                <Route path="clientes" element={<AdminCustomersPage />} />
                 <Route path="ganadores" element={<AdminWinnersPage />} />
                 <Route path="usuarios" element={<AdminUsersPage />} />
                 <Route path="ajustes" element={<AdminSettingsPage />} />

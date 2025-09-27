@@ -8,6 +8,7 @@ export const navLinks = [
     { to: "/admin", text: "Inicio", icon: Home },
     { to: "/admin/sorteos", text: "Rifas", icon: Ticket },
     { to: "/admin/apartados", text: "Apartados", icon: Calendar },
+    { to: "/admin/clientes", text: "Clientes", icon: Users },
     { to: "/admin/ganadores", text: "Ganadores", icon: Trophy },
     { to: "/admin/usuarios", text: "Usuarios", icon: Users },
     { to: "/admin/ajustes", text: "Configuración", icon: Cog },

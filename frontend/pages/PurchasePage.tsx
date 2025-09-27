@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 type FormData = {
     name: string;
     phone: string;
-    state: string;
+    district: string;
 };
 
 const PurchasePage = () => {
@@ -51,7 +51,11 @@ const PurchasePage = () => {
         setIsSubmitting(true);
         try {
             const orderData = {
-                ...data,
+                customer: {
+                    name: data.name,
+                    phone: data.phone,
+                    district: data.district
+                },
                 raffleId: raffle.id,
                 raffleTitle: raffle.title,
                 tickets: initialTickets,
@@ -134,9 +138,9 @@ const PurchasePage = () => {
                             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
                         </div>
                         <div>
-                            <label htmlFor="state" className="block text-sm font-medium text-white mb-1">Departamento</label>
-                            <input id="state" {...register('state', { required: 'El departamento es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 text-white focus:ring-accent focus:border-accent" />
-                            {errors.state && <p className="text-red-400 text-xs mt-1">{errors.state.message}</p>}
+                            <label htmlFor="district" className="block text-sm font-medium text-white mb-1">Distrito</label>
+                            <input id="district" {...register('district', { required: 'El distrito es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-2 px-3 text-white focus:ring-accent focus:border-accent" />
+                            {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district.message}</p>}
                         </div>
                          <div className="mt-8 pt-6 border-t border-slate-700 text-center">
                             <p className="text-2xl font-bold text-white">Total a Pagar: LPS {total.toFixed(2)}</p>
