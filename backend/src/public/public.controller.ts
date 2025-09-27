@@ -34,14 +34,27 @@ export class PublicController {
   @Get('settings')
   getSettings() {
     // Return hardcoded settings to ensure the admin panel works
-    return {
-      id: 'main_settings',
-      siteName: 'Lucky Snap',
-      paymentAccounts: [],
-      faqs: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // This endpoint works without database connection
+    try {
+      return {
+        id: 'main_settings',
+        siteName: 'Lucky Snap',
+        paymentAccounts: [],
+        faqs: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      // Fallback response if anything fails
+      return {
+        id: 'main_settings',
+        siteName: 'Lucky Snap',
+        paymentAccounts: [],
+        faqs: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
   }
 
   @Get('settings-simple')
@@ -63,6 +76,15 @@ export class PublicController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       message: 'Backend is running'
+    };
+  }
+
+  @Get('test')
+  testEndpoint() {
+    return {
+      message: 'Backend is working!',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
     };
   }
 
