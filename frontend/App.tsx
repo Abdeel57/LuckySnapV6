@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
+import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -20,6 +21,7 @@ const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminRafflesPage = lazy(() => import('./pages/admin/AdminRafflesPage'));
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
 const AdminCustomersPage = lazy(() => import('./pages/admin/AdminCustomersPage'));
@@ -32,7 +34,8 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
+          <AnalyticsProvider>
+            <Router>
             <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
               <Routes>
               {/* Public Routes */}
@@ -54,6 +57,7 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }>
                 <Route index element={<AdminDashboardPage />} />
+                <Route path="analytics" element={<AdminAnalyticsPage />} />
                 <Route path="sorteos" element={<AdminRafflesPage />} />
                 <Route path="apartados" element={<AdminOrdersPage />} />
                 <Route path="clientes" element={<AdminCustomersPage />} />
@@ -63,7 +67,8 @@ const App: React.FC = () => {
               </Route>
               </Routes>
             </Suspense>
-          </Router>
+            </Router>
+          </AnalyticsProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

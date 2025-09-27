@@ -9,14 +9,17 @@ import WinnerCard from '../components/WinnerCard';
 import HowItWorks from '../components/HowItWorks';
 import Faq from '../components/Faq';
 import CountdownTimer from '../components/CountdownTimer';
+import { useAnalytics } from '../contexts/AnalyticsContext';
 
 const HomePage = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [winners, setWinners] = useState<Winner[]>([]);
     const [loading, setLoading] = useState(true);
+    const { trackPageView } = useAnalytics();
 
     useEffect(() => {
         setLoading(true);
+        trackPageView('/');
         Promise.all([
             getActiveRaffles(),
             getPastWinners()
@@ -28,7 +31,7 @@ const HomePage = () => {
         }).finally(() => {
             setLoading(false);
         });
-    }, []);
+    }, [trackPageView]);
 
     const mainRaffle = raffles.length > 0 ? raffles[0] : null;
     const otherRaffles = raffles.length > 1 ? raffles.slice(1) : [];
