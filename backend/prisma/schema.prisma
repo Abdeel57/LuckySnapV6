@@ -28,13 +28,14 @@ model Raffle {
   id          String   @id @default(cuid())
   title       String
   description String?
-  imageUrl    String?
-  price       Float
-  totalTickets Int
+  heroImage   String?
+  gallery     String[]
+  tickets     Int
   sold        Int      @default(0)
-  endDate     DateTime
-  isActive    Boolean  @default(true)
-  status      String   @default("active")
+  drawDate    DateTime
+  packs       Json
+  bonuses     String[]
+  status      String   @default("draft")
   slug        String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -104,7 +105,9 @@ model AdminUser {
 
 model Settings {
   id              String   @id @default(cuid())
-  siteName        String   @default("Lucky Snap")
+  appearance      Json
+  contactInfo     Json
+  socialLinks     Json
   paymentAccounts Json?
   faqs            Json?
   createdAt       DateTime @default(now())
