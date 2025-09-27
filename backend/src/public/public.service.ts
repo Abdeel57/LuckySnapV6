@@ -47,6 +47,7 @@ export class PublicService {
       return this.prisma.settings.create({
         data: {
           id: 'main_settings',
+          siteName: 'Lucky Snap',
           appearance: JSON.stringify({
             siteName: 'Lucky Snap',
             logoUrl: '',
