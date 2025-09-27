@@ -18,6 +18,20 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Middleware de logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Request body:', {
+      ...req.body,
+      // Ocultar datos grandes para el log
+      heroImage: req.body.heroImage ? 'HAS_IMAGE' : 'NO_IMAGE',
+      gallery: req.body.gallery?.length || 0
+    });
+  }
+  next();
+});
+
 // Datos en memoria (para que funcione inmediatamente)
 let settings = {
   id: 'main_settings',
@@ -65,7 +79,22 @@ let users = [
 
 // Rutas públicas
 app.get('/', (req, res) => {
-  res.json({ message: 'Lucky Snap API - Funcionando correctamente', status: 'ok' });
+  res.json({ 
+    message: 'Lucky Snap API - Funcionando correctamente', 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    raffles: raffles.length,
+    orders: orders.length,
+    users: users.length
+  });
 });
 
 app.get('/api/public/settings', (req, res) => {
@@ -131,14 +160,47 @@ app.get('/api/admin/raffles', (req, res) => {
 });
 
 app.post('/api/admin/raffles', (req, res) => {
-  const raffle = {
-    id: Date.now().toString(),
-    ...req.body,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
-  raffles.push(raffle);
-  res.json(raffle);
+  try {
+    console.log('📝 Creating raffle with data:', {
+      title: req.body.title,
+      description: req.body.description,
+      heroImage: req.body.heroImage ? 'HAS_IMAGE' : 'NO_IMAGE',
+      gallery: req.body.gallery?.length || 0,
+      packs: req.body.packs?.length || 0
+    });
+
+    // Validar datos requeridos
+    if (!req.body.title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const raffle = {
+      id: Date.now().toString(),
+      title: req.body.title || 'Untitled Raffle',
+      description: req.body.description || '',
+      heroImage: req.body.heroImage || '',
+      gallery: req.body.gallery || [],
+      tickets: req.body.tickets || 100,
+      sold: 0,
+      drawDate: req.body.drawDate ? new Date(req.body.drawDate) : new Date(),
+      packs: req.body.packs || [],
+      bonuses: req.body.bonuses || [],
+      status: req.body.status || 'draft',
+      slug: req.body.slug || req.body.title.toLowerCase().replace(/\s+/g, '-'),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    raffles.push(raffle);
+    console.log('✅ Raffle created successfully:', raffle.id);
+    res.json(raffle);
+  } catch (error) {
+    console.error('❌ Error creating raffle:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
 });
 
 app.patch('/api/admin/raffles/:id', (req, res) => {
