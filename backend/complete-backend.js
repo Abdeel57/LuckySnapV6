@@ -198,6 +198,11 @@ app.get('/api/admin/raffles', (req, res) => {
   res.json(raffles);
 });
 
+app.get('/api/admin/raffles/finished', (req, res) => {
+  const finishedRaffles = raffles.filter(r => r.status === 'finished');
+  res.json(finishedRaffles);
+});
+
 app.post('/api/admin/raffles', (req, res) => {
   try {
     console.log('📝 Creating raffle:', {
@@ -293,6 +298,44 @@ app.get('/api/public/orders/folio/:folio', (req, res) => {
 
 app.get('/api/admin/orders', (req, res) => {
   res.json(orders);
+});
+
+// Clientes
+app.get('/api/admin/customers', (req, res) => {
+  // Extraer clientes únicos de las órdenes
+  const customers = [];
+  const customerMap = new Map();
+  
+  orders.forEach(order => {
+    if (order.customer) {
+      const key = order.customer.phone;
+      if (customerMap.has(key)) {
+        customerMap.get(key).totalOrders += 1;
+      } else {
+        customerMap.set(key, {
+          id: Date.now().toString() + Math.random(),
+          name: order.customer.name,
+          phone: order.customer.phone,
+          district: order.customer.district,
+          totalOrders: 1,
+          createdAt: order.createdAt,
+          updatedAt: order.createdAt
+        });
+      }
+    }
+  });
+  
+  res.json(Array.from(customerMap.values()));
+});
+
+app.get('/api/admin/customers/:id', (req, res) => {
+  // Buscar cliente por ID
+  const customer = customers.find(c => c.id === req.params.id);
+  if (customer) {
+    res.json(customer);
+  } else {
+    res.status(404).json({ error: 'Customer not found' });
+  }
 });
 
 // Usuarios
