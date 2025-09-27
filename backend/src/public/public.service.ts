@@ -82,6 +82,17 @@ export class PublicService {
     }
   }
 
+  async testDatabaseConnection() {
+    try {
+      // Simple query to test database connection
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      console.error('Database connection test failed:', error);
+      throw error;
+    }
+  }
+
   async createOrder(orderData: Prisma.OrderUncheckedCreateInput) {
     const raffle = await this.prisma.raffle.findUnique({ where: { id: orderData.raffleId } });
     if (!raffle) {

@@ -36,6 +36,46 @@ export class PublicController {
     return this.publicService.getSettings();
   }
 
+  @Get('settings-simple')
+  getSettingsSimple() {
+    // Return hardcoded settings to test if the issue is with database
+    return {
+      id: 'main_settings',
+      siteName: 'Lucky Snap',
+      paymentAccounts: [],
+      faqs: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  @Get('health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      message: 'Backend is running'
+    };
+  }
+
+  @Get('test-db')
+  async testDatabase() {
+    try {
+      // Test basic database connection
+      await this.publicService.testDatabaseConnection();
+      return {
+        status: 'ok',
+        message: 'Database connection successful'
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: 'Database connection failed',
+        error: error.message
+      };
+    }
+  }
+
   @Post('orders')
   createOrder(@Body() orderData: Prisma.OrderUncheckedCreateInput) {
     return this.publicService.createOrder(orderData);
