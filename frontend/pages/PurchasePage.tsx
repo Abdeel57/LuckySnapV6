@@ -36,13 +36,21 @@ const PurchasePage = () => {
             console.log('🛒 Loading raffle for purchase:', slug);
             Promise.all([getRaffleBySlug(slug), getSettings()])
             .then(([raffleData, settingsData]) => {
-                console.log('🛒 Raffle data loaded:', {
-                    id: raffleData?.id,
-                    title: raffleData?.title,
-                    hasHeroImage: !!raffleData?.heroImage,
-                    heroImageLength: raffleData?.heroImage?.length || 0,
-                    heroImagePreview: raffleData?.heroImage?.substring(0, 50) + '...' || 'NO_IMAGE'
-                });
+            console.log('🛒 Raffle data loaded:', {
+                id: raffleData?.id,
+                title: raffleData?.title,
+                slug: raffleData?.slug,
+                hasHeroImage: !!raffleData?.heroImage,
+                heroImageLength: raffleData?.heroImage?.length || 0,
+                heroImagePreview: raffleData?.heroImage?.substring(0, 50) + '...' || 'NO_IMAGE',
+                galleryCount: raffleData?.gallery?.length || 0,
+                galleryImages: raffleData?.gallery?.map((img, i) => ({
+                    index: i,
+                    hasImage: !!img,
+                    length: img ? img.length : 0,
+                    preview: img ? img.substring(0, 30) + '...' : 'NO_IMAGE'
+                })) || []
+            });
                 setRaffle(raffleData || null);
                 setPaymentAccounts(settingsData.paymentAccounts);
                 setContactWhatsapp(settingsData.contactInfo.whatsapp);
@@ -130,7 +138,19 @@ const PurchasePage = () => {
                 <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
                  <div className="bg-background-secondary p-4 md:p-8 rounded-lg border border-slate-700/50 shadow-lg">
                     <RaffleGallery 
-                        images={raffle.gallery && raffle.gallery.length > 0 ? raffle.gallery : [raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop']}
+                        images={(() => {
+                            // Priorizar galería si existe, sino usar heroImage, sino imagen por defecto
+                            if (raffle.gallery && raffle.gallery.length > 0) {
+                                console.log('🖼️ Using gallery images:', raffle.gallery.length);
+                                return raffle.gallery;
+                            } else if (raffle.heroImage) {
+                                console.log('🖼️ Using heroImage:', raffle.heroImage.substring(0, 50) + '...');
+                                return [raffle.heroImage];
+                            } else {
+                                console.log('🖼️ Using default image');
+                                return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
+                            }
+                        })()}
                         title={raffle.title}
                         className="w-full h-40 md:h-48 mb-4 md:mb-6"
                     />

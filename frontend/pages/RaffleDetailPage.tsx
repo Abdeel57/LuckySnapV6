@@ -59,7 +59,19 @@ const RaffleDetailPage = () => {
                     {/* Main content */}
                     <div className="lg:col-span-3">
                         <RaffleGallery 
-                            images={raffle.gallery && raffle.gallery.length > 0 ? raffle.gallery : [raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop']}
+                            images={(() => {
+                                // Priorizar galería si existe, sino usar heroImage, sino imagen por defecto
+                                if (raffle.gallery && raffle.gallery.length > 0) {
+                                    console.log('🖼️ Detail page using gallery images:', raffle.gallery.length);
+                                    return raffle.gallery;
+                                } else if (raffle.heroImage) {
+                                    console.log('🖼️ Detail page using heroImage:', raffle.heroImage.substring(0, 50) + '...');
+                                    return [raffle.heroImage];
+                                } else {
+                                    console.log('🖼️ Detail page using default image');
+                                    return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
+                                }
+                            })()}
                             title={raffle.title}
                             className="w-full h-64 md:h-80 mb-4"
                         />

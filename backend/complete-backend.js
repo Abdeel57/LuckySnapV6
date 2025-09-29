@@ -219,15 +219,34 @@ app.post('/api/admin/settings', (req, res) => {
 
 // Rifas
 app.get('/api/public/raffles/active', (req, res) => {
-  res.json(raffles.filter(r => r.status === 'active'));
+  try {
+    const raffles = loadData(RAFFLES_FILE);
+    const activeRaffles = raffles.filter(r => r.status === 'active');
+    console.log('📋 Active raffles:', activeRaffles.map(r => ({ id: r.id, title: r.title, slug: r.slug })));
+    res.json(activeRaffles);
+  } catch (error) {
+    console.error('❌ Error loading active raffles:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.get('/api/public/raffles/slug/:slug', (req, res) => {
-  const raffle = raffles.find(r => r.slug === req.params.slug);
-  if (raffle) {
-    res.json(raffle);
-  } else {
-    res.status(404).json({ error: 'Raffle not found' });
+  try {
+    const raffles = loadData(RAFFLES_FILE);
+    console.log('🔍 Searching for raffle with slug:', req.params.slug);
+    console.log('📋 Available raffles:', raffles.map(r => ({ id: r.id, title: r.title, slug: r.slug })));
+    
+    const raffle = raffles.find(r => r.slug === req.params.slug);
+    if (raffle) {
+      console.log('✅ Raffle found:', { id: raffle.id, title: raffle.title, hasHeroImage: !!raffle.heroImage, galleryCount: raffle.gallery?.length || 0 });
+      res.json(raffle);
+    } else {
+      console.log('❌ Raffle not found for slug:', req.params.slug);
+      res.status(404).json({ error: 'Raffle not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error loading raffle by slug:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -236,16 +255,29 @@ app.get('/api/public/raffles/:id/occupied-tickets', (req, res) => {
 });
 
 app.get('/api/admin/raffles', (req, res) => {
-  res.json(raffles);
+  try {
+    const raffles = loadData(RAFFLES_FILE);
+    res.json(raffles);
+  } catch (error) {
+    console.error('❌ Error loading raffles:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.get('/api/admin/raffles/finished', (req, res) => {
-  const finishedRaffles = raffles.filter(r => r.status === 'finished');
-  res.json(finishedRaffles);
+  try {
+    const raffles = loadData(RAFFLES_FILE);
+    const finishedRaffles = raffles.filter(r => r.status === 'finished');
+    res.json(finishedRaffles);
+  } catch (error) {
+    console.error('❌ Error loading finished raffles:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/api/admin/raffles', (req, res) => {
   try {
+    const raffles = loadData(RAFFLES_FILE);
     console.log('📝 Creating raffle:', {
       title: req.body.title,
       hasHeroImage: !!req.body.heroImage,
@@ -260,12 +292,16 @@ app.post('/api/admin/raffles', (req, res) => {
       })) || []
     });
     
+    // Determinar imagen principal: usar gallery[0] si existe, sino heroImage, sino imagen por defecto
+    const gallery = req.body.gallery || [];
+    const heroImage = gallery.length > 0 ? gallery[0] : (req.body.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop');
+    
     const raffle = {
       id: Date.now().toString(),
       title: req.body.title || 'Nueva Rifa',
       description: req.body.description || '',
-      heroImage: req.body.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop',
-      gallery: req.body.gallery || [],
+      heroImage: heroImage,
+      gallery: gallery,
       tickets: req.body.tickets || 100,
       sold: 0,
       drawDate: req.body.drawDate ? new Date(req.body.drawDate) : new Date(),
