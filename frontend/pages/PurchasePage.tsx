@@ -152,7 +152,7 @@ const PurchasePage = () => {
                             }
                         })()}
                         title={raffle.title}
-                        className="w-full h-40 md:h-48 mb-4 md:mb-6"
+                        className="w-full max-w-md mx-auto mb-6"
                     />
                     <div className="mb-4 md:mb-6">
                         <h3 className="text-base md:text-lg font-bold text-white mb-3">Boletos Seleccionados</h3>

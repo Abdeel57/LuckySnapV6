@@ -73,7 +73,7 @@ const RaffleDetailPage = () => {
                                 }
                             })()}
                             title={raffle.title}
-                            className="w-full h-64 md:h-80 mb-4"
+                            className="w-full max-w-2xl mx-auto mb-6"
                         />
                         <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50">
                             <h1 className="text-3xl font-bold mb-4">{raffle.title}</h1>
