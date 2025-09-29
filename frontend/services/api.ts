@@ -16,6 +16,7 @@ const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000
 // Debug: Log the API URL being used
 console.log('🔗 API URL being used:', API_URL);
 console.log('🌍 Environment:', (import.meta as any).env?.MODE);
+console.log('📋 VITE_API_URL from env:', (import.meta as any).env?.VITE_API_URL);
 console.log('📋 All env vars:', (import.meta as any).env);
 
 /**
@@ -84,15 +85,36 @@ export const getActiveRaffles = async (): Promise<Raffle[]> => {
 };
 
 export const getRaffleBySlug = async (slug: string): Promise<Raffle | undefined> => {
-    console.log('Using local data for raffle by slug (backend disabled)');
+    try {
+        console.log('🔍 Trying backend for raffle by slug:', slug);
+        const response = await fetch(`${API_URL}/public/raffles/slug/${slug}`);
+        const raffle = await handleResponse(response);
+        console.log('✅ Backend raffle by slug loaded successfully:', { id: raffle?.id, title: raffle?.title });
+        return parseDates(raffle, ['drawDate', 'createdAt', 'updatedAt']);
+    } catch (error) {
+        console.error('❌ Backend error for raffle by slug:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for raffle by slug');
     const { localApi } = await import('./localApi');
     const raffles = await localApi.getRaffles();
     return raffles.find(r => r.slug === slug);
 };
 
 export const getOccupiedTickets = async (raffleId: string): Promise<number[]> => {
-    console.log('Using local data for occupied tickets (backend disabled)');
-    // Return empty array for local data (no occupied tickets)
+    try {
+        console.log('🔍 Trying backend for occupied tickets:', raffleId);
+        const response = await fetch(`${API_URL}/public/raffles/${raffleId}/occupied-tickets`);
+        const tickets = await handleResponse(response);
+        console.log('✅ Backend occupied tickets loaded successfully:', tickets?.length || 0);
+        return tickets || [];
+    } catch (error) {
+        console.error('❌ Backend error for occupied tickets:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for occupied tickets');
     return [];
 };
 
