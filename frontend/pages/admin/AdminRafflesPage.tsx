@@ -7,6 +7,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import Spinner from '../../components/Spinner';
 import { format } from 'date-fns';
 import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
+import MultiImageUploader from '../../components/admin/MultiImageUploader';
 
 // FIX: Define a type for the form values to handle bonuses as an array of objects,
 // which is more compatible with react-hook-form's useFieldArray.
@@ -72,24 +73,25 @@ const RaffleFormModal = ({ raffle, onClose, onSave }: { raffle: Partial<Raffle> 
                     </div>
 
                     <div>
+                        <label className="text-sm font-medium text-gray-600">Imágenes del Premio</label>
                         <Controller
-                            name="heroImage"
+                            name="gallery"
                             control={control}
-                            rules={{ required: 'La imagen es requerida' }}
+                            rules={{ required: 'Al menos una imagen es requerida' }}
                             render={({ field }) => (
-                                            <ImageUploaderAdvanced
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                placeholder="Seleccionar imagen principal"
-                                                maxWidth={800}
-                                                maxHeight={600}
-                                                quality={0.8}
-                                            />
+                                <MultiImageUploader
+                                    images={field.value || []}
+                                    onChange={field.onChange}
+                                    maxImages={10}
+                                    maxWidth={800}
+                                    maxHeight={600}
+                                    quality={0.8}
+                                />
                             )}
                         />
-                        {errors.heroImage && <p className="text-red-500 text-xs mt-1">{errors.heroImage.message as React.ReactNode}</p>}
+                        {errors.gallery && <p className="text-red-500 text-xs mt-1">{errors.gallery.message as React.ReactNode}</p>}
                         <p className="text-xs text-gray-500 mt-1">
-                            💡 Las imágenes se optimizan automáticamente para mejor rendimiento
+                            💡 La primera imagen será la imagen principal. Las demás aparecerán en la galería.
                         </p>
                     </div>
 
@@ -186,13 +188,14 @@ const AdminRafflesPage: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    // Función para limpiar datos antes de enviar (SIN reemplazar imágenes)
+    // Función para limpiar datos antes de enviar
     const cleanRaffleData = (data: Raffle) => {
+        const gallery = data.gallery || [];
         return {
             title: data.title,
             description: data.description,
-            heroImage: data.heroImage || '',
-            gallery: data.gallery || [],
+            heroImage: gallery.length > 0 ? gallery[0] : (data.heroImage || ''),
+            gallery: gallery,
             tickets: data.tickets,
             drawDate: data.drawDate,
             packs: data.packs || [],

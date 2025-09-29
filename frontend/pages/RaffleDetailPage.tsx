@@ -7,6 +7,7 @@ import Spinner from '../components/Spinner';
 import CountdownTimer from '../components/CountdownTimer';
 import StickyPurchaseBar from '../components/StickyPurchaseBar';
 import TicketSelector from '../components/TicketSelector';
+import RaffleGallery from '../components/RaffleGallery';
 import { motion } from 'framer-motion';
 
 const RaffleDetailPage = () => {
@@ -57,14 +58,10 @@ const RaffleDetailPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                     {/* Main content */}
                     <div className="lg:col-span-3">
-                        <img 
-                            src={raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'} 
-                            alt={raffle.title} 
-                            className="w-full rounded-lg shadow-lg mb-4"
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
-                            }}
+                        <RaffleGallery 
+                            images={raffle.gallery && raffle.gallery.length > 0 ? raffle.gallery : [raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop']}
+                            title={raffle.title}
+                            className="w-full h-64 md:h-80 mb-4"
                         />
                         <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50">
                             <h1 className="text-3xl font-bold mb-4">{raffle.title}</h1>

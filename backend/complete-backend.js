@@ -251,7 +251,13 @@ app.post('/api/admin/raffles', (req, res) => {
       hasHeroImage: !!req.body.heroImage,
       heroImageType: req.body.heroImage ? (req.body.heroImage.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE',
       heroImageLength: req.body.heroImage ? req.body.heroImage.length : 0,
-      galleryCount: req.body.gallery?.length || 0
+      galleryCount: req.body.gallery?.length || 0,
+      galleryImages: req.body.gallery?.map((img, i) => ({
+        index: i,
+        hasImage: !!img,
+        length: img ? img.length : 0,
+        type: img ? (img.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE'
+      })) || []
     });
     
     const raffle = {
@@ -278,7 +284,14 @@ app.post('/api/admin/raffles', (req, res) => {
       title: raffle.title,
       hasHeroImage: !!raffle.heroImage,
       heroImageLength: raffle.heroImage ? raffle.heroImage.length : 0,
-      heroImagePreview: raffle.heroImage ? raffle.heroImage.substring(0, 50) + '...' : 'NO_IMAGE'
+      heroImagePreview: raffle.heroImage ? raffle.heroImage.substring(0, 50) + '...' : 'NO_IMAGE',
+      galleryCount: raffle.gallery?.length || 0,
+      galleryImages: raffle.gallery?.map((img, i) => ({
+        index: i,
+        hasImage: !!img,
+        length: img ? img.length : 0,
+        preview: img ? img.substring(0, 30) + '...' : 'NO_IMAGE'
+      })) || []
     });
     res.json(raffle);
   } catch (error) {

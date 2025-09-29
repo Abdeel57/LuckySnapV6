@@ -5,6 +5,7 @@ import { getRaffleBySlug, createOrder, getSettings } from '../services/api';
 import { Raffle, Order, PaymentAccount } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
+import RaffleGallery from '../components/RaffleGallery';
 import { Link } from 'react-router-dom';
 
 type FormData = {
@@ -32,13 +33,23 @@ const PurchasePage = () => {
     useEffect(() => {
         if (slug) {
             setLoading(true);
+            console.log('🛒 Loading raffle for purchase:', slug);
             Promise.all([getRaffleBySlug(slug), getSettings()])
             .then(([raffleData, settingsData]) => {
+                console.log('🛒 Raffle data loaded:', {
+                    id: raffleData?.id,
+                    title: raffleData?.title,
+                    hasHeroImage: !!raffleData?.heroImage,
+                    heroImageLength: raffleData?.heroImage?.length || 0,
+                    heroImagePreview: raffleData?.heroImage?.substring(0, 50) + '...' || 'NO_IMAGE'
+                });
                 setRaffle(raffleData || null);
                 setPaymentAccounts(settingsData.paymentAccounts);
                 setContactWhatsapp(settingsData.contactInfo.whatsapp);
             })
-            .catch(err => console.error(err))
+            .catch(err => {
+                console.error('❌ Error loading raffle for purchase:', err);
+            })
             .finally(() => setLoading(false));
         }
     }, [slug]);
@@ -118,14 +129,10 @@ const PurchasePage = () => {
                 <h1 className="text-3xl font-bold text-center text-white mb-2">Confirmar Compra</h1>
                 <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
                  <div className="bg-background-secondary p-4 md:p-8 rounded-lg border border-slate-700/50 shadow-lg">
-                    <img 
-                        src={raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'} 
-                        alt={raffle.title} 
-                        className="w-full h-40 md:h-48 object-cover rounded-lg mb-4 md:mb-6"
-                        onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
-                        }}
+                    <RaffleGallery 
+                        images={raffle.gallery && raffle.gallery.length > 0 ? raffle.gallery : [raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop']}
+                        title={raffle.title}
+                        className="w-full h-40 md:h-48 mb-4 md:mb-6"
                     />
                     <div className="mb-4 md:mb-6">
                         <h3 className="text-base md:text-lg font-bold text-white mb-3">Boletos Seleccionados</h3>
