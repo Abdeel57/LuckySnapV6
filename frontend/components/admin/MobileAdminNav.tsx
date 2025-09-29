@@ -31,21 +31,27 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
     
     return (
         <>
-            {/* Botón flotante principal */}
-            <motion.button
-                className="lg:hidden fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-xl z-50 flex items-center justify-center border-4 border-white"
-                onClick={() => setIsOpen(!isOpen)}
-                whileTap={{ scale: 0.95 }}
-                animate={{ rotate: isOpen ? 45 : 0 }}
-                transition={{ duration: 0.2 }}
-                aria-label="Abrir menú de navegación"
-                style={{ 
-                    boxShadow: '0 8px 25px rgba(37, 99, 235, 0.4)',
-                    animation: 'pulse 2s infinite'
-                }}
-            >
-                {isOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-            </motion.button>
+            {/* Botón flotante principal - Se oculta cuando el menú está abierto */}
+            <AnimatePresence>
+                {!isOpen && (
+                    <motion.button
+                        className="lg:hidden fixed bottom-6 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-xl z-50 flex items-center justify-center border-4 border-white"
+                        onClick={() => setIsOpen(true)}
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        aria-label="Abrir menú de navegación"
+                        style={{ 
+                            boxShadow: '0 8px 25px rgba(37, 99, 235, 0.4)',
+                            animation: 'pulse 2s infinite'
+                        }}
+                    >
+                        <Menu className="w-7 h-7" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
             
             {/* Indicador de que es la nueva navegación */}
             <div className="lg:hidden fixed bottom-6 left-6 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold z-50">
@@ -74,6 +80,17 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                             transition={{ duration: 0.3, ease: "easeOut" }}
                         >
                             <div className="relative">
+                                {/* Botón de cerrar */}
+                                <motion.button
+                                    onClick={() => setIsOpen(false)}
+                                    className="absolute -top-2 -right-2 w-10 h-10 bg-gray-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-600 transition-colors z-10"
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0, opacity: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                >
+                                    <X className="w-5 h-5" />
+                                </motion.button>
                                 {/* Elementos del menú - Distribución inteligente */}
                                 {navLinks.map(({ to, text, icon: Icon }, index) => {
                                     // Distribución más inteligente: semicírculo hacia arriba y lados
