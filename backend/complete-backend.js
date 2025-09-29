@@ -1,9 +1,47 @@
 // Backend completo con TODA la funcionalidad de configuración
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Archivos de datos persistentes
+const DATA_DIR = path.join(__dirname, 'data');
+const RAFFLES_FILE = path.join(DATA_DIR, 'raffles.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const WINNERS_FILE = path.join(DATA_DIR, 'winners.json');
+
+// Crear directorio de datos si no existe
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Función para cargar datos desde archivos
+const loadData = (filePath, defaultValue) => {
+    try {
+        if (fs.existsSync(filePath)) {
+            const data = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.error(`Error loading ${filePath}:`, error);
+    }
+    return defaultValue;
+};
+
+// Función para guardar datos en archivos
+const saveData = (filePath, data) => {
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        console.log(`✅ Data saved to ${path.basename(filePath)}`);
+    } catch (error) {
+        console.error(`❌ Error saving ${filePath}:`, error);
+    }
+};
 
 // Middleware
 app.use(cors({
@@ -24,8 +62,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Datos en memoria con configuración completa
-let settings = {
+// Cargar datos persistentes
+let settings = loadData(SETTINGS_FILE, {
   id: 'main_settings',
   siteName: 'Lucky Snap',
   appearance: {
@@ -36,8 +74,8 @@ let settings = {
       accent: '#ff6b6b',
       action: '#4ecdc4'
     },
-    logo: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=200&h=200&fit=crop',
-    favicon: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=32&h=32&fit=crop'
+    logo: '',
+    favicon: ''
   },
   contactInfo: {
     whatsapp: '+1234567890',
@@ -74,9 +112,9 @@ let settings = {
   ],
   createdAt: new Date(),
   updatedAt: new Date()
-};
+});
 
-let raffles = [
+let raffles = loadData(RAFFLES_FILE, [
   {
     id: '1',
     title: 'iPhone 15 Pro Max',
@@ -97,11 +135,11 @@ let raffles = [
     createdAt: new Date(),
     updatedAt: new Date()
   }
-];
+]);
 
-let orders = [];
-let winners = [];
-let users = [
+let orders = loadData(ORDERS_FILE, []);
+let winners = loadData(WINNERS_FILE, []);
+let users = loadData(USERS_FILE, [
   {
     id: '1',
     name: 'Administrador',
@@ -109,7 +147,9 @@ let users = [
     createdAt: new Date(),
     updatedAt: new Date()
   }
-];
+]);
+
+console.log(`📊 Datos persistentes cargados: ${raffles.length} rifas, ${orders.length} órdenes, ${users.length} usuarios`);
 
 // Rutas públicas
 app.get('/', (req, res) => {
@@ -163,7 +203,8 @@ app.post('/api/admin/settings', (req, res) => {
       updatedAt: new Date()
     };
 
-    console.log('✅ Settings updated successfully');
+    saveData(SETTINGS_FILE, settings); // Guardar datos persistentemente
+    console.log('✅ Settings updated and saved successfully');
     console.log('🎨 New colors:', settings.appearance.colors);
     console.log('🏷️ New site name:', settings.appearance.siteName);
     res.json(settings);
@@ -216,7 +257,7 @@ app.post('/api/admin/raffles', (req, res) => {
       id: Date.now().toString(),
       title: req.body.title || 'Nueva Rifa',
       description: req.body.description || '',
-      heroImage: req.body.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop',
+      heroImage: req.body.heroImage || '',
       gallery: req.body.gallery || [],
       tickets: req.body.tickets || 100,
       sold: 0,
@@ -230,7 +271,8 @@ app.post('/api/admin/raffles', (req, res) => {
     };
 
     raffles.push(raffle);
-    console.log('✅ Raffle created:', raffle.id);
+    saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
+    console.log('✅ Raffle created and saved:', raffle.id);
     res.json(raffle);
   } catch (error) {
     console.error('❌ Error creating raffle:', error);
@@ -246,6 +288,7 @@ app.patch('/api/admin/raffles/:id', (req, res) => {
     const index = raffles.findIndex(r => r.id === req.params.id);
     if (index !== -1) {
       raffles[index] = { ...raffles[index], ...req.body, updatedAt: new Date() };
+      saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
       res.json(raffles[index]);
     } else {
       res.status(404).json({ error: 'Raffle not found' });
@@ -260,6 +303,7 @@ app.delete('/api/admin/raffles/:id', (req, res) => {
     const index = raffles.findIndex(r => r.id === req.params.id);
     if (index !== -1) {
       raffles.splice(index, 1);
+      saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
       res.status(204).send();
     } else {
       res.status(404).json({ error: 'Raffle not found' });
@@ -281,6 +325,7 @@ app.post('/api/public/orders', (req, res) => {
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
     };
     orders.push(order);
+    saveData(ORDERS_FILE, orders); // Guardar datos persistentemente
     res.json(order);
   } catch (error) {
     res.status(500).json({ error: error.message });
