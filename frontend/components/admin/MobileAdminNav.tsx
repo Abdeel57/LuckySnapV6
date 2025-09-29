@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LucideIcon, LogOut, Menu, X } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { LucideIcon, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // CSS para animación pulse
@@ -24,7 +23,6 @@ interface MobileAdminNavProps {
 }
 
 const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
-    const { logout } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
     
@@ -90,7 +88,7 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                                     
                                     // Ajustar posición para que no salga de la pantalla
                                     const adjustedX = Math.max(-60, Math.min(60, x)); // Limitar horizontalmente
-                                    const adjustedY = Math.min(-20, y); // Siempre hacia arriba
+                                    const adjustedY = Math.min(-40, y - 20); // Subir más las opciones
                                     
                                     return (
                                         <motion.div
@@ -127,32 +125,7 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                                     );
                                 })}
                                 
-                                {/* Botón de logout - Posición fija abajo */}
-                                <motion.div
-                                    className="absolute"
-                                    style={{
-                                        left: '32px', // Centrado horizontalmente
-                                        top: '80px', // Abajo del botón principal
-                                        transform: 'translate(-50%, -50%)'
-                                    }}
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0, opacity: 0 }}
-                                    transition={{ 
-                                        delay: navLinks.length * 0.03,
-                                        duration: 0.2 
-                                    }}
-                                >
-                                    <button
-                                        onClick={() => {
-                                            setIsOpen(false);
-                                            logout();
-                                        }}
-                                        className="flex flex-col items-center justify-center w-11 h-11 bg-red-500 text-white rounded-full shadow-lg border-2 border-red-500 hover:bg-red-600 transition-colors"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                    </button>
-                                </motion.div>
+                                {/* Botón de logout eliminado - Ya existe en la parte superior */}
                             </div>
                         </motion.div>
                     </>
