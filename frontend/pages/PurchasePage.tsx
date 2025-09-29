@@ -119,7 +119,7 @@ const PurchasePage = () => {
                 <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
                  <div className="bg-background-secondary p-4 md:p-8 rounded-lg border border-slate-700/50 shadow-lg">
                     <img 
-                        src={raffle.heroImage} 
+                        src={raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'} 
                         alt={raffle.title} 
                         className="w-full h-40 md:h-48 object-cover rounded-lg mb-4 md:mb-6"
                         onError={(e) => {

@@ -58,7 +58,7 @@ const RaffleDetailPage = () => {
                     {/* Main content */}
                     <div className="lg:col-span-3">
                         <img 
-                            src={raffle.heroImage} 
+                            src={raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'} 
                             alt={raffle.title} 
                             className="w-full rounded-lg shadow-lg mb-4"
                             onError={(e) => {

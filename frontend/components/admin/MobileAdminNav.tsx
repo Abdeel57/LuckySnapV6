@@ -149,8 +149,8 @@ const MobileAdminNav = ({ navLinks }: MobileAdminNavProps) => {
                 )}
             </AnimatePresence>
 
-            {/* Indicador de página actual */}
-            {currentNav && (
+            {/* Indicador de página actual - Se oculta cuando el menú está abierto */}
+            {currentNav && !isOpen && (
                 <motion.div
                     className="lg:hidden fixed bottom-24 right-6 bg-white rounded-lg shadow-lg px-3 py-2 z-50"
                     initial={{ opacity: 0, y: 20 }}

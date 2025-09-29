@@ -250,6 +250,7 @@ app.post('/api/admin/raffles', (req, res) => {
       title: req.body.title,
       hasHeroImage: !!req.body.heroImage,
       heroImageType: req.body.heroImage ? (req.body.heroImage.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE',
+      heroImageLength: req.body.heroImage ? req.body.heroImage.length : 0,
       galleryCount: req.body.gallery?.length || 0
     });
     
@@ -257,7 +258,7 @@ app.post('/api/admin/raffles', (req, res) => {
       id: Date.now().toString(),
       title: req.body.title || 'Nueva Rifa',
       description: req.body.description || '',
-      heroImage: req.body.heroImage || '',
+      heroImage: req.body.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop',
       gallery: req.body.gallery || [],
       tickets: req.body.tickets || 100,
       sold: 0,
@@ -272,7 +273,13 @@ app.post('/api/admin/raffles', (req, res) => {
 
     raffles.push(raffle);
     saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
-    console.log('✅ Raffle created and saved:', raffle.id);
+    console.log('✅ Raffle created and saved:', {
+      id: raffle.id,
+      title: raffle.title,
+      hasHeroImage: !!raffle.heroImage,
+      heroImageLength: raffle.heroImage ? raffle.heroImage.length : 0,
+      heroImagePreview: raffle.heroImage ? raffle.heroImage.substring(0, 50) + '...' : 'NO_IMAGE'
+    });
     res.json(raffle);
   } catch (error) {
     console.error('❌ Error creating raffle:', error);
