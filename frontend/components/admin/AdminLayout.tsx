@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Home, Ticket, Calendar, Cog, Users, LogOut, Trophy, BarChart3 } from 'lucide-react';
-import MobileAdminNav from './MobileAdminNav';
+import MobileAdminNavAdaptive from './MobileAdminNavAdaptive';
 
 export const navLinks = [
     { to: "/admin", text: "Inicio", icon: Home },
@@ -80,7 +80,7 @@ const AdminLayout = () => {
             </div>
             
             {/* Bottom Nav for Mobile */}
-            <MobileAdminNav navLinks={navLinks} />
+            <MobileAdminNavAdaptive navLinks={navLinks} />
         </div>
     );
 };
