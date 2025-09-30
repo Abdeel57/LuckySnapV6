@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getDashboardStats } from '../../services/api';
 import { DollarSign, List, Ticket, Users, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -80,6 +81,7 @@ const QuickActionCard = ({
 );
 
 const AdminDashboardPage: React.FC = () => {
+    const navigate = useNavigate();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -158,28 +160,28 @@ const AdminDashboardPage: React.FC = () => {
                         icon={Ticket}
                         title="Nueva Rifa"
                         description="Crear una nueva rifa"
-                        onClick={() => window.location.href = '/admin/raffles'}
+                        onClick={() => navigate('/admin/raffles')}
                         color="bg-gradient-to-r from-blue-500 to-blue-600"
                     />
                     <QuickActionCard
                         icon={Users}
                         title="Gestionar Usuarios"
                         description="Administrar usuarios"
-                        onClick={() => window.location.href = '/admin/users'}
+                        onClick={() => navigate('/admin/users')}
                         color="bg-gradient-to-r from-purple-500 to-purple-600"
                     />
                     <QuickActionCard
                         icon={BarChart3}
                         title="Ver Analytics"
                         description="Estadísticas detalladas"
-                        onClick={() => window.location.href = '/admin/analytics'}
+                        onClick={() => navigate('/admin/analytics')}
                         color="bg-gradient-to-r from-green-500 to-green-600"
                     />
                     <QuickActionCard
                         icon={Calendar}
                         title="Configuración"
                         description="Ajustar configuración"
-                        onClick={() => window.location.href = '/admin/settings'}
+                        onClick={() => navigate('/admin/settings')}
                         color="bg-gradient-to-r from-orange-500 to-orange-600"
                     />
                 </div>
