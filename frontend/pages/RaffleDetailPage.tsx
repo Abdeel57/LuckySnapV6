@@ -9,6 +9,7 @@ import StickyPurchaseBar from '../components/StickyPurchaseBar';
 import TicketSelector from '../components/TicketSelector';
 import RaffleGallery from '../components/RaffleGallery';
 import { motion } from 'framer-motion';
+import metaPixelService from '../services/metaPixel';
 
 const RaffleDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -23,6 +24,9 @@ const RaffleDetailPage = () => {
             getRaffleBySlug(slug).then(raffleData => {
                  setRaffle(raffleData || null);
                  if (raffleData) {
+                    // Track ViewContent event
+                    metaPixelService.trackViewContent(raffleData.id, raffleData);
+                    
                     getOccupiedTickets(raffleData.id).then(occupiedData => {
                         setOccupiedTickets(occupiedData);
                         setLoading(false);
@@ -44,11 +48,19 @@ const RaffleDetailPage = () => {
             return;
         }
         
-        setSelectedTickets(prev => 
-            prev.includes(ticketNumber) 
-            ? prev.filter(t => t !== ticketNumber)
-            : [...prev, ticketNumber]
-        );
+        const wasSelected = selectedTickets.includes(ticketNumber);
+        const newSelectedTickets = wasSelected 
+            ? selectedTickets.filter(t => t !== ticketNumber)
+            : [...selectedTickets, ticketNumber];
+        
+        setSelectedTickets(newSelectedTickets);
+        
+        // Track AddToCart when tickets are selected
+        if (!wasSelected && raffle) {
+            const pricePerTicket = raffle.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+            const totalValue = newSelectedTickets.length * pricePerTicket;
+            metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
+        }
     };
     
     if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;

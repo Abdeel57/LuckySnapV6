@@ -7,6 +7,7 @@ import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
 import RaffleGallery from '../components/RaffleGallery';
 import { Link } from 'react-router-dom';
+import metaPixelService from '../services/metaPixel';
 
 type FormData = {
     name: string;
@@ -70,6 +71,9 @@ const PurchasePage = () => {
         if (!raffle || initialTickets.length === 0) return;
         setIsSubmitting(true);
         try {
+            // Track InitiateCheckout event
+            metaPixelService.trackInitiateCheckout(raffle.id, initialTickets, total);
+
             const orderData = {
                 customer: {
                     name: data.name,
@@ -86,6 +90,10 @@ const PurchasePage = () => {
             console.log('🛒 Creating order with data:', orderData);
             const newOrder = await createOrder(orderData);
             console.log('✅ Order created successfully:', newOrder);
+            
+            // Track Purchase event
+            metaPixelService.trackPurchase(newOrder.id, raffle.id, initialTickets, total);
+            
             setCreatedOrder(newOrder);
         } catch (err) {
             console.error('❌ Error creating order:', err);

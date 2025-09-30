@@ -393,11 +393,6 @@ export const deleteUser = async (id: string): Promise<void> => {
     return localApi.deleteUser(id);
 };
 
-export const createOrder = async (orderData: Omit<Order, 'folio' | 'status' | 'createdAt' | 'expiresAt' | 'id'>): Promise<Order> => {
-    console.log('Using local data for create order (backend disabled)');
-    const { localApi } = await import('./localApi');
-    return localApi.createOrder(orderData);
-};
 
 export const getOrderbyFolio = async (folio: string): Promise<Order | undefined> => {
      try {

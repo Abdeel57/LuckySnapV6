@@ -4,6 +4,8 @@ import { getDashboardStats } from '../../services/api';
 import { DollarSign, List, Ticket, Users, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Spinner from '../../components/Spinner';
+import AnalyticsDashboard from '../../components/admin/AnalyticsDashboard';
+import MetaPixelManager from '../../components/admin/MetaPixelManager';
 
 interface Stats {
     todaySales: number;
@@ -84,6 +86,7 @@ const AdminDashboardPage: React.FC = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'meta'>('overview');
 
     useEffect(() => {
         getDashboardStats().then(data => {
@@ -124,38 +127,89 @@ const AdminDashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Estadísticas principales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <OptimizedStatCard
-                    icon={DollarSign}
-                    title="Ventas de Hoy"
-                    value={`LPS ${stats?.todaySales?.toLocaleString() || 0}`}
-                    color="bg-gradient-to-r from-green-500 to-green-600"
-                    subtitle="Ingresos del día actual"
-                    trend={{ value: 12, isPositive: true }}
-                />
-                <OptimizedStatCard
-                    icon={List}
-                    title="Órdenes Pendientes"
-                    value={stats?.pendingOrders || 0}
-                    color="bg-gradient-to-r from-orange-500 to-orange-600"
-                    subtitle="Requieren atención"
-                    trend={{ value: 5, isPositive: false }}
-                />
-                <OptimizedStatCard
-                    icon={Ticket}
-                    title="Rifas Activas"
-                    value={stats?.activeRaffles || 0}
-                    color="bg-gradient-to-r from-blue-500 to-blue-600"
-                    subtitle="En curso actualmente"
-                    trend={{ value: 8, isPositive: true }}
-                />
+            {/* Tabs */}
+            <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'overview'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        Resumen
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('analytics')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'analytics'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        Analytics Avanzado
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('meta')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'meta'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        Meta Pixel & Ads
+                    </button>
+                </nav>
             </div>
 
-            {/* Acciones rápidas */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+                <>
+                    {/* Estadísticas principales */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <OptimizedStatCard
+                            icon={DollarSign}
+                            title="Ventas de Hoy"
+                            value={`LPS ${stats?.todaySales?.toLocaleString() || 0}`}
+                            color="bg-gradient-to-r from-green-500 to-green-600"
+                            subtitle="Ingresos del día actual"
+                            trend={{ value: 12, isPositive: true }}
+                        />
+                        <OptimizedStatCard
+                            icon={List}
+                            title="Órdenes Pendientes"
+                            value={stats?.pendingOrders || 0}
+                            color="bg-gradient-to-r from-orange-500 to-orange-600"
+                            subtitle="Requieren atención"
+                            trend={{ value: 5, isPositive: false }}
+                        />
+                        <OptimizedStatCard
+                            icon={Ticket}
+                            title="Rifas Activas"
+                            value={stats?.activeRaffles || 0}
+                            color="bg-gradient-to-r from-blue-500 to-blue-600"
+                            subtitle="En curso actualmente"
+                            trend={{ value: 8, isPositive: true }}
+                        />
+                    </div>
+                </>
+            )}
+
+            {activeTab === 'analytics' && (
+                <AnalyticsDashboard />
+            )}
+
+            {activeTab === 'meta' && (
+                <MetaPixelManager />
+            )}
+
+            {activeTab === 'overview' && (
+                <>
+                    {/* Acciones rápidas */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <QuickActionCard
                         icon={Ticket}
                         title="Nueva Rifa"
@@ -242,8 +296,10 @@ const AdminDashboardPage: React.FC = () => {
                             <span className="text-lg font-bold text-gray-900">47</span>
                         </div>
                     </div>
+                    </div>
                 </div>
-            </div>
+            </>
+            )}
         </div>
     );
 };
