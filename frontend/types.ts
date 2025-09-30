@@ -38,26 +38,31 @@ export interface Winner {
 }
 
 export interface Customer {
-    id: string;
+    id?: string;
     name: string;
     phone: string;
+    email?: string;
     district: string;
-    totalOrders: number;
-    createdAt: Date;
-    updatedAt: Date;
+    totalOrders?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface Order {
-    id: string;
-    folio: string;
+    id?: string;
+    folio?: string;
     customer: Customer;
     raffleId: string;
-    raffleTitle: string;
+    raffleTitle?: string;
     tickets: number[];
-    total: number;
-    status: OrderStatus;
-    createdAt: Date;
-    expiresAt: Date;
+    totalAmount?: number;
+    total?: number;
+    status: OrderStatus | string;
+    paymentMethod?: string;
+    notes?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    expiresAt?: Date;
 }
 
 export interface PaymentAccount {

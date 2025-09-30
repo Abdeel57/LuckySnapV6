@@ -19,6 +19,7 @@ import {
 import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, deleteOrder } from '../../services/api';
 import { getRaffles } from '../../services/api';
+import EditOrderForm from '../../components/admin/EditOrderForm';
 
 const AdminOrdersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -29,6 +30,8 @@ const AdminOrdersPage: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -118,6 +121,34 @@ const AdminOrdersPage: React.FC = () => {
     const handleCloseModal = () => {
         setSelectedOrder(null);
         setIsModalOpen(false);
+    };
+
+    // Editar orden
+    const handleEditOrder = (order: Order) => {
+        setEditingOrder(order);
+        setIsEditModalOpen(true);
+    };
+
+    // Cerrar modal de edición
+    const handleCloseEditModal = () => {
+        setEditingOrder(null);
+        setIsEditModalOpen(false);
+    };
+
+    // Guardar cambios de orden
+    const handleSaveOrderChanges = async (updatedOrder: Order) => {
+        try {
+            setRefreshing(true);
+            await updateOrder(updatedOrder.id!, updatedOrder);
+            await refreshData();
+            handleCloseEditModal();
+            console.log('✅ Order updated successfully');
+        } catch (error) {
+            console.error('❌ Error updating order:', error);
+            alert('Error al actualizar la orden');
+        } finally {
+            setRefreshing(false);
+        }
     };
 
     // Obtener color del estado
@@ -284,8 +315,8 @@ const AdminOrdersPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Lista de órdenes */}
-                <div className="space-y-4">
+                {/* Lista de órdenes optimizada */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <AnimatePresence>
                         {filteredOrders.map((order) => {
                             const raffle = getRaffleById(order.raffleId);
@@ -294,114 +325,128 @@ const AdminOrdersPage: React.FC = () => {
                             return (
                                 <motion.div
                                     key={order.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    className="bg-white rounded-xl shadow-lg border border-gray-200 p-6"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow"
                                 >
-                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-3 mb-3">
-                                                <span className="text-lg font-bold text-gray-900">{order.folio}</span>
-                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                                                    <StatusIcon className="w-4 h-4 inline mr-1" />
-                                                    {order.status}
+                                    {/* Header con folio y estado */}
+                                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                                        <div className="flex items-center space-x-3">
+                                            <div className="p-2 bg-blue-100 rounded-xl">
+                                                <ShoppingCart className="w-5 h-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-gray-900">{order.folio}</h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {new Date(order.createdAt).toLocaleDateString('es-ES')} - {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                                            <StatusIcon className="w-4 h-4 inline mr-1" />
+                                            {order.status}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Información del cliente */}
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                                            <User className="w-4 h-4 mr-2 text-gray-500" />
+                                            Cliente
+                                        </h4>
+                                        <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="font-medium text-gray-900">{order.customer.name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Phone className="w-4 h-4 text-gray-400" />
+                                                <span className="text-gray-700">{order.customer.phone}</span>
+                                            </div>
+                                            {order.customer.email && (
+                                                <div className="flex items-center space-x-2">
+                                                    <Mail className="w-4 h-4 text-gray-400" />
+                                                    <span className="text-gray-700">{order.customer.email}</span>
+                                                </div>
+                                            )}
+                                            {order.customer.district && (
+                                                <div className="flex items-center space-x-2">
+                                                    <MapPin className="w-4 h-4 text-gray-400" />
+                                                    <span className="text-gray-700">{order.customer.district}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Detalles de la orden */}
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                                            <ShoppingCart className="w-4 h-4 mr-2 text-gray-500" />
+                                            Detalles
+                                        </h4>
+                                        <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Rifa:</span>
+                                                <span className="font-medium text-gray-900">{raffle?.title || 'Rifa no encontrada'}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Boletos:</span>
+                                                <span className="font-medium text-gray-900">{order.tickets.length} ({order.tickets.join(', ')})</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Total:</span>
+                                                <span className="font-bold text-green-600 text-lg">
+                                                    ${(order.totalAmount || order.total || 0).toLocaleString()}
                                                 </span>
                                             </div>
-                                            
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 mb-2">Cliente</h3>
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center space-x-2">
-                                                            <User className="w-4 h-4 text-gray-400" />
-                                                            <span className="text-gray-700">{order.customer.name}</span>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <Phone className="w-4 h-4 text-gray-400" />
-                                                            <span className="text-gray-700">{order.customer.phone}</span>
-                                                        </div>
-                                                        {order.customer.email && (
-                                                            <div className="flex items-center space-x-2">
-                                                                <span className="text-gray-700">{order.customer.email}</span>
-                                                            </div>
-                                                        )}
-                                                        {order.customer.district && (
-                                                            <div className="flex items-center space-x-2">
-                                                                <MapPin className="w-4 h-4 text-gray-400" />
-                                                                <span className="text-gray-700">{order.customer.district}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-900 mb-2">Detalles de la Orden</h3>
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-gray-700">
-                                                                <strong>Rifa:</strong> {raffle?.title || 'Rifa no encontrada'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-gray-700">
-                                                                <strong>Boletos:</strong> {order.tickets.length} ({order.tickets.join(', ')})
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <DollarSign className="w-4 h-4 text-gray-400" />
-                                                            <span className="text-gray-700">
-                                                                <strong>Total:</strong> ${order.totalAmount?.toLocaleString() || '0'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center space-x-2">
-                                                            <Calendar className="w-4 h-4 text-gray-400" />
-                                                            <span className="text-gray-700">
-                                                                {new Date(order.createdAt).toLocaleDateString('es-ES')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
+                                    </div>
+                                    
+                                    {/* Botones de acción */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => handleViewOrder(order)}
+                                            className="flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            <span>Ver</span>
+                                        </button>
                                         
-                                        <div className="flex flex-col sm:flex-row gap-2">
+                                        <button
+                                            onClick={() => handleEditOrder(order)}
+                                            className="flex items-center justify-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-sm"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                            <span>Editar</span>
+                                        </button>
+                                        
+                                        {order.status === 'PENDING' && (
                                             <button
-                                                onClick={() => handleViewOrder(order)}
-                                                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                                                onClick={() => handleUpdateStatus(order.id!, 'COMPLETED')}
+                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm"
                                             >
-                                                <Eye className="w-4 h-4" />
-                                                <span>Ver</span>
+                                                <CheckCircle className="w-4 h-4" />
+                                                <span>Marcar Pagado</span>
                                             </button>
-                                            
-                                            {order.status === 'PENDING' && (
-                                                <button
-                                                    onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
-                                                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    <span>Completar</span>
-                                                </button>
-                                            )}
-                                            
-                                            {order.status === 'COMPLETED' && (
-                                                <button
-                                                    onClick={() => handleUpdateStatus(order.id, 'PENDING')}
-                                                    className="flex items-center space-x-2 px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors"
-                                                >
-                                                    <Clock className="w-4 h-4" />
-                                                    <span>Pendiente</span>
-                                                </button>
-                                            )}
-                                            
+                                        )}
+                                        
+                                        {order.status === 'COMPLETED' && (
                                             <button
-                                                onClick={() => handleDeleteOrder(order.id)}
-                                                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+                                                onClick={() => handleUpdateStatus(order.id!, 'PENDING')}
+                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm"
                                             >
-                                                <XCircle className="w-4 h-4" />
-                                                <span>Eliminar</span>
+                                                <Clock className="w-4 h-4" />
+                                                <span>Liberar</span>
                                             </button>
-                                        </div>
+                                        )}
+                                        
+                                        <button
+                                            onClick={() => handleDeleteOrder(order.id!)}
+                                            className="flex items-center justify-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                            <span>Eliminar</span>
+                                        </button>
                                     </div>
                                 </motion.div>
                             );
@@ -422,6 +467,45 @@ const AdminOrdersPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Modal de edición */}
+            <AnimatePresence>
+                {isEditModalOpen && editingOrder && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                        onClick={handleCloseEditModal}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900">Editar Orden</h2>
+                                    <button
+                                        onClick={handleCloseEditModal}
+                                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                                    >
+                                        <XCircle className="w-6 h-6 text-gray-500" />
+                                    </button>
+                                </div>
+                                
+                                <EditOrderForm
+                                    order={editingOrder}
+                                    onSave={handleSaveOrderChanges}
+                                    onCancel={handleCloseEditModal}
+                                />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
