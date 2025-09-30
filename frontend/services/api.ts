@@ -499,6 +499,150 @@ export const adminGetUsers = async (): Promise<AdminUser[]> => {
     return handleResponse(await fetch(`${API_URL}/admin/users`));
 };
 
+// Funciones de órdenes mejoradas
+export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt' | 'updatedAt' | 'expiresAt'>): Promise<Order> => {
+    try {
+        console.log('Trying backend for create order...');
+        const response = await fetch(`${API_URL}/public/orders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(order),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend order created successfully');
+            return parseOrderDates(data);
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for create order');
+    const { localApi } = await import('./localApi');
+    return localApi.createOrder(order);
+};
+
+export const getOrderByFolio = async (folio: string): Promise<Order | undefined> => {
+    try {
+        console.log('🔍 Trying backend for order by folio:', folio);
+        const response = await fetch(`${API_URL}/public/orders/folio/${folio}`);
+        const order = await handleResponse(response);
+        console.log('✅ Backend order by folio loaded successfully:', { folio: order?.folio });
+        return parseOrderDates(order);
+    } catch (error) {
+        console.error('❌ Backend error for order by folio:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for order by folio');
+    const { localApi } = await import('./localApi');
+    return localApi.getOrderByFolio(folio);
+};
+
+export const getOrders = async (): Promise<Order[]> => {
+    try {
+        console.log('🔍 Trying backend for orders...');
+        const response = await fetch(`${API_URL}/admin/orders`);
+        const orders = await handleResponse(response);
+        console.log('✅ Backend orders loaded successfully:', orders?.length || 0);
+        return orders?.map(parseOrderDates) || [];
+    } catch (error) {
+        console.error('❌ Backend error for orders:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for orders');
+    const { localApi } = await import('./localApi');
+    return localApi.getOrders();
+};
+
+export const updateOrder = async (id: string, order: Partial<Order>): Promise<Order> => {
+    try {
+        console.log('Trying backend for update order...');
+        const response = await fetch(`${API_URL}/admin/orders/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(order),
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend order updated successfully');
+            return parseOrderDates(data);
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for update order');
+    const { localApi } = await import('./localApi');
+    return localApi.updateOrder(id, order);
+};
+
+export const deleteOrder = async (id: string): Promise<void> => {
+    try {
+        console.log('Trying backend for delete order...');
+        const response = await fetch(`${API_URL}/admin/orders/${id}`, {
+            method: 'DELETE',
+        });
+        if (response.ok) {
+            console.log('✅ Backend order deleted successfully');
+            return;
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for delete order');
+    const { localApi } = await import('./localApi');
+    return localApi.deleteOrder(id);
+};
+
+// Funciones de clientes
+export const getCustomers = async (): Promise<any[]> => {
+    try {
+        console.log('🔍 Trying backend for customers...');
+        const response = await fetch(`${API_URL}/admin/customers`);
+        const customers = await handleResponse(response);
+        console.log('✅ Backend customers loaded successfully:', customers?.length || 0);
+        return customers || [];
+    } catch (error) {
+        console.error('❌ Backend error for customers:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for customers');
+    const { localApi } = await import('./localApi');
+    return localApi.getCustomers();
+};
+
+export const getCustomerById = async (id: string): Promise<any | undefined> => {
+    try {
+        console.log('🔍 Trying backend for customer by ID:', id);
+        const response = await fetch(`${API_URL}/admin/customers/${id}`);
+        const customer = await handleResponse(response);
+        console.log('✅ Backend customer by ID loaded successfully:', { id: customer?.id });
+        return customer;
+    } catch (error) {
+        console.error('❌ Backend error for customer by ID:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for customer by ID');
+    const { localApi } = await import('./localApi');
+    return localApi.getCustomerById(id);
+};
+
 export const adminCreateUser = async (data: Omit<AdminUser, 'id'>): Promise<AdminUser> => {
     const response = await fetch(`${API_URL}/admin/users`, {
         method: 'POST',

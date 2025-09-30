@@ -453,70 +453,251 @@ app.delete('/api/admin/raffles/:id', (req, res) => {
 // Órdenes
 app.post('/api/public/orders', (req, res) => {
   try {
+    // Validación básica
+    if (!req.body.customer || !req.body.customer.name || !req.body.customer.phone) {
+      return res.status(400).json({ error: 'Datos del cliente son requeridos' });
+    }
+    
+    if (!req.body.raffleId) {
+      return res.status(400).json({ error: 'ID de rifa es requerido' });
+    }
+    
+    if (!req.body.tickets || req.body.tickets.length === 0) {
+      return res.status(400).json({ error: 'Debe seleccionar al menos un boleto' });
+    }
+    
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    
     const order = {
       id: Date.now().toString(),
-      ...req.body,
       folio: `ORD-${Date.now()}`,
+      raffleId: req.body.raffleId,
+      customer: {
+        name: req.body.customer.name.trim(),
+        phone: req.body.customer.phone.trim(),
+        email: req.body.customer.email?.trim() || '',
+        district: req.body.customer.district?.trim() || ''
+      },
+      tickets: req.body.tickets,
+      totalAmount: req.body.totalAmount || 0,
       status: 'PENDING',
+      paymentMethod: req.body.paymentMethod || 'transfer',
+      notes: req.body.notes || '',
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      updatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
     };
+    
     orders.push(order);
     saveData(ORDERS_FILE, orders); // Guardar datos persistentemente
+    
+    console.log('✅ Order created:', {
+      id: order.id,
+      folio: order.folio,
+      customer: order.customer.name,
+      tickets: order.tickets.length,
+      amount: order.totalAmount
+    });
+    
     res.json(order);
   } catch (error) {
+    console.error('❌ Error creating order:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 app.get('/api/public/orders/folio/:folio', (req, res) => {
-  const order = orders.find(o => o.folio === req.params.folio);
-  if (order) {
-    res.json(order);
-  } else {
-    res.status(404).json({ error: 'Order not found' });
+  try {
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    const order = orders.find(o => o.folio === req.params.folio);
+    if (order) {
+      console.log('✅ Order found by folio:', order.folio);
+      res.json(order);
+    } else {
+      console.log('❌ Order not found for folio:', req.params.folio);
+      res.status(404).json({ error: 'Order not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error loading order by folio:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.get('/api/admin/orders', (req, res) => {
-  res.json(orders);
+  try {
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    console.log('📋 Loading orders for admin:', orders.length);
+    res.json(orders);
+  } catch (error) {
+    console.error('❌ Error loading orders:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Actualizar estado de orden
+app.patch('/api/admin/orders/:id', (req, res) => {
+  try {
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    const index = orders.findIndex(o => o.id === req.params.id);
+    if (index !== -1) {
+      orders[index] = { 
+        ...orders[index], 
+        ...req.body, 
+        updatedAt: new Date() 
+      };
+      saveData(ORDERS_FILE, orders); // Guardar datos persistentemente
+      console.log('✅ Order updated:', { id: orders[index].id, status: orders[index].status });
+      res.json(orders[index]);
+    } else {
+      console.log('❌ Order not found for update:', req.params.id);
+      res.status(404).json({ error: 'Order not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error updating order:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Eliminar orden
+app.delete('/api/admin/orders/:id', (req, res) => {
+  try {
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    const index = orders.findIndex(o => o.id === req.params.id);
+    if (index !== -1) {
+      const deletedOrder = orders[index];
+      orders.splice(index, 1);
+      saveData(ORDERS_FILE, orders); // Guardar datos persistentemente
+      console.log('✅ Order deleted:', { id: deletedOrder.id, folio: deletedOrder.folio });
+      res.status(204).send();
+    } else {
+      console.log('❌ Order not found for deletion:', req.params.id);
+      res.status(404).json({ error: 'Order not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error deleting order:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Clientes
 app.get('/api/admin/customers', (req, res) => {
-  // Extraer clientes únicos de las órdenes
-  const customers = [];
-  const customerMap = new Map();
-  
-  orders.forEach(order => {
-    if (order.customer) {
-      const key = order.customer.phone;
-      if (customerMap.has(key)) {
-        customerMap.get(key).totalOrders += 1;
-      } else {
-        customerMap.set(key, {
-          id: Date.now().toString() + Math.random(),
-          name: order.customer.name,
-          phone: order.customer.phone,
-          district: order.customer.district,
-          totalOrders: 1,
-          createdAt: order.createdAt,
-          updatedAt: order.createdAt
-        });
+  try {
+    const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    
+    // Extraer clientes únicos de las órdenes
+    const customerMap = new Map();
+    
+    orders.forEach(order => {
+      if (order.customer && order.customer.phone) {
+        const key = order.customer.phone.trim();
+        if (customerMap.has(key)) {
+          const customer = customerMap.get(key);
+          customer.totalOrders += 1;
+          customer.totalSpent += order.totalAmount || 0;
+          customer.lastOrderDate = new Date(Math.max(
+            new Date(customer.lastOrderDate).getTime(),
+            new Date(order.createdAt).getTime()
+          ));
+          customer.orders.push({
+            id: order.id,
+            folio: order.folio,
+            raffleId: order.raffleId,
+            amount: order.totalAmount,
+            status: order.status,
+            createdAt: order.createdAt
+          });
+        } else {
+          customerMap.set(key, {
+            id: `CUST-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: order.customer.name.trim(),
+            phone: order.customer.phone.trim(),
+            email: order.customer.email?.trim() || '',
+            district: order.customer.district?.trim() || '',
+            totalOrders: 1,
+            totalSpent: order.totalAmount || 0,
+            firstOrderDate: order.createdAt,
+            lastOrderDate: order.createdAt,
+            orders: [{
+              id: order.id,
+              folio: order.folio,
+              raffleId: order.raffleId,
+              amount: order.totalAmount,
+              status: order.status,
+              createdAt: order.createdAt
+            }]
+          });
+        }
       }
-    }
-  });
-  
-  res.json(Array.from(customerMap.values()));
+    });
+    
+    const customers = Array.from(customerMap.values()).sort((a, b) => 
+      new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime()
+    );
+    
+    console.log('👥 Customers loaded:', customers.length);
+    res.json(customers);
+  } catch (error) {
+    console.error('❌ Error loading customers:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
+// Obtener cliente específico
 app.get('/api/admin/customers/:id', (req, res) => {
-  // Buscar cliente por ID
-  const customer = customers.find(c => c.id === req.params.id);
-  if (customer) {
-    res.json(customer);
-  } else {
-    res.status(404).json({ error: 'Customer not found' });
+  try {
+    const orders = loadData(ORDERS_FILE, []);
+    const customerMap = new Map();
+    
+    orders.forEach(order => {
+      if (order.customer && order.customer.phone) {
+        const key = order.customer.phone.trim();
+        if (customerMap.has(key)) {
+          const customer = customerMap.get(key);
+          customer.totalOrders += 1;
+          customer.totalSpent += order.totalAmount || 0;
+          customer.orders.push({
+            id: order.id,
+            folio: order.folio,
+            raffleId: order.raffleId,
+            amount: order.totalAmount,
+            status: order.status,
+            createdAt: order.createdAt
+          });
+        } else {
+          customerMap.set(key, {
+            id: `CUST-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: order.customer.name.trim(),
+            phone: order.customer.phone.trim(),
+            email: order.customer.email?.trim() || '',
+            district: order.customer.district?.trim() || '',
+            totalOrders: 1,
+            totalSpent: order.totalAmount || 0,
+            orders: [{
+              id: order.id,
+              folio: order.folio,
+              raffleId: order.raffleId,
+              amount: order.totalAmount,
+              status: order.status,
+              createdAt: order.createdAt
+            }]
+          });
+        }
+      }
+    });
+    
+    const customers = Array.from(customerMap.values());
+    const customer = customers.find(c => c.id === req.params.id);
+    
+    if (customer) {
+      console.log('✅ Customer found:', { id: customer.id, name: customer.name });
+      res.json(customer);
+    } else {
+      console.log('❌ Customer not found:', req.params.id);
+      res.status(404).json({ error: 'Customer not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error loading customer:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
