@@ -250,8 +250,35 @@ app.get('/api/public/raffles/slug/:slug', (req, res) => {
   }
 });
 
+app.get('/api/public/raffles/:id', (req, res) => {
+  try {
+    const raffles = loadData(RAFFLES_FILE, []);
+    const raffle = raffles.find(r => r.id === req.params.id);
+    if (raffle) {
+      console.log('✅ Raffle found by ID:', { id: raffle.id, title: raffle.title });
+      res.json(raffle);
+    } else {
+      console.log('❌ Raffle not found for ID:', req.params.id);
+      res.status(404).json({ error: 'Raffle not found' });
+    }
+  } catch (error) {
+    console.error('❌ Error loading raffle by ID:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/public/raffles/:id/occupied-tickets', (req, res) => {
-  res.json([]);
+  try {
+    // Por ahora retornamos array vacío, pero aquí se podría implementar la lógica de boletos ocupados
+    const orders = loadData(ORDERS_FILE, []);
+    const raffleOrders = orders.filter(order => order.raffleId === req.params.id && order.status === 'completed');
+    const occupiedTickets = raffleOrders.flatMap(order => order.tickets || []);
+    console.log('🎫 Occupied tickets for raffle', req.params.id, ':', occupiedTickets.length);
+    res.json(occupiedTickets);
+  } catch (error) {
+    console.error('❌ Error loading occupied tickets:', error);
+    res.json([]);
+  }
 });
 
 app.get('/api/admin/raffles', (req, res) => {
@@ -277,7 +304,20 @@ app.get('/api/admin/raffles/finished', (req, res) => {
 
 app.post('/api/admin/raffles', (req, res) => {
   try {
-    const raffles = loadData(RAFFLES_FILE);
+    // Validación básica de datos requeridos
+    if (!req.body.title || req.body.title.trim() === '') {
+      return res.status(400).json({ error: 'El título es requerido' });
+    }
+    
+    if (!req.body.tickets || req.body.tickets < 1) {
+      return res.status(400).json({ error: 'El número de boletos debe ser mayor a 0' });
+    }
+    
+    if (!req.body.drawDate) {
+      return res.status(400).json({ error: 'La fecha del sorteo es requerida' });
+    }
+    
+    const raffles = loadData(RAFFLES_FILE, []);
     console.log('📝 Creating raffle:', {
       title: req.body.title,
       hasHeroImage: !!req.body.heroImage,
@@ -291,6 +331,15 @@ app.post('/api/admin/raffles', (req, res) => {
         type: img ? (img.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE'
       })) || []
     });
+    
+    // Generar slug único
+    let baseSlug = req.body.slug || req.body.title?.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') || 'nueva-rifa';
+    let slug = baseSlug;
+    let counter = 1;
+    while (raffles.some(r => r.slug === slug)) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
     
     // Determinar imagen principal: usar gallery[0] si existe, sino heroImage, sino imagen por defecto
     const gallery = req.body.gallery || [];
@@ -308,7 +357,7 @@ app.post('/api/admin/raffles', (req, res) => {
       packs: req.body.packs || [],
       bonuses: req.body.bonuses || [],
       status: req.body.status || 'draft',
-      slug: req.body.slug || req.body.title?.toLowerCase().replace(/\s+/g, '-') || 'nueva-rifa',
+      slug: slug,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -341,30 +390,62 @@ app.post('/api/admin/raffles', (req, res) => {
 
 app.patch('/api/admin/raffles/:id', (req, res) => {
   try {
+    const raffles = loadData(RAFFLES_FILE, []); // Cargar datos del archivo
     const index = raffles.findIndex(r => r.id === req.params.id);
     if (index !== -1) {
-      raffles[index] = { ...raffles[index], ...req.body, updatedAt: new Date() };
+      // Generar slug único si se está cambiando
+      let slug = raffles[index].slug;
+      if (req.body.slug && req.body.slug !== raffles[index].slug) {
+        let baseSlug = req.body.slug.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+        slug = baseSlug;
+        let counter = 1;
+        while (raffles.some((r, i) => i !== index && r.slug === slug)) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+      }
+      
+      // Determinar imagen principal: usar gallery[0] si existe, sino heroImage, sino imagen por defecto
+      const gallery = req.body.gallery || raffles[index].gallery || [];
+      const heroImage = gallery.length > 0 ? gallery[0] : (req.body.heroImage || raffles[index].heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop');
+      
+      raffles[index] = { 
+        ...raffles[index], 
+        ...req.body, 
+        slug: slug,
+        heroImage: heroImage,
+        gallery: gallery,
+        updatedAt: new Date() 
+      };
       saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
+      console.log('✅ Raffle updated:', { id: raffles[index].id, title: raffles[index].title });
       res.json(raffles[index]);
     } else {
+      console.log('❌ Raffle not found for update:', req.params.id);
       res.status(404).json({ error: 'Raffle not found' });
     }
   } catch (error) {
+    console.error('❌ Error updating raffle:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 app.delete('/api/admin/raffles/:id', (req, res) => {
   try {
+    const raffles = loadData(RAFFLES_FILE, []); // Cargar datos del archivo
     const index = raffles.findIndex(r => r.id === req.params.id);
     if (index !== -1) {
+      const deletedRaffle = raffles[index];
       raffles.splice(index, 1);
       saveData(RAFFLES_FILE, raffles); // Guardar datos persistentemente
+      console.log('✅ Raffle deleted:', { id: deletedRaffle.id, title: deletedRaffle.title });
       res.status(204).send();
     } else {
+      console.log('❌ Raffle not found for deletion:', req.params.id);
       res.status(404).json({ error: 'Raffle not found' });
     }
   } catch (error) {
+    console.error('❌ Error deleting raffle:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -84,35 +84,56 @@ const AdminRafflesPage: React.FC = () => {
             packs: data.packs || [],
             bonuses: data.bonuses || [],
             status: data.status || 'draft',
-            slug: data.slug
+            slug: data.slug,
+            sold: data.sold || 0,
+            startDate: data.startDate,
+            terms: data.terms,
+            featured: data.featured
         };
     };
 
     const handleSaveRaffle = async (data: Raffle) => {
         try {
+            setRefreshing(true);
             const cleanedData = cleanRaffleData(data);
+            
+            console.log('💾 Saving raffle:', {
+                id: data.id,
+                title: cleanedData.title,
+                hasGallery: cleanedData.gallery?.length > 0,
+                galleryCount: cleanedData.gallery?.length || 0
+            });
             
             if (data.id) {
                 await updateRaffle(data.id!, cleanedData);
+                console.log('✅ Raffle updated successfully');
             } else {
                 await createRaffle(cleanedData as Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>);
+                console.log('✅ Raffle created successfully');
             }
             await refreshRaffles();
             handleCloseModal();
         } catch (error) {
-            console.error('Error saving raffle:', error);
-            alert("Error al guardar la rifa.");
+            console.error('❌ Error saving raffle:', error);
+            alert(`Error al guardar la rifa: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+        } finally {
+            setRefreshing(false);
         }
     };
 
     const handleDeleteRaffle = async (raffleId: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar esta rifa? Esto no se puede deshacer.')) {
             try {
+                setRefreshing(true);
+                console.log('🗑️ Deleting raffle:', raffleId);
                 await deleteRaffle(raffleId);
                 await refreshRaffles();
+                console.log('✅ Raffle deleted successfully');
             } catch (error) {
-                console.error('Error deleting raffle:', error);
-                alert("Error al eliminar la rifa.");
+                console.error('❌ Error deleting raffle:', error);
+                alert(`Error al eliminar la rifa: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+            } finally {
+                setRefreshing(false);
             }
         }
     };
@@ -124,8 +145,11 @@ const AdminRafflesPage: React.FC = () => {
             title: `${raffle.title} (Copia)`,
             slug: `${raffle.slug}-copia-${Date.now()}`,
             status: 'draft' as const,
-            sold: 0
+            sold: 0,
+            createdAt: undefined,
+            updatedAt: undefined
         };
+        console.log('📋 Duplicating raffle:', { original: raffle.title, duplicate: duplicatedRaffle.title });
         handleOpenModal(duplicatedRaffle);
     };
 

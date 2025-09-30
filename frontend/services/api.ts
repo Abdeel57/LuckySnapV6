@@ -102,6 +102,24 @@ export const getRaffleBySlug = async (slug: string): Promise<Raffle | undefined>
     return raffles.find(r => r.slug === slug);
 };
 
+export const getRaffleById = async (id: string): Promise<Raffle | undefined> => {
+    try {
+        console.log('🔍 Trying backend for raffle by ID:', id);
+        const response = await fetch(`${API_URL}/public/raffles/${id}`);
+        const raffle = await handleResponse(response);
+        console.log('✅ Backend raffle by ID loaded successfully:', { id: raffle?.id, title: raffle?.title });
+        return parseDates(raffle, ['drawDate', 'createdAt', 'updatedAt']);
+    } catch (error) {
+        console.error('❌ Backend error for raffle by ID:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for raffle by ID');
+    const { localApi } = await import('./localApi');
+    const raffles = await localApi.getRaffles();
+    return raffles.find(r => r.id === id);
+};
+
 export const getOccupiedTickets = async (raffleId: string): Promise<number[]> => {
     try {
         console.log('🔍 Trying backend for occupied tickets:', raffleId);
