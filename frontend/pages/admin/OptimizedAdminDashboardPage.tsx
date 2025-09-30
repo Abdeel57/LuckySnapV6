@@ -79,7 +79,7 @@ const QuickActionCard = ({
     </motion.button>
 );
 
-const AdminDashboardPage: React.FC = () => {
+const OptimizedAdminDashboardPage: React.FC = () => {
     const [stats, setStats] = useState<Stats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -246,4 +246,4 @@ const AdminDashboardPage: React.FC = () => {
     );
 };
 
-export default AdminDashboardPage;
+export default OptimizedAdminDashboardPage;
