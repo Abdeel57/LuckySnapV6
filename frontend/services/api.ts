@@ -502,29 +502,33 @@ export const adminGetUsers = async (): Promise<AdminUser[]> => {
 // Funciones de órdenes mejoradas
 export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt' | 'updatedAt' | 'expiresAt'>): Promise<Order> => {
     try {
-        console.log('Trying backend for create order...');
+        console.log('🚀 Trying backend for create order...');
+        console.log('📤 Sending order data:', order);
+        console.log('🌐 API URL:', `${API_URL}/public/orders`);
+        
         const response = await fetch(`${API_URL}/public/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(order),
         });
+        
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response ok:', response.ok);
+        
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Backend order created successfully');
+            console.log('✅ Backend order created successfully:', data);
             return parseOrderDates(data);
         } else {
             console.log('❌ Backend returned error status:', response.status);
             const errorText = await response.text();
             console.log('❌ Error details:', errorText);
+            throw new Error(`Backend error: ${response.status} - ${errorText}`);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        throw error; // Re-throw para que el frontend maneje el error
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for create order');
-    const { localApi } = await import('./localApi');
-    return localApi.createOrder(order);
 };
 
 export const getOrderByFolio = async (folio: string): Promise<Order | undefined> => {

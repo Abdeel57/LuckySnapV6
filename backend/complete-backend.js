@@ -250,6 +250,38 @@ app.get('/api/public/raffles/slug/:slug', (req, res) => {
   }
 });
 
+// Endpoint para obtener boletos ocupados de una rifa
+app.get('/api/public/raffles/:id/occupied-tickets', (req, res) => {
+  try {
+    const orders = loadData(ORDERS_FILE, []);
+    const raffleId = req.params.id;
+    
+    // Filtrar órdenes de la rifa específica que no estén canceladas
+    const raffleOrders = orders.filter(order => 
+      order.raffleId === raffleId && 
+      order.status !== 'CANCELLED' && 
+      order.status !== 'EXPIRED'
+    );
+    
+    // Extraer todos los números de boletos ocupados
+    const occupiedTickets = [];
+    raffleOrders.forEach(order => {
+      if (order.tickets && Array.isArray(order.tickets)) {
+        occupiedTickets.push(...order.tickets);
+      }
+    });
+    
+    // Eliminar duplicados y ordenar
+    const uniqueOccupiedTickets = [...new Set(occupiedTickets)].sort((a, b) => a - b);
+    
+    console.log('✅ Occupied tickets loaded for raffle:', raffleId, 'Count:', uniqueOccupiedTickets.length);
+    res.json(uniqueOccupiedTickets);
+  } catch (error) {
+    console.error('❌ Error loading occupied tickets:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/public/raffles/:id', (req, res) => {
   try {
     const raffles = loadData(RAFFLES_FILE, []);
@@ -453,20 +485,26 @@ app.delete('/api/admin/raffles/:id', (req, res) => {
 // Órdenes
 app.post('/api/public/orders', (req, res) => {
   try {
+    console.log('📝 Creating new order with data:', req.body);
+    
     // Validación básica
     if (!req.body.customer || !req.body.customer.name || !req.body.customer.phone) {
+      console.log('❌ Missing customer data');
       return res.status(400).json({ error: 'Datos del cliente son requeridos' });
     }
     
     if (!req.body.raffleId) {
+      console.log('❌ Missing raffle ID');
       return res.status(400).json({ error: 'ID de rifa es requerido' });
     }
     
     if (!req.body.tickets || req.body.tickets.length === 0) {
+      console.log('❌ No tickets selected');
       return res.status(400).json({ error: 'Debe seleccionar al menos un boleto' });
     }
     
     const orders = loadData(ORDERS_FILE, []); // Cargar datos del archivo
+    console.log('📋 Current orders count:', orders.length);
     
     const order = {
       id: Date.now().toString(),
@@ -491,14 +529,16 @@ app.post('/api/public/orders', (req, res) => {
     orders.push(order);
     saveData(ORDERS_FILE, orders); // Guardar datos persistentemente
     
-    console.log('✅ Order created:', {
+    console.log('✅ Order created successfully:', {
       id: order.id,
       folio: order.folio,
       customer: order.customer.name,
       tickets: order.tickets.length,
-      amount: order.totalAmount
+      amount: order.totalAmount,
+      raffleId: order.raffleId
     });
     
+    console.log('📋 Total orders after creation:', orders.length);
     res.json(order);
   } catch (error) {
     console.error('❌ Error creating order:', error);
