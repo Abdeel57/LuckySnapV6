@@ -7,7 +7,7 @@ import Spinner from '../../components/Spinner';
 import OptimizedRaffleManager from '../../components/admin/OptimizedRaffleManager';
 import AdvancedRaffleForm from '../../components/admin/AdvancedRaffleForm';
 
-const AdminRafflesPage: React.FC = () => {
+const OptimizedAdminRafflesPage: React.FC = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -136,7 +136,6 @@ const AdminRafflesPage: React.FC = () => {
                     try {
                         const importedRaffles = JSON.parse(e.target?.result as string);
                         console.log('Rifas importadas:', importedRaffles);
-                        // Aquí podrías implementar la lógica para importar las rifas
                         alert('Funcionalidad de importación en desarrollo');
                     } catch (error) {
                         alert('Error al leer el archivo JSON');
@@ -165,7 +164,7 @@ const AdminRafflesPage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
         >
-            {/* Header compacto */}
+            {/* Header compacto con acciones */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Rifas</h1>
@@ -233,4 +232,4 @@ const AdminRafflesPage: React.FC = () => {
     );
 };
 
-export default AdminRafflesPage;
+export default OptimizedAdminRafflesPage;
