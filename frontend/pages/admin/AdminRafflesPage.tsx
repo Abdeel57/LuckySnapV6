@@ -6,8 +6,27 @@ import { Plus, RefreshCw, Download, Upload } from 'lucide-react';
 import Spinner from '../../components/Spinner';
 import OptimizedRaffleManager from '../../components/admin/OptimizedRaffleManager';
 import AdvancedRaffleForm from '../../components/admin/AdvancedRaffleForm';
+import MobileOptimizedRaffleForm from '../../components/admin/MobileOptimizedRaffleForm';
+
+// Hook para detectar dispositivos móviles
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+        };
+
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
+
+    return isMobile;
+};
 
 const AdminRafflesPage: React.FC = () => {
+    const isMobile = useIsMobile();
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,7 +95,7 @@ const AdminRafflesPage: React.FC = () => {
             if (data.id) {
                 await updateRaffle(data.id!, cleanedData);
             } else {
-                await createRaffle(cleanedData as Omit<Raffle, 'id' | 'sold'>);
+                await createRaffle(cleanedData as Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>);
             }
             await refreshRaffles();
             handleCloseModal();
@@ -105,9 +124,7 @@ const AdminRafflesPage: React.FC = () => {
             title: `${raffle.title} (Copia)`,
             slug: `${raffle.slug}-copia-${Date.now()}`,
             status: 'draft' as const,
-            sold: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            sold: 0
         };
         handleOpenModal(duplicatedRaffle);
     };
@@ -218,15 +235,24 @@ const AdminRafflesPage: React.FC = () => {
                 loading={refreshing}
             />
             
-            {/* Modal de formulario avanzado */}
+            {/* Modal de formulario - Responsive */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <AdvancedRaffleForm
-                        raffle={editingRaffle}
-                        onClose={handleCloseModal}
-                        onSave={handleSaveRaffle}
-                        loading={refreshing}
-                    />
+                    isMobile ? (
+                        <MobileOptimizedRaffleForm
+                            raffle={editingRaffle}
+                            onClose={handleCloseModal}
+                            onSave={handleSaveRaffle}
+                            loading={refreshing}
+                        />
+                    ) : (
+                        <AdvancedRaffleForm
+                            raffle={editingRaffle}
+                            onClose={handleCloseModal}
+                            onSave={handleSaveRaffle}
+                            loading={refreshing}
+                        />
+                    )
                 )}
             </AnimatePresence>
         </motion.div>
