@@ -14,6 +14,7 @@ const RaffleDetailPage = lazy(() => import('./pages/RaffleDetailPage'));
 const PurchasePage = lazy(() => import('./pages/PurchasePage'));
 const VerifierPage = lazy(() => import('./pages/VerifierPage'));
 const PaymentAccountsPage = lazy(() => import('./pages/PaymentAccountsPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 
@@ -45,6 +46,7 @@ const App: React.FC = () => {
                 <Route path="comprar/:slug" element={<PurchasePage />} />
                 <Route path="verificador" element={<VerifierPage />} />
                 <Route path="cuentas-de-pago" element={<PaymentAccountsPage />} />
+                <Route path="terminos" element={<TermsPage />} />
                 <Route path="mis-cuentas" element={<AccountsPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>

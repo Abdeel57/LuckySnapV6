@@ -38,6 +38,12 @@ const RaffleDetailPage = () => {
     }, [slug]);
 
     const handleTicketClick = (ticketNumber: number) => {
+        // Verificar si el boleto ya está ocupado
+        if (occupiedTickets.includes(ticketNumber)) {
+            alert('Este boleto ya está ocupado. Por favor selecciona otro.');
+            return;
+        }
+        
         setSelectedTickets(prev => 
             prev.includes(ticketNumber) 
             ? prev.filter(t => t !== ticketNumber)

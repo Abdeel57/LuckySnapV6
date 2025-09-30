@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { getOrderbyFolio } from '../services/api';
+import { getOrderByFolio } from '../services/api';
 import { Order } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -23,7 +23,7 @@ const VerifierPage = () => {
         if (searchParams.get('folio') !== data.folio) {
             setSearchParams({ folio: data.folio });
         }
-        const result = await getOrderbyFolio(data.folio);
+        const result = await getOrderByFolio(data.folio);
         setOrder(result ?? null);
         setIsLoading(false);
     }, [setSearchParams, searchParams]);

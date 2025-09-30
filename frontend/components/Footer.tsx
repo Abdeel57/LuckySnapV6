@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getSettings } from '../services/api';
 import { Settings } from '../types';
 import { Facebook, Instagram, Twitter, Mail, MessageCircle } from 'lucide-react';
@@ -24,6 +25,19 @@ const Footer = () => {
                 <div className="flex justify-center gap-8 mb-8">
                     {/* Social links removed for now - not in local data structure */}
                 </div>
+                
+                <div className="flex justify-center gap-6 mb-6 text-sm">
+                    <Link to="/terminos" className="hover:text-white transition-colors">
+                        Términos y Condiciones
+                    </Link>
+                    <Link to="/verificador" className="hover:text-white transition-colors">
+                        Verificar Folio
+                    </Link>
+                    <Link to="/cuentas-de-pago" className="hover:text-white transition-colors">
+                        Cuentas de Pago
+                    </Link>
+                </div>
+                
                 <p className="text-sm">© {new Date().getFullYear()} {settings?.siteName || 'Lucky Snap'}. Todos los derechos reservados.</p>
             </div>
         </footer>

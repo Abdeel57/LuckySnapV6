@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 type FormData = {
     name: string;
     phone: string;
+    email: string;
     district: string;
 };
 
@@ -73,19 +74,23 @@ const PurchasePage = () => {
                 customer: {
                     name: data.name,
                     phone: data.phone,
+                    email: data.email,
                     district: data.district
                 },
                 raffleId: raffle.id,
-                raffleTitle: raffle.title,
                 tickets: initialTickets,
-                total: total,
+                totalAmount: total,
+                paymentMethod: 'transfer',
+                notes: `Compra de ${initialTickets.length} boleto(s) para ${raffle.title}`
             };
-            // @ts-ignore
+            console.log('🛒 Creating order with data:', orderData);
             const newOrder = await createOrder(orderData);
+            console.log('✅ Order created successfully:', newOrder);
             setCreatedOrder(newOrder);
         } catch (err) {
-            console.error(err);
-            alert("Hubo un error al crear tu apartado.");
+            console.error('❌ Error creating order:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            alert(`Hubo un error al crear tu apartado: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -187,6 +192,11 @@ const PurchasePage = () => {
                             <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Teléfono (8 dígitos)</label>
                             <input id="phone" type="tel" {...register('phone', { required: 'El teléfono es requerido', pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
                             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-white mb-1">Email (opcional)</label>
+                            <input id="email" type="email" {...register('email', { pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Ingresa un email válido' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
+                            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
                         </div>
                         <div>
                             <label htmlFor="district" className="block text-sm font-medium text-white mb-1">Distrito</label>
