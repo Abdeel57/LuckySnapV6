@@ -5,8 +5,8 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npx prisma generate
-    startCommand: node simple-backend-test.js
+    buildCommand: echo "No build needed"
+    startCommand: node ultra-simple-test.js
     envVars:
       - key: NODE_VERSION
         value: 22.19.0
