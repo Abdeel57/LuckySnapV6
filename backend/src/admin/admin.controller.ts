@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, HttpException, HttpStatus } from '@nestjs/common';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Raffle, type Winner, type Prisma } from '@prisma/client';
@@ -15,13 +15,41 @@ export class AdminController {
 
   // Orders
   @Get('orders')
-  getAllOrders() {
-    return this.adminService.getAllOrders();
+  async getAllOrders() {
+    try {
+      const orders = await this.adminService.getAllOrders();
+      return orders;
+    } catch (error) {
+      console.error('Error getting orders:', error);
+      throw new HttpException('Error al obtener las órdenes', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
   
   @Patch('orders/:folio/status')
   updateOrderStatus(@Param('folio') folio: string, @Body('status') status: string) {
     return this.adminService.updateOrderStatus(folio, status);
+  }
+
+  @Patch('orders/:id')
+  async updateOrder(@Param('id') id: string, @Body() orderData: any) {
+    try {
+      const order = await this.adminService.updateOrder(id, orderData);
+      return order;
+    } catch (error) {
+      console.error('Error updating order:', error);
+      throw new HttpException('Error al actualizar la orden', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Delete('orders/:id')
+  async deleteOrder(@Param('id') id: string) {
+    try {
+      await this.adminService.deleteOrder(id);
+      return { message: 'Orden eliminada exitosamente' };
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw new HttpException('Error al eliminar la orden', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   // Raffles

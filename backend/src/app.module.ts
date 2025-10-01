@@ -5,11 +5,21 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { PublicModule } from './public/public.module';
 import { AdminModule } from './admin/admin.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { MetaModule } from './meta/meta.module';
+import { TrackingModule } from './tracking/tracking.module';
 import { InitController } from './init.controller';
 import { InitDatabaseService } from './init-database';
 
 @Module({
-  imports: [PrismaModule, PublicModule, AdminModule],
+  imports: [
+    PrismaModule, 
+    PublicModule, 
+    AdminModule, 
+    AnalyticsModule, 
+    MetaModule, 
+    TrackingModule
+  ],
   controllers: [AppController, InitController],
   providers: [AppService, InitDatabaseService],
 })

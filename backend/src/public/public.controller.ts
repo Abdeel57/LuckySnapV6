@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Req } from '@nestjs/common';
 import { PublicService } from './public.service';
+import { TrackingService } from '../tracking/tracking.service';
 // FIX: Using `import type` for the Prisma namespace to aid module resolution.
 import type { Prisma } from '@prisma/client';
 
 @Controller('public')
 export class PublicController {
-  constructor(private readonly publicService: PublicService) {}
+  constructor(
+    private readonly publicService: PublicService,
+    private readonly trackingService: TrackingService,
+  ) {}
 
   @Get('raffles/active')
   getActiveRaffles() {
@@ -13,11 +17,15 @@ export class PublicController {
   }
 
   @Get('raffles/slug/:slug')
-  async getRaffleBySlug(@Param('slug') slug: string) {
+  async getRaffleBySlug(@Param('slug') slug: string, @Req() req: any) {
     const raffle = await this.publicService.getRaffleBySlug(slug);
     if (!raffle) {
       throw new NotFoundException(`Raffle with slug ${slug} not found`);
     }
+    
+    // Track ViewContent event
+    await this.trackingService.trackViewContent(raffle.id, raffle, req.user?.id);
+    
     return raffle;
   }
 
@@ -136,8 +144,27 @@ export class PublicController {
   }
 
   @Post('orders')
-  createOrder(@Body() orderData: Prisma.OrderUncheckedCreateInput) {
-    return this.publicService.createOrder(orderData);
+  async createOrder(@Body() orderData: Prisma.OrderUncheckedCreateInput, @Req() req: any) {
+    // Track InitiateCheckout event
+    await this.trackingService.trackInitiateCheckout(
+      orderData.raffleId,
+      orderData.tickets as number[],
+      orderData.total,
+      orderData.userId
+    );
+
+    const order = await this.publicService.createOrder(orderData);
+    
+    // Track Purchase event
+    await this.trackingService.trackPurchase(
+      order.id,
+      orderData.raffleId,
+      orderData.tickets as number[],
+      orderData.total,
+      orderData.userId
+    );
+
+    return order;
   }
 
   @Get('orders/folio/:folio')

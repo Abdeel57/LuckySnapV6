@@ -547,7 +547,13 @@ export const getOrders = async (): Promise<Order[]> => {
     try {
         console.log('🔍 Trying backend for orders...');
         const response = await fetch(`${API_URL}/admin/orders`);
-        const orders = await handleResponse(response);
+        
+        if (!response.ok) {
+            console.log('❌ Backend returned error status:', response.status);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const orders = await response.json();
         console.log('✅ Backend orders loaded successfully:', orders?.length || 0);
         return orders?.map(parseOrderDates) || [];
     } catch (error) {

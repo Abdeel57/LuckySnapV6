@@ -1,0 +1,50 @@
+{
+  "id": "main_settings",
+  "siteName": "Lucky Snap",
+  "appearance": {
+    "siteName": "Lucky Snap",
+    "colors": {
+      "backgroundPrimary": "#1a1a1a",
+      "backgroundSecondary": "#2d2d2d",
+      "accent": "#ff6b6b",
+      "action": "#4ecdc4"
+    },
+    "logo": "",
+    "favicon": ""
+  },
+  "contactInfo": {
+    "whatsapp": "+1234567890",
+    "email": "contacto@luckysnap.com",
+    "phone": "+1234567890",
+    "address": "Tu dirección aquí"
+  },
+  "socialLinks": {
+    "facebookUrl": "https://facebook.com/luckysnap",
+    "instagramUrl": "https://instagram.com/luckysnap",
+    "twitterUrl": "https://twitter.com/luckysnap",
+    "youtubeUrl": "https://youtube.com/luckysnap"
+  },
+  "paymentAccounts": [
+    {
+      "id": "1",
+      "bank": "Banco Principal",
+      "accountNumber": "1234567890",
+      "accountHolder": "Lucky Snap",
+      "clabe": "123456789012345678"
+    }
+  ],
+  "faqs": [
+    {
+      "id": "1",
+      "question": "¿Cómo funcionan las rifas?",
+      "answer": "Las rifas funcionan comprando boletos y participando en sorteos."
+    },
+    {
+      "id": "2",
+      "question": "¿Cuándo se realizan los sorteos?",
+      "answer": "Los sorteos se realizan en las fechas especificadas en cada rifa."
+    }
+  ],
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}

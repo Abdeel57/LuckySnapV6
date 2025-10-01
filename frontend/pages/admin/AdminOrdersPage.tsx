@@ -14,7 +14,9 @@ import {
   Phone,
   MapPin,
   Download,
-  RefreshCw
+  RefreshCw,
+  FileText,
+  Mail
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, deleteOrder } from '../../services/api';
@@ -45,11 +47,15 @@ const AdminOrdersPage: React.FC = () => {
                 getOrders(),
                 getRaffles()
             ]);
-            setOrders(ordersData);
-            setRaffles(rafflesData);
-            console.log('📋 Orders and raffles loaded:', { orders: ordersData.length, raffles: rafflesData.length });
+            setOrders(ordersData || []);
+            setRaffles(rafflesData || []);
+            console.log('📋 Orders and raffles loaded:', { orders: ordersData?.length || 0, raffles: rafflesData?.length || 0 });
         } catch (error) {
             console.error('❌ Error loading data:', error);
+            // Mostrar mensaje de error al usuario
+            alert('Error al cargar los datos. Verifica la conexión al servidor.');
+            setOrders([]);
+            setRaffles([]);
         } finally {
             setLoading(false);
         }
@@ -86,9 +92,10 @@ const AdminOrdersPage: React.FC = () => {
             await updateOrder(orderId, { status: newStatus });
             await refreshData();
             console.log('✅ Order status updated:', { orderId, newStatus });
+            alert(`Estado de la orden actualizado a: ${newStatus}`);
         } catch (error) {
             console.error('❌ Error updating order status:', error);
-            alert('Error al actualizar el estado de la orden');
+            alert(`Error al actualizar el estado de la orden: ${error.message || 'Error desconocido'}`);
         } finally {
             setRefreshing(false);
         }
@@ -102,9 +109,10 @@ const AdminOrdersPage: React.FC = () => {
                 await deleteOrder(orderId);
                 await refreshData();
                 console.log('✅ Order deleted:', orderId);
+                alert('Orden eliminada exitosamente');
             } catch (error) {
                 console.error('❌ Error deleting order:', error);
-                alert('Error al eliminar la orden');
+                alert(`Error al eliminar la orden: ${error.message || 'Error desconocido'}`);
             } finally {
                 setRefreshing(false);
             }
@@ -467,6 +475,137 @@ const AdminOrdersPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Modal de detalles de orden */}
+            <AnimatePresence>
+                {isModalOpen && selectedOrder && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                        onClick={handleCloseModal}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900">Detalles de la Orden</h2>
+                                    <button
+                                        onClick={handleCloseModal}
+                                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                                    >
+                                        <XCircle className="w-6 h-6 text-gray-500" />
+                                    </button>
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    {/* Información básica */}
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <h3 className="font-semibold text-gray-900 mb-3">Información Básica</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <span className="text-sm text-gray-600">Folio:</span>
+                                                <p className="font-medium">{selectedOrder.folio}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-sm text-gray-600">Estado:</span>
+                                                <p className="font-medium">{selectedOrder.status}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-sm text-gray-600">Fecha:</span>
+                                                <p className="font-medium">
+                                                    {new Date(selectedOrder.createdAt!).toLocaleDateString('es-ES')}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <span className="text-sm text-gray-600">Total:</span>
+                                                <p className="font-bold text-green-600">
+                                                    ${(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Información del cliente */}
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <h3 className="font-semibold text-gray-900 mb-3">Cliente</h3>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <span className="text-sm text-gray-600">Nombre:</span>
+                                                <p className="font-medium">{selectedOrder.customer.name}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-sm text-gray-600">Teléfono:</span>
+                                                <p className="font-medium">{selectedOrder.customer.phone}</p>
+                                            </div>
+                                            {selectedOrder.customer.email && (
+                                                <div>
+                                                    <span className="text-sm text-gray-600">Email:</span>
+                                                    <p className="font-medium">{selectedOrder.customer.email}</p>
+                                                </div>
+                                            )}
+                                            {selectedOrder.customer.district && (
+                                                <div>
+                                                    <span className="text-sm text-gray-600">Distrito:</span>
+                                                    <p className="font-medium">{selectedOrder.customer.district}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Boletos */}
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <h3 className="font-semibold text-gray-900 mb-3">Boletos</h3>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <span className="text-sm text-gray-600">Cantidad:</span>
+                                                <p className="font-medium">{selectedOrder.tickets.length}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-sm text-gray-600">Números:</span>
+                                                <p className="font-medium">{selectedOrder.tickets.join(', ')}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Acciones */}
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => {
+                                                handleCloseModal();
+                                                handleEditOrder(selectedOrder);
+                                            }}
+                                            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                            <span>Editar</span>
+                                        </button>
+                                        
+                                        {selectedOrder.status === 'PENDING' && (
+                                            <button
+                                                onClick={() => {
+                                                    handleCloseModal();
+                                                    handleUpdateStatus(selectedOrder.id!, 'COMPLETED');
+                                                }}
+                                                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                                            >
+                                                <CheckCircle className="w-4 h-4" />
+                                                <span>Marcar Pagado</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Modal de edición */}
             <AnimatePresence>

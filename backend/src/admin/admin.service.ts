@@ -13,9 +13,9 @@ export class AdminService {
     today.setHours(0, 0, 0, 0);
 
     const todaySales = await this.prisma.order.aggregate({
-      _sum: { total: true },
+      _sum: { totalAmount: true },
       where: {
-        status: 'PAID',
+        status: 'COMPLETED',
         createdAt: { gte: today },
       },
     });
@@ -29,7 +29,7 @@ export class AdminService {
     });
 
     return {
-      todaySales: todaySales._sum.total || 0,
+      todaySales: todaySales._sum.totalAmount || 0,
       pendingOrders,
       activeRaffles,
     };
@@ -37,9 +37,32 @@ export class AdminService {
 
   // Orders
   async getAllOrders() {
-    return this.prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      const orders = await this.prisma.order.findMany({
+        include: {
+          raffle: true,
+          user: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      
+      // Transformar los datos para que coincidan con el frontend
+      return orders.map(order => ({
+        ...order,
+        customer: {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || 'Sin teléfono',
+          email: order.user.email || '',
+          district: order.user.district || 'Sin distrito',
+        },
+        raffleTitle: order.raffle.title,
+        total: order.totalAmount, // Asegurar compatibilidad
+      }));
+    } catch (error) {
+      console.error('Error getting orders:', error);
+      throw error;
+    }
   }
   
   async updateOrderStatus(folio: string, status: string) {
@@ -62,6 +85,68 @@ export class AdminService {
         where: { folio },
         data: { status: status as any },
     });
+  }
+
+  async updateOrder(id: string, orderData: any) {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id } });
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Actualizar la orden
+      const updatedOrder = await this.prisma.order.update({
+        where: { id },
+        data: {
+          ...orderData,
+          updatedAt: new Date(),
+        },
+        include: {
+          raffle: true,
+          user: true,
+        },
+      });
+
+      // Transformar los datos para el frontend
+      return {
+        ...updatedOrder,
+        customer: {
+          id: updatedOrder.user.id,
+          name: updatedOrder.user.name || 'Sin nombre',
+          phone: updatedOrder.user.phone || 'Sin teléfono',
+          email: updatedOrder.user.email || '',
+          district: updatedOrder.user.district || 'Sin distrito',
+        },
+        raffleTitle: updatedOrder.raffle.title,
+        total: updatedOrder.totalAmount,
+      };
+    } catch (error) {
+      console.error('Error updating order:', error);
+      throw error;
+    }
+  }
+
+  async deleteOrder(id: string) {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id } });
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Si la orden está completada, ajustar el conteo de boletos vendidos
+      if (order.status === 'COMPLETED') {
+        await this.prisma.raffle.update({
+          where: { id: order.raffleId },
+          data: { sold: { decrement: order.tickets.length } },
+        });
+      }
+
+      await this.prisma.order.delete({ where: { id } });
+      return { message: 'Orden eliminada exitosamente' };
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
   }
 
   // Raffles
@@ -92,7 +177,7 @@ export class AdminService {
   
   async drawWinner(raffleId: string) {
     const paidOrders = await this.prisma.order.findMany({
-        where: { raffleId, status: 'PAID' }
+        where: { raffleId, status: 'COMPLETED' }
     });
     
     if (paidOrders.length === 0) {

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-30T21:54:14.322Z",
+  "files": [
+    "raffles.json",
+    "settings.json",
+    "users.json",
+    "orders.json",
+    "winners.json"
+  ],
+  "backedUpCount": 0,
+  "note": "Respaldo automático antes de migración a PostgreSQL"
+}

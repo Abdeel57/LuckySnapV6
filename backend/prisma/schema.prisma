@@ -14,6 +14,8 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
+  phone     String?
+  district  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,17 +32,18 @@ model Raffle {
   description String?
   heroImage   String?
   gallery     String[]
+  price       Float    @default(50.0)
   tickets     Int
   sold        Int      @default(0)
   drawDate    DateTime
-  packs       Json
+  packs       Json?
   bonuses     String[]
   status      String   @default("draft")
   slug        String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tickets Ticket[]
+  ticketOrders Ticket[]
   winners Winner[]
   orders  Order[]
 
@@ -62,15 +65,19 @@ model Ticket {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  folio     String      @unique
-  raffleId  String
-  userId    String
-  tickets   Int[]
-  total     Float
-  status    OrderStatus @default(PENDING)
-  createdAt DateTime    @default(now())
-  expiresAt DateTime
+  id           String      @id @default(cuid())
+  folio        String      @unique
+  raffleId     String
+  userId       String
+  tickets      Int[]
+  totalAmount  Float
+  total        Float?      // Campo adicional para compatibilidad
+  status       OrderStatus @default(PENDING)
+  paymentMethod String?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  expiresAt    DateTime
 
   raffle Raffle @relation(fields: [raffleId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
@@ -116,7 +123,7 @@ model Settings {
 
 enum OrderStatus {
   PENDING
-  PAID
+  COMPLETED
   CANCELLED
   EXPIRED
 }

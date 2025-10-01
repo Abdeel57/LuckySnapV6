@@ -1,100 +1,175 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🎯 Lucky Snap - Sistema de Rifas Completo
 
-# Lucky Snap - Sistema de Rifas
+Sistema completo de gestión de rifas con panel de administración, frontend moderno y backend robusto.
 
-Aplicación fullstack para gestión de rifas con React + NestJS + PostgreSQL.
+## 🚀 Inicio Rápido
 
-## 🚀 Setup Local
-
-**Prerequisites:** Node.js 22.19.0+
-
-### 1. Configurar Variables de Entorno
-
+### Opción 1: Inicio Automático (Recomendado)
 ```bash
-# Frontend
-cp env.example .env
+npm start
+```
+Este comando iniciará automáticamente tanto el frontend como el backend.
 
-# Backend  
-cp backend/env.example backend/.env
+### Opción 2: Inicio Manual
+```bash
+# Terminal 1 - Backend
+cd backend
+npm run start:optimized
+
+# Terminal 2 - Frontend  
+cd frontend
+npm run dev
 ```
 
-Edita los archivos `.env` con tus valores:
-- `DATABASE_URL`: URL de tu base de datos PostgreSQL
-- `VITE_API_URL`: URL del backend (http://localhost:3000/api para desarrollo)
+## 📱 URLs de Acceso
 
-### 2. Instalar Dependencias
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000/api
+- **Panel Admin**: http://localhost:5173/#/admin
+- **Health Check**: http://localhost:3000/api/health
 
+## 🛠️ Comandos Disponibles
+
+### Desarrollo
 ```bash
-npm install
+npm start              # Inicia toda la aplicación
+npm run dev            # Modo desarrollo completo
+npm run dev:frontend   # Solo frontend
+npm run dev:backend    # Solo backend
 ```
 
-### 3. Configurar Base de Datos
-
+### Construcción
 ```bash
-# Generar cliente Prisma
-npm run migrate:status
+npm run build          # Construye frontend y backend
+npm run build:frontend # Solo frontend
+npm run build:backend  # Solo backend
+```
 
-# Aplicar migraciones (si hay migraciones pendientes)
+### Base de Datos
+```bash
+npm run migrate:status # Estado de migraciones
+npm run migrate:deploy # Aplicar migraciones
+npm run migrate:dev    # Migración de desarrollo
+npm run backup         # Respaldar datos
+npm run test:db        # Probar conexión DB
+```
+
+### Utilidades
+```bash
+npm run setup          # Instalar dependencias y configurar DB
+npm run clean          # Limpiar node_modules
+npm run typecheck      # Verificar tipos TypeScript
+```
+
+## 🏗️ Arquitectura
+
+### Frontend (React + Vite)
+- **Framework**: React 19 + TypeScript
+- **Routing**: React Router DOM
+- **UI**: Lucide React Icons + Tailwind CSS
+- **Animaciones**: Framer Motion
+- **Formularios**: React Hook Form
+
+### Backend (Node.js + Express)
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js
+- **Base de Datos**: PostgreSQL + Prisma ORM
+- **CORS**: Configurado para desarrollo y producción
+
+### Base de Datos
+- **Motor**: PostgreSQL (Railway)
+- **ORM**: Prisma
+- **Migraciones**: Automáticas
+- **Esquema**: Optimizado para rifas
+
+## 📊 Funcionalidades
+
+### Panel de Administración
+- ✅ Gestión de Rifas
+- ✅ Gestión de Órdenes/Apartados
+- ✅ Gestión de Usuarios
+- ✅ Gestión de Ganadores
+- ✅ Estadísticas y Analytics
+- ✅ Configuración del Sistema
+
+### Frontend Público
+- ✅ Visualización de Rifas Activas
+- ✅ Compra de Boletos
+- ✅ Historial de Órdenes
+- ✅ Verificación de Boletos
+- ✅ Información de Ganadores
+
+## 🔧 Configuración
+
+### Variables de Entorno
+El archivo `backend/.env` contiene:
+```env
+DATABASE_URL=postgresql://...
+PORT=3000
+NODE_ENV=development
+JWT_SECRET=...
+```
+
+### Base de Datos
+- **Host**: Railway PostgreSQL
+- **Puerto**: 50670
+- **Esquema**: Automáticamente creado por Prisma
+
+## 🚨 Solución de Problemas
+
+### Error de Prisma en Windows
+Si encuentras errores EPERM con Prisma:
+```bash
+cd backend
+npm run start:optimized
+```
+
+### Puerto en Uso
+Si los puertos 3000 o 5173 están ocupados:
+```bash
+# Verificar procesos
+netstat -ano | findstr :3000
+netstat -ano | findstr :5173
+
+# Terminar proceso (reemplazar PID)
+taskkill /PID <PID> /F
+```
+
+### Problemas de Dependencias
+```bash
+npm run clean
+npm run install:all
+```
+
+## 📈 Despliegue
+
+### Desarrollo Local
+```bash
+npm start
+```
+
+### Producción
+```bash
+npm run build
 npm run migrate:deploy
 ```
 
-### 4. Ejecutar en Desarrollo
+## 🤝 Soporte
 
-```bash
-# Ejecutar frontend y backend simultáneamente
-npm run dev
+Si encuentras problemas:
+1. Verifica que Node.js 18+ esté instalado
+2. Ejecuta `npm run setup` para configuración inicial
+3. Revisa los logs en la consola
+4. Verifica la conexión a la base de datos con `npm run test:db`
 
-# O ejecutar por separado:
-npm run dev:frontend  # Frontend en http://localhost:5173
-npm run dev:backend   # Backend en http://localhost:3000
-```
+## 📝 Notas Importantes
 
-### 5. Verificar Funcionamiento
+- El backend usa el script optimizado `start-optimized.js` por defecto
+- La base de datos está configurada para Railway PostgreSQL
+- CORS está configurado para desarrollo y producción
+- Todas las rutas de API están bajo `/api`
+- El panel de administración está en `/#/admin`
 
-```bash
-# Health check del backend
-curl http://localhost:3000/api/health
+---
 
-# Abrir frontend
-open http://localhost:5173
-```
-
-## 🏗️ Build para Producción
-
-```bash
-# Build completo (frontend + backend)
-npm run build
-
-# Solo frontend
-npm run build:frontend
-
-# Solo backend  
-npm run build:backend
-```
-
-## 📋 Comandos Disponibles
-
-- `npm run dev` - Desarrollo completo (FE + BE)
-- `npm run build` - Build completo
-- `npm run migrate:deploy` - Aplicar migraciones
-- `npm run typecheck` - Verificar tipos TypeScript
-
-## 🌐 Despliegue en Render
-
-El proyecto incluye `render.yaml` para despliegue automático en Render:
-
-1. Conecta tu repositorio a Render
-2. Render detectará automáticamente el blueprint
-3. Configura las variables de entorno en Render
-4. El despliegue se realizará automáticamente
-
-## 🔧 Estructura del Proyecto
-
-```
-├── frontend/          # React + Vite
-├── backend/           # NestJS + Prisma
-├── render.yaml        # Configuración de despliegue
-└── env.example        # Variables de entorno ejemplo
-```
+**¡Disfruta usando Lucky Snap! 🎉**
