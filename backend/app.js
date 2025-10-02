@@ -30,6 +30,26 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Endpoint de diagnóstico
+app.get('/api/debug', async (req, res) => {
+  try {
+    const raffles = await prisma.raffle.findMany({ take: 5 });
+    const users = await prisma.user.findMany({ take: 5 });
+    const orders = await prisma.order.findMany({ take: 5 });
+    
+    res.json({
+      raffles: raffles.length,
+      users: users.length,
+      orders: orders.length,
+      sampleRaffle: raffles[0] || null,
+      sampleUser: users[0] || null,
+      sampleOrder: orders[0] || null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
@@ -136,10 +156,48 @@ app.get('/api/public/raffles/active', async (req, res) => {
 // CRÍTICO: Endpoint que estaba fallando
 app.post('/api/public/orders', async (req, res) => {
   try {
+    console.log('📝 Datos recibidos:', JSON.stringify(req.body, null, 2));
+    
     const { raffleId, userId, tickets, total, paymentMethod, notes } = req.body;
+    
+    // Validar datos requeridos
+    if (!raffleId) {
+      return res.status(400).json({ error: 'raffleId es requerido' });
+    }
+    if (!userId) {
+      return res.status(400).json({ error: 'userId es requerido' });
+    }
+    
+    console.log('🔍 Verificando rifa:', raffleId);
+    
+    // Verificar que la rifa existe
+    const raffle = await prisma.raffle.findUnique({ 
+      where: { id: raffleId } 
+    });
+    
+    if (!raffle) {
+      console.log('❌ Rifa no encontrada:', raffleId);
+      return res.status(404).json({ error: 'Rifa no encontrada' });
+    }
+    
+    console.log('✅ Rifa encontrada:', raffle.title);
+    
+    // Verificar que el usuario existe
+    const user = await prisma.user.findUnique({ 
+      where: { id: userId } 
+    });
+    
+    if (!user) {
+      console.log('❌ Usuario no encontrado:', userId);
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    console.log('✅ Usuario encontrado:', user.name);
     
     // Generar folio único
     const folio = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('📋 Creando orden con folio:', folio);
     
     // Crear orden
     const order = await prisma.order.create({
@@ -160,10 +218,17 @@ app.post('/api/public/orders', async (req, res) => {
       },
     });
     
+    console.log('✅ Orden creada exitosamente:', order.folio);
+    
     res.json(order);
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Error al crear la orden' });
+    console.error('❌ Error creating order:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Error al crear la orden',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
