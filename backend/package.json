@@ -5,9 +5,9 @@
   "private": true,
   "scripts": {
     "build": "npx prisma generate && nest build",
-    "start": "node server.js",
-    "start:dev": "node server.js",
-    "start:prod": "node server.js",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
     "start:final": "node start-final.js",
     "start:fixed": "node start-fixed.js",
     "start:optimized": "node start-optimized.js",

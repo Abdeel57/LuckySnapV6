@@ -13,9 +13,9 @@ export class AdminService {
     today.setHours(0, 0, 0, 0);
 
     const todaySales = await this.prisma.order.aggregate({
-      _sum: { totalAmount: true },
+      _sum: { total: true },
       where: {
-        status: 'COMPLETED',
+        status: 'PAID',
         createdAt: { gte: today },
       },
     });
@@ -29,7 +29,7 @@ export class AdminService {
     });
 
     return {
-      todaySales: todaySales._sum.totalAmount || 0,
+      todaySales: todaySales._sum.total || 0,
       pendingOrders,
       activeRaffles,
     };
@@ -57,7 +57,7 @@ export class AdminService {
           district: order.user.district || 'Sin distrito',
         },
         raffleTitle: order.raffle.title,
-        total: order.totalAmount, // Asegurar compatibilidad
+        total: order.total, // Asegurar compatibilidad
       }));
     } catch (error) {
       console.error('Error getting orders:', error);
@@ -118,7 +118,7 @@ export class AdminService {
           district: updatedOrder.user.district || 'Sin distrito',
         },
         raffleTitle: updatedOrder.raffle.title,
-        total: updatedOrder.totalAmount,
+        total: updatedOrder.total,
       };
     } catch (error) {
       console.error('Error updating order:', error);
@@ -134,7 +134,7 @@ export class AdminService {
       }
 
       // Si la orden está completada, ajustar el conteo de boletos vendidos
-      if (order.status === 'COMPLETED') {
+      if (order.status === 'PAID') {
         await this.prisma.raffle.update({
           where: { id: order.raffleId },
           data: { sold: { decrement: order.tickets.length } },
@@ -177,7 +177,7 @@ export class AdminService {
   
   async drawWinner(raffleId: string) {
     const paidOrders = await this.prisma.order.findMany({
-        where: { raffleId, status: 'COMPLETED' }
+        where: { raffleId, status: 'PAID' }
     });
     
     if (paidOrders.length === 0) {

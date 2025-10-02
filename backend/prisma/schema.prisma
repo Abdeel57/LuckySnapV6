@@ -70,8 +70,7 @@ model Order {
   raffleId     String
   userId       String
   tickets      Int[]
-  totalAmount  Float
-  total        Float?      // Campo adicional para compatibilidad
+  total        Float
   status       OrderStatus @default(PENDING)
   paymentMethod String?
   notes        String?
@@ -123,7 +122,7 @@ model Settings {
 
 enum OrderStatus {
   PENDING
-  COMPLETED
+  PAID
   CANCELLED
   EXPIRED
 }
