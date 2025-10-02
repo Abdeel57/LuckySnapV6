@@ -30,7 +30,7 @@ model Raffle {
   id          String   @id @default(cuid())
   title       String
   description String?
-  heroImage   String?
+  imageUrl    String?
   gallery     String[]
   price       Float    @default(50.0)
   tickets     Int
