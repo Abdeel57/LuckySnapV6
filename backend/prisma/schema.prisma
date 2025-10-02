@@ -31,13 +31,10 @@ model Raffle {
   title       String
   description String?
   imageUrl    String?
-  gallery     String[]
   price       Float    @default(50.0)
   tickets     Int
   sold        Int      @default(0)
   drawDate    DateTime
-  packs       Json?
-  bonuses     String[]
   status      String   @default("draft")
   slug        String?  @unique
   createdAt   DateTime @default(now())
