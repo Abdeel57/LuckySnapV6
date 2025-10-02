@@ -5,8 +5,8 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: echo "No build needed"
-    startCommand: node index.js
+    buildCommand: npm install && npx prisma generate
+    startCommand: node fix-render-backend.js
     envVars:
       - key: NODE_VERSION
         value: 22.19.0
