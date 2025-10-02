@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: npm install && npx prisma generate
-    startCommand: node app-final.js
+    startCommand: node index.js
     envVars:
       - key: NODE_VERSION
         value: 22.19.0

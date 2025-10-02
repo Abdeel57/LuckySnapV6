@@ -1,31 +1,28 @@
-// Punto de entrada forzado para NestJS
-console.log('🚀 Iniciando Lucky Snap Backend con NestJS...');
+// Punto de entrada forzado para el backend definitivo
+console.log('🚀 Iniciando Lucky Snap Backend DEFINITIVO...');
 console.log('📡 Verificando configuración...');
 
-// Verificar que dist/main.js existe
+// Verificar que app-final.js existe
 const fs = require('fs');
 const path = require('path');
 
-const distPath = path.join(__dirname, 'dist', 'main.js');
+const appFinalPath = path.join(__dirname, 'app-final.js');
 
-if (fs.existsSync(distPath)) {
-  console.log('✅ Archivo dist/main.js encontrado');
-  console.log('🚀 Ejecutando NestJS...');
-  require('./dist/main.js');
+if (fs.existsSync(appFinalPath)) {
+  console.log('✅ Archivo app-final.js encontrado');
+  console.log('🚀 Ejecutando backend definitivo...');
+  require('./app-final.js');
 } else {
-  console.log('❌ Archivo dist/main.js no encontrado');
-  console.log('🔧 Intentando build...');
+  console.log('❌ Archivo app-final.js no encontrado');
+  console.log('🔧 Intentando app.js...');
   
-  // Intentar hacer build si no existe
-  const { execSync } = require('child_process');
-  try {
-    console.log('📦 Ejecutando npm run build...');
-    execSync('npm run build', { stdio: 'inherit' });
-    console.log('✅ Build completado');
-    console.log('🚀 Ejecutando NestJS...');
-    require('./dist/main.js');
-  } catch (error) {
-    console.error('❌ Error en build:', error.message);
+  const appPath = path.join(__dirname, 'app.js');
+  if (fs.existsSync(appPath)) {
+    console.log('✅ Archivo app.js encontrado');
+    console.log('🚀 Ejecutando app.js...');
+    require('./app.js');
+  } else {
+    console.error('❌ No se encontró ningún backend válido');
     process.exit(1);
   }
 }
