@@ -182,17 +182,34 @@ app.post('/api/public/orders', async (req, res) => {
     
     console.log('✅ Rifa encontrada:', raffle.title);
     
-    // Verificar que el usuario existe
-    const user = await prisma.user.findUnique({ 
+    // Verificar que el usuario existe o crearlo
+    let user = await prisma.user.findUnique({ 
       where: { id: userId } 
     });
     
     if (!user) {
-      console.log('❌ Usuario no encontrado:', userId);
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      console.log('👤 Usuario no encontrado, creando nuevo usuario:', userId);
+      
+      // Crear usuario con los datos proporcionados
+      const { userData } = req.body;
+      if (!userData) {
+        return res.status(400).json({ error: 'userData es requerido para crear usuario' });
+      }
+      
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          name: userData.name,
+          phone: userData.phone,
+          email: userData.email || '',
+          district: userData.district || '',
+        }
+      });
+      
+      console.log('✅ Usuario creado:', user.name);
+    } else {
+      console.log('✅ Usuario encontrado:', user.name);
     }
-    
-    console.log('✅ Usuario encontrado:', user.name);
     
     // Generar folio único
     const folio = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

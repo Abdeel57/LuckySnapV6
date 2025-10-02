@@ -74,18 +74,26 @@ const PurchasePage = () => {
             // Track InitiateCheckout event
             metaPixelService.trackInitiateCheckout(raffle.id, initialTickets, total);
 
+            // Primero crear o buscar el usuario
+            const userData = {
+                name: data.name,
+                phone: data.phone,
+                email: data.email || '',
+                district: data.district
+            };
+            
+            // Crear usuario temporal (en una app real esto sería más complejo)
+            const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
             const orderData = {
-                customer: {
-                    name: data.name,
-                    phone: data.phone,
-                    email: data.email,
-                    district: data.district
-                },
+                userId: userId,
                 raffleId: raffle.id,
                 tickets: initialTickets,
-                totalAmount: total,
+                total: total,
                 paymentMethod: 'transfer',
-                notes: `Compra de ${initialTickets.length} boleto(s) para ${raffle.title}`
+                notes: `Compra de ${initialTickets.length} boleto(s) para ${raffle.title}`,
+                // Datos del usuario para crear en el backend
+                userData: userData
             };
             console.log('🛒 Creating order with data:', orderData);
             const newOrder = await createOrder(orderData);
