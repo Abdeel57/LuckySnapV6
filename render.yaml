@@ -6,7 +6,7 @@ services:
     plan: free
     rootDir: backend
     buildCommand: echo "No build needed"
-    startCommand: node ultra-simple-test.js
+    startCommand: node index.js
     envVars:
       - key: NODE_VERSION
         value: 22.19.0
