@@ -1,26 +1,77 @@
-import React from 'react';
-import { UploadCloud, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { UploadCloud, X, Loader2 } from 'lucide-react';
 
 interface ImageUploaderProps {
     value?: string;
-    onChange: (base64: string) => void;
+    onChange: (imageUrl: string) => void;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            // En lugar de convertir a base64, usar una URL de placeholder
-            // Esto evita el error 413 Content Too Large
-            console.log('📁 Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'bytes');
-            
-            // Para evitar el error 413, usamos una imagen placeholder
-            // En producción, aquí subirías la imagen a un servicio como Cloudinary
-            const placeholderUrl = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
-            onChange(placeholderUrl);
-            
-            console.log('⚠️ Usando imagen placeholder para evitar error 413');
+        if (!file) return;
+
+        console.log('📁 Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'bytes');
+        
+        // Validar tamaño (2MB)
+        const maxSize = 2 * 1024 * 1024;
+        if (file.size > maxSize) {
+            setError('La imagen excede el tamaño máximo de 2MB');
+            console.error('❌ Imagen muy grande:', file.size, 'bytes');
+            return;
         }
+
+        setUploading(true);
+        setError(null);
+
+        try {
+            // Convertir a base64
+            const base64 = await fileToBase64(file);
+            
+            // Subir al backend
+            const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+            const response = await fetch(`${API_URL}/upload/image`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imageData: base64 }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success && result.url) {
+                console.log('✅ Imagen subida correctamente:', result.url);
+                onChange(result.url);
+            } else {
+                throw new Error('Respuesta inválida del servidor');
+            }
+        } catch (err) {
+            console.error('❌ Error subiendo imagen:', err);
+            setError('Error al subir la imagen. Usando imagen placeholder.');
+            
+            // Fallback a placeholder
+            const placeholderUrl = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
+            onChange(placeholderUrl);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
     };
 
     const removeImage = (e: React.MouseEvent) => {
@@ -37,12 +88,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
     return (
         <div className="w-full">
             <label className="block text-sm font-medium text-gray-600 mb-1">Imagen Principal</label>
+            {error && (
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    ⚠️ {error}
+                </div>
+            )}
             <div 
                 className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-500 transition-colors"
                 onClick={triggerFileInput}
             >
                 <div className="space-y-1 text-center">
-                    {value ? (
+                    {uploading ? (
+                        <div className="flex flex-col items-center justify-center">
+                            <Loader2 className="h-12 w-12 text-blue-600 animate-spin mb-2" />
+                            <p className="text-sm text-gray-600">Subiendo imagen...</p>
+                        </div>
+                    ) : value ? (
                         <div className="relative group mx-auto">
                             <img src={value} alt="Preview" className="mx-auto h-40 w-auto rounded-md object-contain" />
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
@@ -67,7 +128,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
                                 </span>
                                 <p className="pl-1">o arrástralo aquí</p>
                             </div>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF</p>
+                            <p className="text-xs text-gray-500">PNG, JPG, GIF (máx. 2MB)</p>
                         </>
                     )}
                      <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleFileChange} />

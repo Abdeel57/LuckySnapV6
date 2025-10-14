@@ -129,3 +129,4 @@ Respuesta esperada:
 - **Admin Panel**: https://lucky-snap-frontend.onrender.com/#/admin
 
 
+

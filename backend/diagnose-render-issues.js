@@ -10,7 +10,13 @@
 const { PrismaClient } = require('@prisma/client');
 
 // Configuración de diagnóstico
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:ZuCkGpLHcIJynmWvsMEqzIzypbuXotKm@nozomi.proxy.rlwy.net:50670/railway';
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error('❌ ERROR: DATABASE_URL no está configurada');
+  console.error('💡 Configura la variable de entorno DATABASE_URL');
+  process.exit(1);
+}
 
 console.log('🔍 DIAGNÓSTICO DE PROBLEMAS EN RENDER');
 console.log('=====================================');

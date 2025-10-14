@@ -36,18 +36,42 @@ export class AdminService {
   }
 
   // Orders
-  async getAllOrders() {
+  async getAllOrders(page: number = 1, limit: number = 50, status?: string) {
     try {
-      const orders = await this.prisma.order.findMany({
-        include: {
-          raffle: true,
-          user: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+      const skip = (page - 1) * limit;
+      const where = status ? { status: status as any } : {};
+      
+      const [orders, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          include: {
+            raffle: {
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                status: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                district: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
       
       // Transformar los datos para que coincidan con el frontend
-      return orders.map(order => ({
+      const transformedOrders = orders.map(order => ({
         ...order,
         customer: {
           id: order.user.id,
@@ -57,11 +81,25 @@ export class AdminService {
           district: order.user.district || 'Sin distrito',
         },
         raffleTitle: order.raffle.title,
-        total: order.total, // Asegurar compatibilidad
+        total: order.total,
       }));
+      
+      return {
+        orders: transformedOrders,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
     } catch (error) {
       console.error('Error getting orders:', error);
-      throw error;
+      // Fallback para evitar crashes
+      return {
+        orders: [],
+        pagination: { page: 1, limit, total: 0, pages: 0 },
+      };
     }
   }
   
@@ -150,8 +188,11 @@ export class AdminService {
   }
 
   // Raffles
-  async getAllRaffles() {
-    return this.prisma.raffle.findMany({ orderBy: { createdAt: 'desc' } });
+  async getAllRaffles(limit: number = 50) {
+    return this.prisma.raffle.findMany({ 
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
   }
 
   async getFinishedRaffles() {

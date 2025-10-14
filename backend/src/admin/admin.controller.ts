@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Raffle, type Winner, type Prisma } from '@prisma/client';
@@ -15,10 +15,17 @@ export class AdminController {
 
   // Orders
   @Get('orders')
-  async getAllOrders() {
+  async getAllOrders(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
     try {
-      const orders = await this.adminService.getAllOrders();
-      return orders;
+      const pageNum = page ? parseInt(page, 10) : 1;
+      const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
+      
+      const result = await this.adminService.getAllOrders(pageNum, limitNum, status);
+      return result;
     } catch (error) {
       console.error('Error getting orders:', error);
       throw new HttpException('Error al obtener las órdenes', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -54,8 +61,9 @@ export class AdminController {
 
   // Raffles
   @Get('raffles')
-  getAllRaffles() {
-    return this.adminService.getAllRaffles();
+  getAllRaffles(@Query('limit') limit?: string) {
+    const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
+    return this.adminService.getAllRaffles(limitNum);
   }
   
   @Get('raffles/finished')

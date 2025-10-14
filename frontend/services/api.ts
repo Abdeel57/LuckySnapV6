@@ -543,21 +543,29 @@ export const getOrderByFolio = async (folio: string): Promise<Order | undefined>
     return localApi.getOrderByFolio(folio);
 };
 
-export const getOrders = async (): Promise<Order[]> => {
+export const getOrders = async (page: number = 1, limit: number = 50, status?: string): Promise<Order[]> => {
     try {
         console.log('🔍 Trying backend for orders...');
-        const response = await fetch(`${API_URL}/admin/orders`);
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
+        if (status) params.append('status', status);
+        
+        const response = await fetch(`${API_URL}/admin/orders?${params.toString()}`);
         
         if (!response.ok) {
             console.log('❌ Backend returned error status:', response.status);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const orders = await response.json();
+        const data = await response.json();
+        // El backend ahora devuelve { orders: [], pagination: {} }
+        const orders = data.orders || data; // Compatibilidad con respuesta vieja y nueva
         console.log('✅ Backend orders loaded successfully:', orders?.length || 0);
         return orders?.map(parseOrderDates) || [];
     } catch (error) {
         console.error('❌ Backend error for orders:', error);
+        return []; // Fallback para evitar crashes
     }
     
     // Fallback to local data

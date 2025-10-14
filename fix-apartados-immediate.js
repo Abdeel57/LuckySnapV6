@@ -73,3 +73,4 @@ console.log('\n🎉 ¡EL PROBLEMA ESTÁ IDENTIFICADO Y SOLUCIONADO!');
 console.log('Solo necesitas hacer el deploy del frontend en Netlify.');
 
 
+
