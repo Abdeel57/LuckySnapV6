@@ -21,12 +21,12 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
         >
             <Link to={`/sorteo/${raffle.slug}`}>
                 <img 
-                    src={raffle.heroImage} 
+                    src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
                     alt={raffle.title} 
                     className="w-full h-40 md:h-48 object-cover"
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+                        target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
                     }}
                 />
             </Link>

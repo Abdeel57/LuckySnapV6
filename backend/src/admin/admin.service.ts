@@ -201,17 +201,28 @@ export class AdminService {
   
   async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
     try {
+      // Generar slug automático si no existe
+      const autoSlug = data.slug || data.title
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+        .replace(/[^a-z0-9]+/g, '-') // Reemplazar caracteres especiales con guiones
+        .replace(/^-+|-+$/g, '') // Quitar guiones del inicio/final
+        .substring(0, 50) + '-' + Date.now().toString().slice(-6); // Agregar timestamp para unicidad
+      
+      // Imagen por defecto si no se proporciona
+      const defaultImage = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop';
+      
       // Filtrar solo los campos que existen en el esquema de Prisma
       const raffleData = {
         title: data.title,
         description: data.description || null,
-        imageUrl: data.imageUrl || null,
+        imageUrl: data.imageUrl || defaultImage,
         price: data.price || 50,
         tickets: data.tickets,
         sold: 0,
         drawDate: new Date(data.drawDate),
         status: data.status || 'draft',
-        slug: data.slug || null,
+        slug: autoSlug,
       };
 
       console.log('📝 Creating raffle with data:', raffleData);

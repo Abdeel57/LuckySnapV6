@@ -50,7 +50,7 @@ const HomePage = () => {
                 <div className="container mx-auto px-4 pt-8 md:pt-16 text-center">
                     <div className="max-w-4xl mx-auto bg-background-secondary rounded-lg p-4 md:p-6 lg:p-8 border border-slate-700/50 shadow-lg shadow-neon-accent">
                         <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6">Próximo Gran Sorteo</h2>
-                        <img src={mainRaffle.heroImage} alt={mainRaffle.title} className="w-full h-48 md:h-64 lg:h-96 object-cover rounded-lg mb-4 md:mb-6"/>
+                        <img src={mainRaffle.imageUrl || mainRaffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800'} alt={mainRaffle.title} className="w-full h-48 md:h-64 lg:h-96 object-cover rounded-lg mb-4 md:mb-6"/>
                         <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-white mb-4">{mainRaffle.title}</h3>
                         <div className="mb-6 md:mb-8">
                             <CountdownTimer targetDate={mainRaffle.drawDate} />
