@@ -57,7 +57,7 @@ const RaffleDetailPage = () => {
         
         // Track AddToCart when tickets are selected
         if (!wasSelected && raffle) {
-            const pricePerTicket = raffle.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+            const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
             const totalValue = newSelectedTickets.length * pricePerTicket;
             metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
         }
@@ -67,7 +67,7 @@ const RaffleDetailPage = () => {
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
     
     const progress = (raffle.sold / raffle.tickets) * 100;
-    const pricePerTicket = raffle.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+    const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     const totalPrice = selectedTickets.length * pricePerTicket;
 
     return (
@@ -78,16 +78,19 @@ const RaffleDetailPage = () => {
                     <div className="lg:col-span-3">
                         <RaffleGallery 
                             images={(() => {
-                                // Priorizar galería si existe, sino usar heroImage, sino imagen por defecto
-                                if (raffle.gallery && raffle.gallery.length > 0) {
+                                // Priorizar imageUrl (campo real de Prisma), sino galería, sino heroImage, sino default
+                                if (raffle.imageUrl) {
+                                    console.log('🖼️ Detail page using imageUrl');
+                                    return [raffle.imageUrl];
+                                } else if (raffle.gallery && raffle.gallery.length > 0) {
                                     console.log('🖼️ Detail page using gallery images:', raffle.gallery.length);
                                     return raffle.gallery;
                                 } else if (raffle.heroImage) {
-                                    console.log('🖼️ Detail page using heroImage:', raffle.heroImage.substring(0, 50) + '...');
+                                    console.log('🖼️ Detail page using heroImage');
                                     return [raffle.heroImage];
                                 } else {
                                     console.log('🖼️ Detail page using default image');
-                                    return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
+                                    return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
                                 }
                             })()}
                             title={raffle.title}
@@ -95,8 +98,8 @@ const RaffleDetailPage = () => {
                         />
                         <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50">
                             <h1 className="text-3xl font-bold mb-4">{raffle.title}</h1>
-                            <p className="text-slate-300 mb-6">{raffle.description}</p>
-                             {raffle.bonuses.length > 0 && (
+                            <p className="text-slate-300 mb-6">{raffle.description || 'Participa en esta increíble rifa'}</p>
+                             {raffle.bonuses && raffle.bonuses.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="font-bold mb-2 text-accent">Bonos y Premios Adicionales</h3>
                                     <ul className="list-disc list-inside text-slate-300 space-y-1">
