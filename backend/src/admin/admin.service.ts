@@ -200,11 +200,62 @@ export class AdminService {
   }
   
   async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
-    return this.prisma.raffle.create({ data: { ...data, sold: 0 } as any });
+    try {
+      // Filtrar solo los campos que existen en el esquema de Prisma
+      const raffleData = {
+        title: data.title,
+        description: data.description || null,
+        imageUrl: data.imageUrl || null,
+        price: data.price || 50,
+        tickets: data.tickets,
+        sold: 0,
+        drawDate: new Date(data.drawDate),
+        status: data.status || 'draft',
+        slug: data.slug || null,
+      };
+
+      console.log('📝 Creating raffle with data:', raffleData);
+      
+      const createdRaffle = await this.prisma.raffle.create({ 
+        data: raffleData 
+      });
+      
+      console.log('✅ Raffle created successfully:', createdRaffle.id);
+      return createdRaffle;
+    } catch (error) {
+      console.error('❌ Error creating raffle:', error);
+      throw error;
+    }
   }
 
   async updateRaffle(id: string, data: Raffle) {
-    return this.prisma.raffle.update({ where: { id }, data });
+    try {
+      // Filtrar solo los campos válidos del esquema Prisma
+      const raffleData: any = {};
+      
+      if (data.title !== undefined) raffleData.title = data.title;
+      if (data.description !== undefined) raffleData.description = data.description;
+      if (data.imageUrl !== undefined) raffleData.imageUrl = data.imageUrl;
+      if (data.price !== undefined) raffleData.price = data.price;
+      if (data.tickets !== undefined) raffleData.tickets = data.tickets;
+      if (data.sold !== undefined) raffleData.sold = data.sold;
+      if (data.drawDate !== undefined) raffleData.drawDate = new Date(data.drawDate);
+      if (data.status !== undefined) raffleData.status = data.status;
+      if (data.slug !== undefined) raffleData.slug = data.slug;
+      
+      console.log('📝 Updating raffle:', id, 'with data:', raffleData);
+      
+      const updatedRaffle = await this.prisma.raffle.update({ 
+        where: { id }, 
+        data: raffleData 
+      });
+      
+      console.log('✅ Raffle updated successfully');
+      return updatedRaffle;
+    } catch (error) {
+      console.error('❌ Error updating raffle:', error);
+      throw error;
+    }
   }
 
   async deleteRaffle(id: string) {
