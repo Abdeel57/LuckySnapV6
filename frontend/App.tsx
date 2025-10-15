@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Spinner from './components/Spinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ToastProvider } from './hooks/useToast';
+import ToastContainer from './components/ToastContainer';
 
 // Public Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -34,11 +36,13 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
-          <AnalyticsProvider>
-            <Router>
-            <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
-              <Routes>
+        <ToastProvider>
+          <AuthProvider>
+            <AnalyticsProvider>
+              <Router>
+                <ToastContainer />
+                <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
+                  <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
@@ -67,11 +71,12 @@ const App: React.FC = () => {
                 <Route path="usuarios" element={<AdminUsersPage />} />
                 <Route path="ajustes" element={<AdminSettingsPage />} />
               </Route>
-              </Routes>
-            </Suspense>
-            </Router>
-          </AnalyticsProvider>
-        </AuthProvider>
+                  </Routes>
+                </Suspense>
+              </Router>
+            </AnalyticsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
