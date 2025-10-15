@@ -23,12 +23,16 @@ class MetaPixelService {
 
   private async loadPixelConfig() {
     try {
-      const response = await fetch('/api/admin/meta/pixel-config');
+      const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+      const response = await fetch(`${API_URL}/admin/meta/pixel-config`);
       const config = await response.json();
       this.pixelId = config.pixelId;
       this.initializePixel();
     } catch (error) {
       console.error('Error loading pixel config:', error);
+      // Usar ID por defecto si falla
+      this.pixelId = '1234567890123456';
+      this.initializePixel();
     }
   }
 
@@ -101,7 +105,8 @@ class MetaPixelService {
 
   private async sendToBackend(event: PixelEvent) {
     try {
-      await fetch('/api/tracking/event', {
+      const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+      await fetch(`${API_URL}/tracking/event`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,6 +115,7 @@ class MetaPixelService {
       });
     } catch (error) {
       console.error('Error sending event to backend:', error);
+      // No hacer nada, el tracking no es crítico
     }
   }
 
