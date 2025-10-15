@@ -22,6 +22,7 @@ import {
 import { Raffle } from '../../types';
 import MultiImageUploader from './MultiImageUploader';
 import { format } from 'date-fns';
+import { useToast } from '../../hooks/useToast';
 
 interface AdvancedRaffleFormProps {
     raffle?: Partial<Raffle> | null;
@@ -43,6 +44,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'images' | 'advanced'>('basic');
     const [previewMode, setPreviewMode] = useState(false);
+    const toast = useToast();
 
     const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } = useForm<RaffleFormValues>({
         defaultValues: raffle 
@@ -54,7 +56,8 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
             }
             : { 
                 status: 'draft', 
-                tickets: 1000, 
+                tickets: 1000,
+                price: 50,
                 packs: [{ q: 1, price: 100 }], 
                 bonuses: [], 
                 gallery: [], 
@@ -72,12 +75,49 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
 
     const watchedData = watch();
 
-    const onSubmit = (data: RaffleFormValues) => {
-        const saveData = {
-            ...data,
-            bonuses: data.bonuses.map(b => b.value),
-        };
-        onSave({ ...raffle, ...saveData } as Raffle);
+    const onSubmit = async (data: RaffleFormValues) => {
+        try {
+            // Validar campos requeridos
+            if (!data.title || data.title.trim() === '') {
+                toast.error('Título requerido', 'Por favor ingresa un título para la rifa');
+                return;
+            }
+            
+            if (!data.tickets || data.tickets < 1) {
+                toast.error('Boletos requeridos', 'Debes especificar al menos 1 boleto');
+                return;
+            }
+            
+            if (!data.price || data.price <= 0) {
+                toast.error('Precio requerido', 'El precio debe ser mayor a 0');
+                return;
+            }
+            
+            if (!data.drawDate) {
+                toast.error('Fecha requerida', 'Debes seleccionar la fecha del sorteo');
+                return;
+            }
+
+            const saveData = {
+                ...data,
+                bonuses: data.bonuses.map(b => b.value),
+            };
+            
+            await onSave({ ...raffle, ...saveData } as Raffle);
+            
+            toast.success(
+                raffle ? '¡Rifa actualizada!' : '¡Rifa creada!',
+                raffle ? 'La rifa se actualizó correctamente' : 'La rifa se creó exitosamente'
+            );
+            
+            onClose();
+        } catch (error: any) {
+            console.error('Error saving raffle:', error);
+            toast.error(
+                'Error al guardar',
+                error.message || 'No se pudo guardar la rifa. Verifica todos los campos e intenta de nuevo.'
+            );
+        }
     };
 
     const tabs = [
@@ -249,7 +289,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div>
                                                 <label className={labelClasses}>
                                                     <Users className="w-4 h-4 inline mr-2" />
@@ -262,6 +302,24 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                                     placeholder="1000"
                                                 />
                                                 {errors.tickets && <p className="text-red-500 text-sm mt-1">{errors.tickets.message}</p>}
+                                            </div>
+
+                                            <div>
+                                                <label className={labelClasses}>
+                                                    <DollarSign className="w-4 h-4 inline mr-2" />
+                                                    Precio por Boleto (LPS)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    {...register('price', { 
+                                                        required: 'El precio es requerido', 
+                                                        min: { value: 0.01, message: 'El precio debe ser mayor a 0' }
+                                                    })}
+                                                    className={inputClasses}
+                                                    placeholder="50.00"
+                                                />
+                                                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price.message}</p>}
                                             </div>
 
                                             <div>

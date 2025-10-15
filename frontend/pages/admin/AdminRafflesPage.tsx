@@ -7,6 +7,8 @@ import Spinner from '../../components/Spinner';
 import OptimizedRaffleManager from '../../components/admin/OptimizedRaffleManager';
 import AdvancedRaffleForm from '../../components/admin/AdvancedRaffleForm';
 import MobileOptimizedRaffleForm from '../../components/admin/MobileOptimizedRaffleForm';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 // Hook para detectar dispositivos móviles
 const useIsMobile = () => {
@@ -27,6 +29,7 @@ const useIsMobile = () => {
 
 const AdminRafflesPage: React.FC = () => {
     const isMobile = useIsMobile();
+    const toast = useToast();
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
