@@ -282,6 +282,9 @@ const AdminRafflesPage: React.FC = () => {
                     )
                 )}
             </AnimatePresence>
+            
+            {/* Toast Container */}
+            <ToastContainer />
         </motion.div>
     );
 };

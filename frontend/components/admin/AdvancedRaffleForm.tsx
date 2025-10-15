@@ -459,29 +459,39 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                                             <div className="flex items-center space-x-2 mb-2">
                                                 <ImageIcon className="w-5 h-5 text-green-600" />
-                                                <h3 className="font-semibold text-green-900">Galería de Imágenes</h3>
+                                                <h3 className="font-semibold text-green-900">Imagen Principal</h3>
                                             </div>
                                             <p className="text-green-700 text-sm">
-                                                Sube múltiples imágenes del premio. La primera imagen será la imagen principal.
+                                                Sube la imagen principal del premio (opcional). Se usará una imagen por defecto si no subes ninguna.
                                             </p>
                                         </div>
 
-                                        <Controller
-                                            name="gallery"
-                                            control={control}
-                                            rules={{ required: 'Al menos una imagen es requerida' }}
-                                            render={({ field }) => (
-                                                <MultiImageUploader
-                                                    images={field.value || []}
-                                                    onChange={field.onChange}
-                                                    maxImages={10}
-                                                    maxWidth={800}
-                                                    maxHeight={600}
-                                                    quality={0.8}
-                                                />
+                                        <div>
+                                            <label className={labelClasses}>
+                                                <ImageIcon className="w-4 h-4 inline mr-2" />
+                                                URL de Imagen
+                                            </label>
+                                            <input
+                                                {...register('imageUrl')}
+                                                className={inputClasses}
+                                                placeholder="https://ejemplo.com/imagen.jpg"
+                                            />
+                                            <p className="text-gray-500 text-sm mt-1">
+                                                Pega una URL de imagen o déjalo vacío para usar imagen por defecto
+                                            </p>
+                                            {watchedData.imageUrl && (
+                                                <div className="mt-3">
+                                                    <img 
+                                                        src={watchedData.imageUrl} 
+                                                        alt="Preview" 
+                                                        className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
+                                                        }}
+                                                    />
+                                                </div>
                                             )}
-                                        />
-                                        {errors.gallery && <p className="text-red-500 text-sm mt-1">{errors.gallery.message}</p>}
+                                        </div>
                                     </motion.div>
                                 )}
 

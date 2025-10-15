@@ -54,8 +54,9 @@ const PurchasePage = () => {
                 })) || []
             });
                 setRaffle(raffleData || null);
-                setPaymentAccounts(settingsData.paymentAccounts);
-                setContactWhatsapp(settingsData.contactInfo.whatsapp);
+                setPaymentAccounts(settingsData.paymentAccounts || []);
+                // Usar número por defecto si no existe contactInfo
+                setContactWhatsapp(settingsData.contactInfo?.whatsapp || '50400000000');
             })
             .catch(err => {
                 console.error('❌ Error loading raffle for purchase:', err);
@@ -64,7 +65,8 @@ const PurchasePage = () => {
         }
     }, [slug]);
 
-    const pricePerTicket = raffle?.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+    // Usar el precio base del esquema Prisma (no packs)
+    const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     const total = initialTickets.length * pricePerTicket;
 
     const onSubmit = async (data: FormData) => {

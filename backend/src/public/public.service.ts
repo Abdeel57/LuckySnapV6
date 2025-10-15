@@ -93,29 +93,76 @@ export class PublicService {
     }
   }
 
-  async createOrder(orderData: Prisma.OrderUncheckedCreateInput) {
-    const raffle = await this.prisma.raffle.findUnique({ where: { id: orderData.raffleId } });
-    if (!raffle) {
+  async createOrder(orderData: any) {
+    try {
+      console.log('📝 Creating order with data:', orderData);
+      
+      // Verificar que la rifa existe
+      const raffle = await this.prisma.raffle.findUnique({ where: { id: orderData.raffleId } });
+      if (!raffle) {
         throw new NotFoundException('Raffle not found');
-    }
-    
-    const newOrder = await this.prisma.order.create({
+      }
+      
+      console.log('✅ Raffle found:', raffle.title);
+      
+      // Crear o buscar el usuario
+      let user;
+      const userData = orderData.userData || {};
+      
+      if (userData.email) {
+        // Buscar usuario existente por email
+        user = await this.prisma.user.findUnique({ where: { email: userData.email } });
+      }
+      
+      if (!user) {
+        // Crear nuevo usuario
+        user = await this.prisma.user.create({
+          data: {
+            email: userData.email || `user-${Date.now()}@temp.com`,
+            name: userData.name,
+            phone: userData.phone,
+            district: userData.district,
+          },
+        });
+        console.log('✅ User created:', user.id);
+      } else {
+        console.log('✅ Existing user found:', user.id);
+      }
+      
+      // Crear la orden
+      const newOrder = await this.prisma.order.create({
         data: {
-            ...orderData,
-            folio: `LKSNP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-            status: 'PENDING',
-            createdAt: new Date(),
-            expiresAt: add(new Date(), { hours: 24 }),
-        }
-    });
+          folio: `LKSNP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+          raffleId: orderData.raffleId,
+          userId: user.id,
+          tickets: orderData.tickets,
+          total: orderData.total,
+          status: 'PENDING',
+          paymentMethod: orderData.paymentMethod || 'transfer',
+          notes: orderData.notes || '',
+          expiresAt: add(new Date(), { hours: 24 }),
+        },
+        include: {
+          raffle: true,
+          user: true,
+        },
+      });
 
-    // This should ideally be in a transaction
-    await this.prisma.raffle.update({
+      console.log('✅ Order created:', newOrder.folio);
+
+      // Actualizar boletos vendidos
+      await this.prisma.raffle.update({
         where: { id: orderData.raffleId },
         data: { sold: { increment: Array.isArray(orderData.tickets) ? orderData.tickets.length : 0 } },
-    });
+      });
 
-    return newOrder;
+      console.log('✅ Raffle updated with sold tickets');
+
+      return newOrder;
+    } catch (error) {
+      console.error('❌ Error creating order:', error);
+      throw error;
+    }
   }
 
   async getOrderByFolio(folio: string) {
