@@ -74,24 +74,21 @@ const AdminRafflesPage: React.FC = () => {
         setIsModalOpen(false);
     };
 
-    // Función para limpiar datos antes de enviar
+    // Función para limpiar datos antes de enviar - SOLO campos válidos del esquema Prisma
     const cleanRaffleData = (data: Raffle) => {
         const gallery = data.gallery || [];
         return {
             title: data.title,
-            description: data.description,
-            heroImage: gallery.length > 0 ? gallery[0] : (data.heroImage || ''),
-            gallery: gallery,
+            description: data.description || null,
+            imageUrl: gallery.length > 0 ? gallery[0] : (data.imageUrl || data.heroImage || null),
+            price: data.price || 50,
             tickets: data.tickets,
             drawDate: data.drawDate,
-            packs: data.packs || [],
-            bonuses: data.bonuses || [],
             status: data.status || 'draft',
-            slug: data.slug,
-            sold: data.sold || 0,
-            startDate: data.startDate,
-            terms: data.terms,
-            featured: data.featured
+            slug: data.slug || null,
+            sold: data.sold || 0
+            // NO enviar: packs, gallery, bonuses, heroImage, startDate, terms, featured
+            // Estos no existen en el esquema Prisma
         };
     };
 
@@ -103,22 +100,24 @@ const AdminRafflesPage: React.FC = () => {
             console.log('💾 Saving raffle:', {
                 id: data.id,
                 title: cleanedData.title,
-                hasGallery: cleanedData.gallery?.length > 0,
-                galleryCount: cleanedData.gallery?.length || 0
+                price: cleanedData.price,
+                tickets: cleanedData.tickets
             });
             
             if (data.id) {
                 await updateRaffle(data.id!, cleanedData);
                 console.log('✅ Raffle updated successfully');
+                toast.success('¡Rifa actualizada!', 'Los cambios se guardaron correctamente');
             } else {
                 await createRaffle(cleanedData as Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>);
                 console.log('✅ Raffle created successfully');
+                toast.success('¡Rifa creada!', 'La rifa se creó exitosamente');
             }
             await refreshRaffles();
             handleCloseModal();
         } catch (error) {
             console.error('❌ Error saving raffle:', error);
-            alert(`Error al guardar la rifa: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+            toast.error('Error al guardar', error instanceof Error ? error.message : 'No se pudo guardar la rifa');
         } finally {
             setRefreshing(false);
         }
@@ -132,9 +131,10 @@ const AdminRafflesPage: React.FC = () => {
                 await deleteRaffle(raffleId);
                 await refreshRaffles();
                 console.log('✅ Raffle deleted successfully');
+                toast.success('Rifa eliminada', 'La rifa se eliminó correctamente');
             } catch (error) {
                 console.error('❌ Error deleting raffle:', error);
-                alert(`Error al eliminar la rifa: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+                toast.error('Error al eliminar', error instanceof Error ? error.message : 'No se pudo eliminar la rifa');
             } finally {
                 setRefreshing(false);
             }

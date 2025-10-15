@@ -55,11 +55,12 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
         const active = raffles.filter(r => r.status === 'active').length;
         const draft = raffles.filter(r => r.status === 'draft').length;
         const finished = raffles.filter(r => r.status === 'finished').length;
-        const totalTickets = raffles.reduce((sum, r) => sum + r.tickets, 0);
-        const soldTickets = raffles.reduce((sum, r) => sum + r.sold, 0);
+        const totalTickets = raffles.reduce((sum, r) => sum + (r.tickets || 0), 0);
+        const soldTickets = raffles.reduce((sum, r) => sum + (r.sold || 0), 0);
         const revenue = raffles.reduce((sum, r) => {
-            const pricePerTicket = r.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
-            return sum + (r.sold * pricePerTicket);
+            // Usar el precio base si packs no existe
+            const pricePerTicket = r.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || r.price || 0;
+            return sum + ((r.sold || 0) * pricePerTicket);
         }, 0);
 
         return {
@@ -78,7 +79,7 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
     const filteredAndSortedRaffles = useMemo(() => {
         let filtered = raffles.filter(raffle => {
             const matchesSearch = raffle.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                raffle.description.toLowerCase().includes(searchTerm.toLowerCase());
+                                (raffle.description || '').toLowerCase().includes(searchTerm.toLowerCase());
             const matchesStatus = statusFilter === 'all' || raffle.status === statusFilter;
             return matchesSearch && matchesStatus;
         });
@@ -351,7 +352,7 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
                                                 </div>
                                             </div>
 
-                                            <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{raffle.description}</p>
+                                            <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{raffle.description || 'Sin descripción'}</p>
 
                                             {/* Métricas compactas */}
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
