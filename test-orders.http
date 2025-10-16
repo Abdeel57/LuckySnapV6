@@ -1,0 +1,55 @@
+### Archivo de pruebas HTTP para endpoints de órdenes
+### Reemplaza {{BACKEND_URL}} con tu URL de Render (ej: https://tu-backend.onrender.com/api)
+
+### 1. Health Check
+GET {{BACKEND_URL}}/health
+
+### 2. Obtener todas las órdenes
+GET {{BACKEND_URL}}/admin/orders
+
+### 3. Obtener órdenes con filtros
+GET {{BACKEND_URL}}/admin/orders?status=PENDING
+GET {{BACKEND_URL}}/admin/orders?status=PAID
+GET {{BACKEND_URL}}/admin/orders?raffleId=tu-raffle-id
+
+### 4. Obtener orden específica por ID
+GET {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}
+
+### 5. Marcar orden como pagada
+PUT {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}/mark-paid
+Content-Type: application/json
+
+### 6. Editar orden (cliente, boletos, notas)
+PUT {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}/edit
+Content-Type: application/json
+
+{
+  "customer": {
+    "name": "Juan Pérez",
+    "phone": "5551234567",
+    "email": "juan@email.com",
+    "district": "Centro"
+  },
+  "tickets": [1, 2, 3],
+  "notes": "Cliente VIP"
+}
+
+### 7. Liberar orden (devolver boletos al inventario)
+PUT {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}/release
+Content-Type: application/json
+
+### 8. Actualizar orden (método genérico)
+PATCH {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}
+Content-Type: application/json
+
+{
+  "status": "PAID",
+  "notes": "Pago confirmado"
+}
+
+### 9. Eliminar orden
+DELETE {{BACKEND_URL}}/admin/orders/{{ORDER_ID}}
+
+### Variables de ejemplo:
+# BACKEND_URL = https://tu-backend.onrender.com/api
+# ORDER_ID = uuid-de-la-orden

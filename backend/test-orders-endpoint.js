@@ -1,14 +1,19 @@
-const fetch = require('node-fetch');
-
 const API_URL = 'http://localhost:3000/api';
+
+async function getFetch() {
+  if (typeof fetch === 'function') return fetch;
+  const mod = await import('node-fetch');
+  return mod.default;
+}
 
 async function testOrdersEndpoint() {
   console.log('🧪 Iniciando pruebas del endpoint de órdenes...');
 
   try {
+    const fetch = await getFetch();
     // Probar el endpoint de salud
     console.log('1️⃣ Probando endpoint de salud...');
-    const healthResponse = await fetch(`${API_URL}/public/health`);
+    const healthResponse = await fetch(`${API_URL}/health`);
     if (healthResponse.ok) {
       const healthData = await healthResponse.json();
       console.log('✅ Endpoint de salud funcionando:', healthData);

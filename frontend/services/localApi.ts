@@ -138,6 +138,38 @@ export const localApi = {
     return newOrder;
   },
 
+  async updateOrder(id: string, updates: Partial<Order>): Promise<Order> {
+    await delay(500);
+    const index = HARDCODED_ORDERS.findIndex(o => o.id === id);
+    if (index === -1) throw new Error('Order not found');
+    
+    HARDCODED_ORDERS[index] = { ...HARDCODED_ORDERS[index], ...updates, updatedAt: new Date() };
+    return HARDCODED_ORDERS[index];
+  },
+
+  async deleteOrder(id: string): Promise<void> {
+    await delay(500);
+    const index = HARDCODED_ORDERS.findIndex(o => o.id === id);
+    if (index === -1) throw new Error('Order not found');
+    HARDCODED_ORDERS.splice(index, 1);
+  },
+
+  async getOrderByFolio(folio: string): Promise<Order | undefined> {
+    await delay(500);
+    return HARDCODED_ORDERS.find(o => o.folio === folio);
+  },
+
+  // Customers (alias para órdenes pagadas)
+  async getCustomers(): Promise<Order[]> {
+    await delay(500);
+    return HARDCODED_ORDERS.filter(o => o.status === 'PAID');
+  },
+
+  async getCustomerById(id: string): Promise<Order | undefined> {
+    await delay(500);
+    return HARDCODED_ORDERS.find(o => o.id === id && o.status === 'PAID');
+  },
+
   // Winners
   async getWinners(): Promise<Winner[]> {
     await delay(500);

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Raffle, type Winner, type Prisma } from '@prisma/client';
@@ -19,16 +19,27 @@ export class AdminController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('raffleId') raffleId?: string,
   ) {
     try {
       const pageNum = page ? parseInt(page, 10) : 1;
       const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
       
-      const result = await this.adminService.getAllOrders(pageNum, limitNum, status);
+      const result = await this.adminService.getAllOrders(pageNum, limitNum, status, raffleId);
       return result;
     } catch (error) {
       console.error('Error getting orders:', error);
       throw new HttpException('Error al obtener las órdenes', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+  
+  @Get('orders/:id')
+  async getOrderById(@Param('id') id: string) {
+    try {
+      return await this.adminService.getOrderById(id);
+    } catch (error) {
+      console.error('Error getting order:', error);
+      throw new HttpException('Error al obtener la orden', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
   
@@ -45,6 +56,39 @@ export class AdminController {
     } catch (error) {
       console.error('Error updating order:', error);
       throw new HttpException('Error al actualizar la orden', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('orders/:id/mark-paid')
+  async markOrderPaid(@Param('id') id: string) {
+    try {
+      return await this.adminService.markOrderPaid(id);
+    } catch (error) {
+      console.error('Error marking order as paid:', error);
+      throw new HttpException('Error al marcar la orden como pagada', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('orders/:id/edit')
+  async editOrder(
+    @Param('id') id: string,
+    @Body() body: { customer?: any; tickets?: number[]; notes?: string }
+  ) {
+    try {
+      return await this.adminService.editOrder(id, body);
+    } catch (error) {
+      console.error('Error editing order:', error);
+      throw new HttpException('Error al editar la orden', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Put('orders/:id/release')
+  async releaseOrder(@Param('id') id: string) {
+    try {
+      return await this.adminService.releaseOrder(id);
+    } catch (error) {
+      console.error('Error releasing order:', error);
+      throw new HttpException('Error al liberar la orden', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

@@ -621,6 +621,86 @@ export const deleteOrder = async (id: string): Promise<void> => {
     return localApi.deleteOrder(id);
 };
 
+// Nuevas funciones específicas de órdenes según especificaciones
+export const markOrderPaid = async (id: string): Promise<Order> => {
+    try {
+        console.log('🚀 Trying backend for mark order paid...');
+        const response = await fetch(`${API_URL}/admin/orders/${id}/mark-paid`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend order marked as paid successfully');
+            return parseOrderDates(data);
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for mark order paid');
+    const { localApi } = await import('./localApi');
+    return localApi.updateOrder(id, { status: 'PAID' });
+};
+
+export const editOrder = async (id: string, data: { customer?: any; tickets?: number[]; notes?: string }): Promise<Order> => {
+    try {
+        console.log('🚀 Trying backend for edit order...');
+        const response = await fetch(`${API_URL}/admin/orders/${id}/edit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Backend order edited successfully');
+            return parseOrderDates(result);
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for edit order');
+    const { localApi } = await import('./localApi');
+    return localApi.updateOrder(id, data);
+};
+
+export const releaseOrder = async (id: string): Promise<Order> => {
+    try {
+        console.log('🚀 Trying backend for release order...');
+        const response = await fetch(`${API_URL}/admin/orders/${id}/release`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend order released successfully');
+            return parseOrderDates(data);
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for release order');
+    const { localApi } = await import('./localApi');
+    return localApi.updateOrder(id, { status: 'RELEASED' });
+};
+
 // Funciones de clientes
 export const getCustomers = async (): Promise<any[]> => {
     try {

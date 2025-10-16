@@ -36,10 +36,12 @@ export class AdminService {
   }
 
   // Orders
-  async getAllOrders(page: number = 1, limit: number = 50, status?: string) {
+  async getAllOrders(page: number = 1, limit: number = 50, status?: string, raffleId?: string) {
     try {
       const skip = (page - 1) * limit;
-      const where = status ? { status: status as any } : {};
+      const where: any = {};
+      if (status) where.status = status as any;
+      if (raffleId) where.raffleId = raffleId;
       
       const [orders, total] = await Promise.all([
         this.prisma.order.findMany({
@@ -103,6 +105,26 @@ export class AdminService {
     }
   }
   
+  async getOrderById(id: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { raffle: true, user: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return {
+      ...order,
+      customer: {
+        id: order.user.id,
+        name: order.user.name || 'Sin nombre',
+        phone: order.user.phone || 'Sin teléfono',
+        email: order.user.email || '',
+        district: order.user.district || 'Sin distrito',
+      },
+      raffleTitle: order.raffle.title,
+      total: order.total,
+    };
+  }
+  
   async updateOrderStatus(folio: string, status: string) {
     const order = await this.prisma.order.findUnique({ where: { folio } });
     if (!order) {
@@ -162,6 +184,115 @@ export class AdminService {
       console.error('Error updating order:', error);
       throw error;
     }
+  }
+
+  async markOrderPaid(id: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status === 'PAID') return order;
+
+    // Vincular/crear cliente (admin_users no es clientes; asumimos tabla user existente)
+    // Aquí solo marcamos como pagado y actualizamos updatedAt
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: { status: 'PAID' as any, updatedAt: new Date() },
+      include: { raffle: true, user: true },
+    });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
+  }
+
+  async editOrder(id: string, body: { customer?: any; tickets?: number[]; notes?: string }) {
+    const order = await this.prisma.order.findUnique({ where: { id }, include: { user: true } });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const dataToUpdate: any = { updatedAt: new Date() };
+
+    // Validar y actualizar tickets
+    if (body.tickets) {
+      // Validación básica: no duplicados en la misma orden
+      const uniqueTickets = Array.from(new Set(body.tickets));
+      if (uniqueTickets.length !== body.tickets.length) {
+        throw new BadRequestException('Boletos duplicados en la misma orden');
+      }
+      dataToUpdate.tickets = uniqueTickets;
+    }
+
+    // Notas
+    if (body.notes !== undefined) {
+      dataToUpdate.notes = body.notes;
+    }
+
+    // Actualizar datos del cliente (en tabla user)
+    if (body.customer && Object.keys(body.customer).length > 0) {
+      await this.prisma.user.update({
+        where: { id: order.userId },
+        data: {
+          name: body.customer.name ?? order.user.name,
+          phone: body.customer.phone ?? order.user.phone,
+          email: body.customer.email ?? order.user.email,
+          district: body.customer.district ?? order.user.district,
+        },
+      });
+    }
+
+    const updated = await this.prisma.order.update({ where: { id }, data: dataToUpdate, include: { raffle: true, user: true } });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
+  }
+
+  async releaseOrder(id: string) {
+    const order = await this.prisma.order.findUnique({ where: { id }, include: { raffle: true, user: true } });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: { status: 'RELEASED' as any, updatedAt: new Date() },
+      include: { raffle: true, user: true },
+    });
+
+    // Ajustar inventario: decrementa vendidos si estaba pagada
+    if (order.status === 'PAID') {
+      await this.prisma.raffle.update({
+        where: { id: order.raffleId },
+        data: { sold: { decrement: order.tickets.length } },
+      });
+    }
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
   }
 
   async deleteOrder(id: string) {
