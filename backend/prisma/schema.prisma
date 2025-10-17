@@ -122,4 +122,5 @@ enum OrderStatus {
   PAID
   CANCELLED
   EXPIRED
+  RELEASED
 }
