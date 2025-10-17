@@ -19,7 +19,7 @@ import {
   Mail
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
-import { getOrders, updateOrder, deleteOrder } from '../../services/api';
+import { getOrders, updateOrder, deleteOrder, markOrderPaid } from '../../services/api';
 import { getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 
@@ -89,10 +89,19 @@ const AdminOrdersPage: React.FC = () => {
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
         try {
             setRefreshing(true);
-            await updateOrder(orderId, { status: newStatus });
+            
+            // Usar función específica para marcar como pagado
+            if (newStatus === 'COMPLETED') {
+                await markOrderPaid(orderId);
+                console.log('✅ Order marked as paid:', { orderId });
+                alert('Orden marcada como pagada exitosamente');
+            } else {
+                await updateOrder(orderId, { status: newStatus });
+                console.log('✅ Order status updated:', { orderId, newStatus });
+                alert(`Estado de la orden actualizado a: ${newStatus}`);
+            }
+            
             await refreshData();
-            console.log('✅ Order status updated:', { orderId, newStatus });
-            alert(`Estado de la orden actualizado a: ${newStatus}`);
         } catch (error) {
             console.error('❌ Error updating order status:', error);
             alert(`Error al actualizar el estado de la orden: ${error.message || 'Error desconocido'}`);
