@@ -19,7 +19,7 @@ import {
   Mail
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
-import { getOrders, updateOrder, deleteOrder, markOrderPaid } from '../../services/api';
+import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder } from '../../services/api';
 import { getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 
@@ -33,6 +33,7 @@ const AdminOrdersPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isLoadingAction, setIsLoadingAction] = useState(false);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -155,16 +156,35 @@ const AdminOrdersPage: React.FC = () => {
     // Guardar cambios de orden
     const handleSaveOrderChanges = async (updatedOrder: Order) => {
         try {
-            setRefreshing(true);
+            setIsLoadingAction(true);
             await updateOrder(updatedOrder.id!, updatedOrder);
             await refreshData();
             handleCloseEditModal();
             console.log('✅ Order updated successfully');
+            alert('✅ Orden actualizada correctamente');
         } catch (error) {
             console.error('❌ Error updating order:', error);
-            alert('Error al actualizar la orden');
+            alert(`❌ Error: ${error.message || 'Error al actualizar la orden'}`);
         } finally {
-            setRefreshing(false);
+            setIsLoadingAction(false);
+        }
+    };
+
+    // Liberar boletos usando releaseOrder
+    const handleReleaseOrder = async (orderId: string) => {
+        if (!window.confirm('¿Estás seguro de liberar estos boletos? Volverán al inventario.')) return;
+        try {
+            setIsLoadingAction(true);
+            await releaseOrder(orderId);
+            await refreshData();
+            handleCloseModal();
+            console.log('✅ Order released successfully');
+            alert('✅ Boletos liberados correctamente');
+        } catch (error) {
+            console.error('❌ Error releasing order:', error);
+            alert(`❌ Error: ${error.message || 'Error al liberar la orden'}`);
+        } finally {
+            setIsLoadingAction(false);
         }
     };
 
@@ -435,8 +455,9 @@ const AdminOrdersPage: React.FC = () => {
                                         
                                         {order.status === 'COMPLETED' && (
                                             <button
-                                                onClick={() => handleUpdateStatus(order.id!, 'PENDING')}
-                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm"
+                                                onClick={() => handleReleaseOrder(order.id!)}
+                                                disabled={isLoadingAction}
+                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm disabled:opacity-50"
                                             >
                                                 <Clock className="w-4 h-4" />
                                                 <span>Liberar</span>
@@ -588,10 +609,25 @@ const AdminOrdersPage: React.FC = () => {
                                                     handleCloseModal();
                                                     handleUpdateStatus(selectedOrder.id!, 'COMPLETED');
                                                 }}
-                                                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                                                disabled={isLoadingAction}
+                                                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
                                             >
                                                 <CheckCircle className="w-4 h-4" />
                                                 <span>Marcar Pagado</span>
+                                            </button>
+                                        )}
+                                        
+                                        {selectedOrder.status === 'COMPLETED' && (
+                                            <button
+                                                onClick={() => {
+                                                    handleCloseModal();
+                                                    handleReleaseOrder(selectedOrder.id!);
+                                                }}
+                                                disabled={isLoadingAction}
+                                                className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                                            >
+                                                <Clock className="w-4 h-4" />
+                                                <span>Liberar Boletos</span>
                                             </button>
                                         )}
                                     </div>

@@ -13,7 +13,7 @@ import {
     RefreshCw,
 } from 'lucide-react';
 import { Order } from '../../types';
-import { getOrders, updateOrder } from '../../services/api';
+import { getOrders, updateOrder, releaseOrder } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 
 const AdminCustomersPage: React.FC = () => {
@@ -25,6 +25,7 @@ const AdminCustomersPage: React.FC = () => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isLoadingAction, setIsLoadingAction] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -102,31 +103,36 @@ const AdminCustomersPage: React.FC = () => {
 
     const handleSaveEdit = async (updated: Order) => {
         try {
-            setRefreshing(true);
+            setIsLoadingAction(true);
             await updateOrder(updated.id!, updated);
             await refreshData();
             closeEdit();
             console.log('✅ Orden actualizada');
+            alert('✅ Orden actualizada correctamente');
         } catch (e) {
             console.error('❌ Error al actualizar orden:', e);
-            alert('Error al actualizar la orden');
+            alert(`❌ Error: ${e.message || 'Error al actualizar la orden'}`);
         } finally {
-            setRefreshing(false);
+            setIsLoadingAction(false);
         }
     };
 
-    // Liberar: regresar orden pagada a PENDING
+    // Liberar boletos usando releaseOrder
     const handleRelease = async (orderId: string) => {
+        if (!window.confirm('¿Estás seguro de liberar estos boletos? Volverán al inventario.')) return;
         try {
-            setRefreshing(true);
-            await updateOrder(orderId, { status: 'PENDING' });
+            setIsLoadingAction(true);
+            await releaseOrder(orderId);
             await refreshData();
-            alert('Orden liberada (regresada a pendiente)');
+            closeDetails();
+            closeEdit();
+            console.log('✅ Boletos liberados');
+            alert('✅ Boletos liberados correctamente');
         } catch (e) {
             console.error('❌ Error al liberar orden:', e);
-            alert('Error al liberar la orden');
+            alert(`❌ Error: ${e.message || 'Error al liberar la orden'}`);
         } finally {
-            setRefreshing(false);
+            setIsLoadingAction(false);
         }
     };
 
@@ -276,21 +282,24 @@ const AdminCustomersPage: React.FC = () => {
                                 <div className="grid grid-cols-3 gap-2">
                                     <button
                                         onClick={() => handleView(order)}
-                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm"
+                                        disabled={isLoadingAction}
+                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
                                     >
                                         <Eye className="w-4 h-4" />
                                         <span>Ver</span>
                                     </button>
                                     <button
                                         onClick={() => handleEdit(order)}
-                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-sm"
+                                        disabled={isLoadingAction}
+                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors text-sm disabled:opacity-50"
                                     >
                                         <FileText className="w-4 h-4" />
                                         <span>Editar</span>
                                     </button>
                                     <button
                                         onClick={() => handleRelease(order.id!)}
-                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm"
+                                        disabled={isLoadingAction}
+                                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm disabled:opacity-50"
                                     >
                                         <Clock className="w-4 h-4" />
                                         <span>Liberar</span>
@@ -392,7 +401,8 @@ const AdminCustomersPage: React.FC = () => {
                                                 closeDetails();
                                                 handleEdit(selectedOrder);
                                             }}
-                                            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+                                            disabled={isLoadingAction}
+                                            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50"
                                         >
                                             <FileText className="w-4 h-4" />
                                             <span>Editar</span>
@@ -402,7 +412,8 @@ const AdminCustomersPage: React.FC = () => {
                                                 closeDetails();
                                                 handleRelease(selectedOrder.id!);
                                             }}
-                                            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors"
+                                            disabled={isLoadingAction}
+                                            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors disabled:opacity-50"
                                         >
                                             <Clock className="w-4 h-4" />
                                             <span>Liberar</span>
