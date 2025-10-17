@@ -29,7 +29,6 @@ const AdminOrdersPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -67,17 +66,18 @@ const AdminOrdersPage: React.FC = () => {
         setRefreshing(false);
     };
 
-    // Filtrar órdenes
+    // Filtrar órdenes - SOLO PENDING
     const filteredOrders = orders.filter(order => {
+        // Solo mostrar órdenes PENDING
+        if (order.status !== 'PENDING') return false;
+        
         const matchesSearch = 
             order.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.phone.includes(searchTerm) ||
             order.customer.email.toLowerCase().includes(searchTerm.toLowerCase());
         
-        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-        
-        return matchesSearch && matchesStatus;
+        return matchesSearch;
     });
 
     // Obtener rifa por ID
@@ -224,8 +224,8 @@ const AdminOrdersPage: React.FC = () => {
                                 <ShoppingCart className="w-6 h-6 text-blue-600" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Gestión de Órdenes</h1>
-                                <p className="text-gray-600">Administra todas las órdenes de boletos</p>
+                                <h1 className="text-2xl font-bold text-gray-900">Apartados Pendientes</h1>
+                                <p className="text-gray-600">Órdenes pendientes de pago</p>
                             </div>
                         </div>
                         
@@ -256,7 +256,7 @@ const AdminOrdersPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-gray-600">Total Órdenes</p>
-                                <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+                                <p className="text-2xl font-bold text-gray-900">{filteredOrders.length}</p>
                             </div>
                             <ShoppingCart className="w-8 h-8 text-blue-600" />
                         </div>
@@ -267,7 +267,7 @@ const AdminOrdersPage: React.FC = () => {
                             <div>
                                 <p className="text-sm text-gray-600">Pendientes</p>
                                 <p className="text-2xl font-bold text-yellow-600">
-                                    {orders.filter(o => o.status === 'PENDING').length}
+                                    {filteredOrders.length}
                                 </p>
                             </div>
                             <Clock className="w-8 h-8 text-yellow-600" />
@@ -315,20 +315,6 @@ const AdminOrdersPage: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center space-x-2">
-                            <Filter className="w-4 h-4 text-gray-400" />
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="all">Todos los estados</option>
-                                <option value="PENDING">Pendientes</option>
-                                <option value="COMPLETED">Completadas</option>
-                                <option value="CANCELLED">Canceladas</option>
-                                <option value="EXPIRED">Expiradas</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
@@ -475,7 +461,7 @@ const AdminOrdersPage: React.FC = () => {
                             <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay órdenes</h3>
                             <p className="text-gray-600">
-                                {searchTerm || statusFilter !== 'all' 
+                                {searchTerm
                                     ? 'No se encontraron órdenes con los filtros aplicados'
                                     : 'Aún no hay órdenes registradas'
                                 }
