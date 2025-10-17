@@ -14,9 +14,7 @@ interface FormData {
     customerPhone: string;
     customerEmail: string;
     customerDistrict: string;
-    status: string;
     notes: string;
-    totalAmount: number;
 }
 
 const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }) => {
@@ -28,9 +26,7 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
             customerPhone: order.customer.phone,
             customerEmail: order.customer.email || '',
             customerDistrict: order.customer.district,
-            status: order.status,
-            notes: order.notes || '',
-            totalAmount: order.totalAmount || order.total || 0
+            notes: order.notes || ''
         }
     });
 
@@ -46,9 +42,7 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                     email: data.customerEmail,
                     district: data.customerDistrict
                 },
-                status: data.status,
                 notes: data.notes,
-                totalAmount: data.totalAmount,
                 updatedAt: new Date()
             };
             
@@ -143,38 +137,23 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                     Información de la Orden
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Estado
-                        </label>
-                        <select
-                            {...register('status', { required: 'El estado es requerido' })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="PENDING">Pendiente</option>
-                            <option value="COMPLETED">Completada</option>
-                            <option value="CANCELLED">Cancelada</option>
-                            <option value="EXPIRED">Expirada</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Total (LPS)
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            {...register('totalAmount', { 
-                                required: 'El total es requerido',
-                                min: { value: 0, message: 'El total debe ser mayor a 0' }
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        {errors.totalAmount && (
-                            <p className="text-red-500 text-sm mt-1">{errors.totalAmount.message}</p>
-                        )}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800">
+                                Información Importante
+                            </h3>
+                            <div className="mt-2 text-sm text-blue-700">
+                                <p>• El <strong>estado</strong> se controla con los botones "Marcar Pagado" y "Liberar"</p>
+                                <p>• El <strong>total</strong> no se puede modificar una vez creada la orden</p>
+                                <p>• Solo puedes editar los datos del cliente y las notas</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -204,6 +183,23 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                         <span className="font-medium text-gray-900">{order.folio}</span>
                     </div>
                     <div className="flex justify-between">
+                        <span className="text-gray-600">Estado:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                            order.status === 'PAID' || order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            order.status === 'RELEASED' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                        }`}>
+                            {order.status}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Total:</span>
+                        <span className="font-bold text-green-600">
+                            ${(order.totalAmount || order.total || 0).toLocaleString()}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
                         <span className="text-gray-600">Boletos:</span>
                         <span className="font-medium text-gray-900">{order.tickets.join(', ')}</span>
                     </div>
@@ -213,12 +209,14 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                             {new Date(order.createdAt).toLocaleString('es-ES')}
                         </span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">Fecha de Expiración:</span>
-                        <span className="font-medium text-gray-900">
-                            {new Date(order.expiresAt).toLocaleString('es-ES')}
-                        </span>
-                    </div>
+                    {order.expiresAt && (
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Fecha de Expiración:</span>
+                            <span className="font-medium text-gray-900">
+                                {new Date(order.expiresAt).toLocaleString('es-ES')}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
