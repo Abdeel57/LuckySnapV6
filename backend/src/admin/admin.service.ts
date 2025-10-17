@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Prisma, type Raffle, type Winner } from '@prisma/client';
@@ -264,35 +264,72 @@ export class AdminService {
   }
 
   async releaseOrder(id: string) {
-    const order = await this.prisma.order.findUnique({ where: { id }, include: { raffle: true, user: true } });
-    if (!order) throw new NotFoundException('Order not found');
-
-    const updated = await this.prisma.order.update({
-      where: { id },
-      data: { status: 'RELEASED' as any, updatedAt: new Date() },
-      include: { raffle: true, user: true },
-    });
-
-    // Ajustar inventario: decrementa vendidos si estaba pagada
-    if (order.status === 'PAID') {
-      await this.prisma.raffle.update({
-        where: { id: order.raffleId },
-        data: { sold: { decrement: order.tickets.length } },
+    try {
+      console.log('📌 Iniciando releaseOrder para ID:', id);
+      
+      // 1. Buscar la orden
+      const order = await this.prisma.order.findUnique({ 
+        where: { id }, 
+        include: { raffle: true, user: true } 
       });
-    }
+      
+      console.log('📌 Orden encontrada:', order?.id);
+      console.log('📌 Status actual:', order?.status);
+      console.log('📌 Tickets:', order?.tickets);
+      console.log('📌 RaffleId:', order?.raffleId);
+      
+      if (!order) {
+        throw new NotFoundException('Orden no encontrada');
+      }
 
-    return {
-      ...updated,
-      customer: {
-        id: updated.user.id,
-        name: updated.user.name || 'Sin nombre',
-        phone: updated.user.phone || 'Sin teléfono',
-        email: updated.user.email || '',
-        district: updated.user.district || 'Sin distrito',
-      },
-      raffleTitle: updated.raffle.title,
-      total: updated.total,
-    };
+      // 2. Validar que existan los datos necesarios
+      if (!order.raffleId || !Array.isArray(order.tickets)) {
+        throw new BadRequestException('Datos de orden inválidos');
+      }
+
+      // 3. Usar transacción para ambas operaciones
+      const [updated] = await this.prisma.$transaction([
+        // Actualizar estado de la orden
+        this.prisma.order.update({
+          where: { id },
+          data: { 
+            status: 'RELEASED' as any, 
+            updatedAt: new Date() 
+          },
+          include: { raffle: true, user: true },
+        }),
+        // Si estaba PAID, devolver boletos al inventario
+        ...(order.status === 'PAID' 
+          ? [this.prisma.raffle.update({
+              where: { id: order.raffleId },
+              data: { sold: { decrement: order.tickets.length } },
+            })]
+          : []
+        ),
+      ]);
+
+      console.log('✅ Orden liberada exitosamente');
+
+      // 4. Retornar con formato correcto
+      return {
+        ...updated,
+        customer: {
+          id: updated.user.id,
+          name: updated.user.name || 'Sin nombre',
+          phone: updated.user.phone || 'Sin teléfono',
+          email: updated.user.email || '',
+          district: updated.user.district || 'Sin distrito',
+        },
+        raffleTitle: updated.raffle.title,
+        total: updated.total,
+      };
+    } catch (error) {
+      console.error('❌ Error en releaseOrder:', error);
+      throw new HttpException(
+        error.message || 'Error al liberar la orden',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async deleteOrder(id: string) {
