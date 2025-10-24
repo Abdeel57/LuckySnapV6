@@ -154,11 +154,14 @@ export class AdminService {
         throw new NotFoundException('Order not found');
       }
 
+      // Filtrar solo los campos que se pueden actualizar directamente
+      const { id: _, raffle, user, customer, raffleTitle, createdAt, ...updateData } = orderData;
+
       // Actualizar la orden
       const updatedOrder = await this.prisma.order.update({
         where: { id },
         data: {
-          ...orderData,
+          ...updateData,
           updatedAt: new Date(),
         },
         include: {
