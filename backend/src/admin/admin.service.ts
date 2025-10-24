@@ -290,30 +290,27 @@ export class AdminService {
         throw new BadRequestException('Datos de orden inválidos');
       }
 
-      // 3. Usar transacción para ambas operaciones
-      const [updated] = await this.prisma.$transaction([
-        // Actualizar estado de la orden
-        this.prisma.order.update({
-          where: { id },
-          data: { 
-            status: 'RELEASED' as any, 
-            updatedAt: new Date() 
-          },
-          include: { raffle: true, user: true },
-        }),
-        // Si estaba PAID, devolver boletos al inventario
-        ...(order.status === 'PAID' 
-          ? [this.prisma.raffle.update({
-              where: { id: order.raffleId },
-              data: { sold: { decrement: order.tickets.length } },
-            })]
-          : []
-        ),
-      ]);
+      // 3. Actualizar estado de la orden
+      const updated = await this.prisma.order.update({
+        where: { id },
+        data: { 
+          status: 'RELEASED' as any, 
+          updatedAt: new Date() 
+        },
+        include: { raffle: true, user: true },
+      });
+
+      // 4. Si estaba PAID, devolver boletos al inventario
+      if (order.status === 'PAID') {
+        await this.prisma.raffle.update({
+          where: { id: order.raffleId },
+          data: { sold: { decrement: order.tickets.length } },
+        });
+      }
 
       console.log('✅ Orden liberada exitosamente');
 
-      // 4. Retornar con formato correcto
+      // 5. Retornar con formato correcto
       return {
         ...updated,
         customer: {
