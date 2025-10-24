@@ -294,7 +294,7 @@ export class AdminService {
       const updated = await this.prisma.order.update({
         where: { id },
         data: { 
-          status: 'RELEASED' as any, 
+          status: 'CANCELLED' as any, // Usar CANCELLED en lugar de RELEASED
           updatedAt: new Date() 
         },
         include: { raffle: true, user: true },
