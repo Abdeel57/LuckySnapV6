@@ -82,20 +82,28 @@ const AdminSettingsPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header compacto */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Configuración</h1>
-                    <p className="text-gray-600 text-sm">Personaliza tu plataforma de rifas</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                        <span className="hidden sm:inline">Actualizar</span>
-                    </button>
+            {/* Header simplificado */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                            <Palette className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
+                            <p className="text-gray-600">Personaliza tu plataforma</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            <span>Actualizar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -248,36 +256,38 @@ const AdminSettingsPage = () => {
                      <button type="button" onClick={() => appendFaq({ id: '', question: '', answer: '' })} className="mt-4 text-sm text-blue-600 font-semibold flex items-center gap-1"><Plus size={14}/>Agregar Pregunta</button>
                 </OptimizedSectionWrapper>
                 
-                {/* Botones de acción */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div className="text-sm text-gray-500">
-                        {isDirty && "Tienes cambios sin guardar"}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <button
-                            type="button"
-                            onClick={() => window.location.reload()}
-                            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting || saving || !isDirty}
-                            className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting || saving ? (
-                                <>
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                    <span>Guardando...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="w-4 h-4" />
-                                    <span>Guardar Configuración</span>
-                                </>
-                            )}
-                        </button>
+                {/* Botones de acción simplificados */}
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-500">
+                            {isDirty && "Tienes cambios sin guardar"}
+                        </div>
+                        <div className="flex items-center space-x-3">
+                            <button
+                                type="button"
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || saving || !isDirty}
+                                className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting || saving ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                        <span>Guardando...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        <span>Guardar</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>

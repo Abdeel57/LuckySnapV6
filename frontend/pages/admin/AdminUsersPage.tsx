@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUsers, createUser, updateUser, deleteUser } from '../../services/api';
 import { AdminUser } from '../../types';
-import { Plus, Edit, Trash2, X, User, Shield, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, X, User, Search } from 'lucide-react';
 import Spinner from '../../components/Spinner';
 
 // Modal for Add/Edit User
@@ -153,18 +153,6 @@ const AdminUsersPage = () => {
         return matchesSearch && matchesRole;
     });
 
-    const getRoleColor = (role: string) => {
-        switch (role) {
-            case 'admin': return 'bg-red-100 text-red-800 border-red-200';
-            case 'user': return 'bg-blue-100 text-blue-800 border-blue-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
-    };
-
-    const getRoleIcon = (role: string) => {
-        return role === 'admin' ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />;
-    };
-
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -178,23 +166,33 @@ const AdminUsersPage = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header compacto */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Usuarios</h1>
-                    <p className="text-gray-600 text-sm">Gestiona los usuarios de tu plataforma</p>
+            {/* Header simplificado */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-3 bg-blue-100 rounded-xl">
+                            <User className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+                            <p className="text-gray-600">Gestiona los usuarios del sistema</p>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => handleOpenModal()}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Nuevo Usuario</span>
+                        </button>
+                    </div>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg text-sm"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Nuevo Usuario</span>
-                </button>
             </div>
 
-            {/* Controles de filtrado */}
-            <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200">
+            {/* Controles simplificados */}
+            <div className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200 mb-6">
                 <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
                     {/* Búsqueda */}
                     <div className="relative flex-1 max-w-md">
@@ -223,58 +221,50 @@ const AdminUsersPage = () => {
                 </div>
             </div>
 
-            {/* Lista de usuarios */}
-            <div className="space-y-4">
+            {/* Lista de usuarios simplificada */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <AnimatePresence>
                     {filteredUsers.map((user) => (
                         <motion.div
                             key={user.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-xl"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow"
                         >
-                            <div className="p-4 md:p-6">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    {/* Información del usuario */}
-                                    <div className="flex items-center space-x-4">
-                                        <div className="p-3 bg-blue-100 rounded-xl">
-                                            {getRoleIcon(user.role)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-lg font-bold text-gray-900 truncate">{user.name}</h3>
-                                            <p className="text-sm text-gray-600 truncate">{user.email}</p>
-                                            <div className="flex items-center space-x-2 mt-2">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(user.role)}`}>
-                                                    {getRoleIcon(user.role)}
-                                                    <span className="ml-1 capitalize">{user.role}</span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Acciones */}
-                                    <div className="flex items-center space-x-2">
-                                        <button
-                                            onClick={() => handleOpenModal(user)}
-                                            className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all duration-200"
-                                            title="Editar usuario"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteUser(user.id)}
-                                            className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all duration-200"
-                                            title="Eliminar usuario"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                            {/* Información esencial */}
+                            <div className="mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 mb-2">{user.name}</h3>
+                                <div className="space-y-1 text-sm text-gray-600">
+                                    <p>📧 {user.email}</p>
+                                    <p className={`font-bold ${user.role === 'admin' ? 'text-red-600' : 'text-blue-600'}`}>
+                                        {user.role === 'admin' ? '🛡️ Administrador' : '👤 Usuario'}
+                                    </p>
                                 </div>
+                            </div>
+
+                            {/* Botones de acción */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => handleOpenModal(user)}
+                                    className="flex items-center justify-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                    <span>Editar</span>
+                                </button>
+                                
+                                <button
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="flex items-center justify-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Eliminar</span>
+                                </button>
                             </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
+            </div>
 
                 {filteredUsers.length === 0 && (
                     <div className="text-center py-12">
@@ -291,7 +281,6 @@ const AdminUsersPage = () => {
                         </button>
                     </div>
                 )}
-            </div>
 
             {/* Modal de formulario */}
             <AnimatePresence>

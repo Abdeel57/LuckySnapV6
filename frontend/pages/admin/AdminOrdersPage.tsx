@@ -3,20 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingCart, 
   Search, 
-  Filter, 
   Eye, 
   CheckCircle, 
   XCircle, 
-  Clock, 
-  DollarSign,
-  User,
-  Calendar,
-  Phone,
-  MapPin,
-  Download,
   RefreshCw,
   FileText,
-  Mail
+  Download
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder } from '../../services/api';
@@ -80,11 +72,6 @@ const AdminOrdersPage: React.FC = () => {
         
         return matchesSearch;
     });
-
-    // Obtener rifa por ID
-    const getRaffleById = (raffleId: string) => {
-        return raffles.find(r => r.id === raffleId);
-    };
 
     // Actualizar estado de orden
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
@@ -188,28 +175,6 @@ const AdminOrdersPage: React.FC = () => {
         }
     };
 
-    // Obtener color del estado
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-            case 'COMPLETED': return 'bg-green-100 text-green-800';
-            case 'CANCELLED': return 'bg-red-100 text-red-800';
-            case 'EXPIRED': return 'bg-gray-100 text-gray-800';
-            default: return 'bg-blue-100 text-blue-800';
-        }
-    };
-
-    // Obtener icono del estado
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'PENDING': return Clock;
-            case 'COMPLETED': return CheckCircle;
-            case 'CANCELLED': return XCircle;
-            case 'EXPIRED': return Clock;
-            default: return Clock;
-        }
-    };
-
     // Exportar órdenes
     const handleExportOrders = () => {
         const dataStr = JSON.stringify(orders, null, 2);
@@ -270,54 +235,6 @@ const AdminOrdersPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Estadísticas */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Total Órdenes</p>
-                                <p className="text-2xl font-bold text-gray-900">{filteredOrders.length}</p>
-                            </div>
-                            <ShoppingCart className="w-8 h-8 text-blue-600" />
-                        </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Pendientes</p>
-                                <p className="text-2xl font-bold text-yellow-600">
-                                    {filteredOrders.length}
-                                </p>
-                            </div>
-                            <Clock className="w-8 h-8 text-yellow-600" />
-                        </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Completadas</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                    {orders.filter(o => o.status === 'COMPLETED').length}
-                                </p>
-                            </div>
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                        </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Total Vendido</p>
-                                <p className="text-2xl font-bold text-green-600">
-                                    ${orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}
-                                </p>
-                            </div>
-                            <DollarSign className="w-8 h-8 text-green-600" />
-                        </div>
-                    </div>
-                </div>
 
                 {/* Filtros */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
@@ -342,9 +259,6 @@ const AdminOrdersPage: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <AnimatePresence>
                         {filteredOrders.map((order) => {
-                            const raffle = getRaffleById(order.raffleId);
-                            const StatusIcon = getStatusIcon(order.status);
-                            
                             return (
                                 <motion.div
                                     key={order.id}
@@ -353,78 +267,17 @@ const AdminOrdersPage: React.FC = () => {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow"
                                 >
-                                    {/* Header con folio y estado */}
-                                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="p-2 bg-blue-100 rounded-xl">
-                                                <ShoppingCart className="w-5 h-5 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-gray-900">{order.folio}</h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {new Date(order.createdAt).toLocaleDateString('es-ES')} - {new Date(order.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                                            <StatusIcon className="w-4 h-4 inline mr-1" />
-                                            {order.status}
-                                        </span>
-                                    </div>
-                                    
-                                    {/* Información del cliente */}
+                                    {/* Información esencial */}
                                     <div className="mb-4">
-                                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
-                                            <User className="w-4 h-4 mr-2 text-gray-500" />
-                                            Cliente
-                                        </h4>
-                                        <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                                            <div className="flex items-center space-x-2">
-                                                <span className="font-medium text-gray-900">{order.customer.name}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <Phone className="w-4 h-4 text-gray-400" />
-                                                <span className="text-gray-700">{order.customer.phone}</span>
-                                            </div>
-                                            {order.customer.email && (
-                                                <div className="flex items-center space-x-2">
-                                                    <Mail className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700">{order.customer.email}</span>
-                                                </div>
-                                            )}
-                                            {order.customer.district && (
-                                                <div className="flex items-center space-x-2">
-                                                    <MapPin className="w-4 h-4 text-gray-400" />
-                                                    <span className="text-gray-700">{order.customer.district}</span>
-                                                </div>
-                                            )}
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">{order.folio}</h3>
+                                        <div className="space-y-1 text-sm text-gray-600">
+                                            <p>👤 {order.customer.name}</p>
+                                            <p>📞 {order.customer.phone}</p>
+                                            <p>🎫 Boletos: {order.tickets.join(', ')}</p>
+                                            <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                         </div>
                                     </div>
-                                    
-                                    {/* Detalles de la orden */}
-                                    <div className="mb-4">
-                                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
-                                            <ShoppingCart className="w-4 h-4 mr-2 text-gray-500" />
-                                            Detalles
-                                        </h4>
-                                        <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600">Rifa:</span>
-                                                <span className="font-medium text-gray-900">{raffle?.title || 'Rifa no encontrada'}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600">Boletos:</span>
-                                                <span className="font-medium text-gray-900">{order.tickets.length} ({order.tickets.join(', ')})</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600">Total:</span>
-                                                <span className="font-bold text-green-600 text-lg">
-                                                    ${(order.totalAmount || order.total || 0).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
+
                                     {/* Botones de acción */}
                                     <div className="grid grid-cols-2 gap-2">
                                         <button
@@ -443,26 +296,13 @@ const AdminOrdersPage: React.FC = () => {
                                             <span>Editar</span>
                                         </button>
                                         
-                                        {order.status === 'PENDING' && (
-                                            <button
-                                                onClick={() => handleUpdateStatus(order.id!, 'COMPLETED')}
-                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm"
-                                            >
-                                                <CheckCircle className="w-4 h-4" />
-                                                <span>Marcar Pagado</span>
-                                            </button>
-                                        )}
-                                        
-                                        {order.status === 'COMPLETED' && (
-                                            <button
-                                                onClick={() => handleReleaseOrder(order.id!)}
-                                                disabled={isLoadingAction}
-                                                className="flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-xl hover:bg-yellow-700 transition-colors text-sm disabled:opacity-50"
-                                            >
-                                                <Clock className="w-4 h-4" />
-                                                <span>Liberar</span>
-                                            </button>
-                                        )}
+                                        <button
+                                            onClick={() => handleUpdateStatus(order.id!, 'COMPLETED')}
+                                            className="flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm"
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>Marcar Pagado</span>
+                                        </button>
                                         
                                         <button
                                             onClick={() => handleDeleteOrder(order.id!)}

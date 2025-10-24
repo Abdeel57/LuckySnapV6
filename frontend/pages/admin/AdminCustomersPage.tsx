@@ -6,10 +6,6 @@ import {
     Eye,
     FileText,
     Clock,
-    DollarSign,
-    Phone,
-    Mail,
-    MapPin,
     RefreshCw,
 } from 'lucide-react';
 import { Order } from '../../types';
@@ -75,11 +71,6 @@ const AdminCustomersPage: React.FC = () => {
             );
         });
     }, [orders, searchTerm]);
-
-    const totalPaid = paidCustomers.length;
-    const totalRevenue = useMemo(() => {
-        return paidCustomers.reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
-    }, [paidCustomers]);
 
     const handleView = (order: Order) => {
         setSelectedOrder(order);
@@ -176,28 +167,6 @@ const AdminCustomersPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Estadísticas */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Total Clientes Pagados</p>
-                                <p className="text-2xl font-bold text-green-600">{totalPaid}</p>
-                            </div>
-                            <User className="w-8 h-8 text-green-600" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Ingresos (pagados)</p>
-                                <p className="text-2xl font-bold text-green-600">${totalRevenue.toLocaleString()}</p>
-                            </div>
-                            <DollarSign className="w-8 h-8 text-green-600" />
-                        </div>
-                    </div>
-                </div>
 
                 {/* Búsqueda */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
@@ -228,57 +197,18 @@ const AdminCustomersPage: React.FC = () => {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-shadow"
                             >
-                                {/* Cabecera */}
-                                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="p-2 bg-blue-100 rounded-xl">
-                                            <User className="w-5 h-5 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-gray-900">{order.customer.name}</h3>
-                                            <p className="text-sm text-gray-500">
-                                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-ES') : ''}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800`}>
-                                        Pagado
-                                    </span>
-                                </div>
-
-                                {/* Datos del cliente */}
-                                <div className="bg-gray-50 rounded-xl p-3 space-y-2 mb-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Phone className="w-4 h-4 text-gray-400" />
-                                        <span className="text-gray-700">{order.customer.phone}</span>
-                                    </div>
-                                    {order.customer.email && (
-                                        <div className="flex items-center space-x-2">
-                                            <Mail className="w-4 h-4 text-gray-400" />
-                                            <span className="text-gray-700">{order.customer.email}</span>
-                                        </div>
-                                    )}
-                                    {order.customer.district && (
-                                        <div className="flex items-center space-x-2">
-                                            <MapPin className="w-4 h-4 text-gray-400" />
-                                            <span className="text-gray-700">{order.customer.district}</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Boletos y monto */}
-                                <div className="bg-gray-50 rounded-xl p-3 space-y-2 mb-4">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Boletos:</span>
-                                        <span className="font-medium text-gray-900">{order.tickets.length} ({order.tickets.join(', ')})</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Monto:</span>
-                                        <span className="font-bold text-green-600 text-lg">${(order.totalAmount || order.total || 0).toLocaleString()}</span>
+                                {/* Información esencial */}
+                                <div className="mb-4">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name}</h3>
+                                    <div className="space-y-1 text-sm text-gray-600">
+                                        <p>📞 {order.customer.phone}</p>
+                                        {order.customer.email && <p>📧 {order.customer.email}</p>}
+                                        <p>🎫 Boletos: {order.tickets.join(', ')}</p>
+                                        <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
 
-                                {/* Acciones */}
+                                {/* Botones de acción */}
                                 <div className="grid grid-cols-3 gap-2">
                                     <button
                                         onClick={() => handleView(order)}
