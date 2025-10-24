@@ -565,13 +565,11 @@ export const getOrders = async (page: number = 1, limit: number = 50, status?: s
         return orders?.map(parseOrderDates) || [];
     } catch (error) {
         console.error('❌ Backend error for orders:', error);
-        return []; // Fallback para evitar crashes
+        // Fallback to local data
+        console.log('🔄 Using local data for orders');
+        const { localApi } = await import('./localApi');
+        return localApi.getOrders();
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for orders');
-    const { localApi } = await import('./localApi');
-    return localApi.getOrders();
 };
 
 export const updateOrder = async (id: string, order: Partial<Order>): Promise<Order> => {
