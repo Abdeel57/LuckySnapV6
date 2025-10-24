@@ -508,24 +508,62 @@ export class AdminService {
   // Settings
   async updateSettings(data: any) {
     try {
-      const { paymentAccounts, faqs, siteName } = data;
+      console.log('🔧 Updating settings with data:', data);
       
-      return await this.prisma.settings.upsert({
+      const { 
+        appearance, 
+        contactInfo, 
+        socialLinks, 
+        paymentAccounts, 
+        faqs 
+      } = data;
+      
+      // Extract appearance data
+      const appearanceData = appearance || {};
+      const contactData = contactInfo || {};
+      const socialData = socialLinks || {};
+      
+      const settingsData = {
+        siteName: appearanceData.siteName || 'Lucky Snap',
+        
+        // Appearance settings
+        logo: appearanceData.logo || null,
+        favicon: appearanceData.favicon || null,
+        logoAnimation: appearanceData.logoAnimation || 'rotate',
+        primaryColor: appearanceData.colors?.backgroundPrimary || '#111827',
+        secondaryColor: appearanceData.colors?.backgroundSecondary || '#1f2937',
+        accentColor: appearanceData.colors?.accent || '#ec4899',
+        actionColor: appearanceData.colors?.action || '#0ea5e9',
+        
+        // Contact info
+        whatsapp: contactData.whatsapp || null,
+        email: contactData.email || null,
+        
+        // Social links
+        facebookUrl: socialData.facebookUrl || null,
+        instagramUrl: socialData.instagramUrl || null,
+        twitterUrl: socialData.twitterUrl || null,
+        
+        // Other settings
+        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
+        faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
+      };
+      
+      console.log('🔧 Settings data to save:', settingsData);
+      
+      const result = await this.prisma.settings.upsert({
         where: { id: 'main_settings' },
-        update: {
-          siteName: siteName || 'Lucky Snap',
-          paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
-          faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
-        },
+        update: settingsData,
         create: {
           id: 'main_settings',
-          siteName: siteName || 'Lucky Snap',
-          paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
-          faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
+          ...settingsData,
         },
       });
+      
+      console.log('✅ Settings updated successfully:', result);
+      return result;
     } catch (error) {
-      console.error('Error updating settings:', error);
+      console.error('❌ Error updating settings:', error);
       throw new Error('Failed to update settings');
     }
   }

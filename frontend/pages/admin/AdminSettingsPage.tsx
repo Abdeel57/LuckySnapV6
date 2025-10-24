@@ -54,16 +54,21 @@ const AdminSettingsPage = () => {
     const onSubmit = async (data: Settings) => {
         setSaving(true);
         try {
+            console.log('🔧 Saving settings:', data);
             const result = await adminUpdateSettings(data);
+            console.log('✅ Settings saved successfully:', result);
             reset(result);
             
             if (result.appearance) {
+                console.log('🎨 Updating appearance in real-time...');
                 updateAppearance(result.appearance);
             }
             
-            alert('Configuración guardada con éxito');
+            // Show success message with more details
+            alert(`✅ Configuración guardada con éxito!\n\nCambios aplicados:\n- Apariencia: ${result.appearance?.siteName || 'N/A'}\n- Contacto: ${result.contactInfo?.whatsapp ? 'WhatsApp configurado' : 'Sin WhatsApp'}\n- Redes: ${Object.values(result.socialLinks || {}).filter(Boolean).length} redes configuradas`);
         } catch (error) {
-            alert('Error al guardar la configuración');
+            console.error('❌ Error saving settings:', error);
+            alert('❌ Error al guardar la configuración. Revisa la consola para más detalles.');
         } finally {
             setSaving(false);
         }
@@ -163,10 +168,86 @@ const AdminSettingsPage = () => {
                                     <Controller
                                         name={`appearance.colors.${colorKey}`}
                                         control={control}
-                                        render={({ field }) => <input type="color" {...field} className="w-full h-10 p-1 border rounded-md" />}
+                                        render={({ field }) => (
+                                            <div className="space-y-2">
+                                                <input 
+                                                    type="color" 
+                                                    {...field} 
+                                                    className="w-full h-10 p-1 border rounded-md cursor-pointer" 
+                                                />
+                                                <div 
+                                                    className="w-full h-8 rounded-md border"
+                                                    style={{ backgroundColor: field.value }}
+                                                />
+                                                <input 
+                                                    type="text" 
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    className="w-full text-xs p-1 border rounded text-center"
+                                                    placeholder="#000000"
+                                                />
+                                            </div>
+                                        )}
                                     />
                                 </div>
                             ))}
+                        </div>
+                        
+                        {/* Preview section */}
+                        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                            <h3 className="text-lg font-semibold mb-3">Vista Previa</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 mb-2 block">Colores principales</label>
+                                    <div className="space-y-2">
+                                        <Controller
+                                            name="appearance.colors.backgroundPrimary"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
+                                                    <span className="text-sm text-gray-600">Fondo Principal</span>
+                                                </div>
+                                            )}
+                                        />
+                                        <Controller
+                                            name="appearance.colors.accent"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
+                                                    <span className="text-sm text-gray-600">Color de Acento</span>
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 mb-2 block">Colores secundarios</label>
+                                    <div className="space-y-2">
+                                        <Controller
+                                            name="appearance.colors.backgroundSecondary"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
+                                                    <span className="text-sm text-gray-600">Fondo Secundario</span>
+                                                </div>
+                                            )}
+                                        />
+                                        <Controller
+                                            name="appearance.colors.action"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
+                                                    <span className="text-sm text-gray-600">Color de Acción</span>
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </OptimizedSectionWrapper>

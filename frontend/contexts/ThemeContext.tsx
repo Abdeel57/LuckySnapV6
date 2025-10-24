@@ -58,11 +58,34 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && appearance?.colors) {
+      console.log('🎨 Applying appearance colors:', appearance.colors);
       const root = document.documentElement;
+      
+      // Apply color variables
       root.style.setProperty('--color-background-primary', hexToRgb(appearance.colors.backgroundPrimary));
       root.style.setProperty('--color-background-secondary', hexToRgb(appearance.colors.backgroundSecondary));
       root.style.setProperty('--color-accent', hexToRgb(appearance.colors.accent));
       root.style.setProperty('--color-action', hexToRgb(appearance.colors.action));
+      
+      // Apply site name to document title
+      if (appearance.siteName) {
+        document.title = appearance.siteName;
+      }
+      
+      // Apply favicon if available
+      if (appearance.favicon) {
+        const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (faviconLink) {
+          faviconLink.href = appearance.favicon;
+        } else {
+          const link = document.createElement('link');
+          link.rel = 'icon';
+          link.href = appearance.favicon;
+          document.head.appendChild(link);
+        }
+      }
+      
+      console.log('✅ Appearance applied successfully');
     }
   }, [appearance, isLoading]);
 

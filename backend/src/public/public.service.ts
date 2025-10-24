@@ -40,46 +40,97 @@ export class PublicService {
 
   async getSettings() {
     try {
+      console.log('🔧 Getting settings from database...');
+      
       const settings = await this.prisma.settings.findUnique({
         where: { id: 'main_settings' },
       });
       
       if (!settings) {
+        console.log('⚠️ No settings found, creating default settings');
         // Create default settings if they don't exist
         const newSettings = await this.prisma.settings.create({
           data: {
             id: 'main_settings',
             siteName: 'Lucky Snap',
+            logoAnimation: 'rotate',
+            primaryColor: '#111827',
+            secondaryColor: '#1f2937',
+            accentColor: '#ec4899',
+            actionColor: '#0ea5e9',
             paymentAccounts: JSON.stringify([]),
             faqs: JSON.stringify([]),
           },
         });
         
-        return {
-          ...newSettings,
-          paymentAccounts: [],
-          faqs: [],
-        };
+        return this.formatSettingsResponse(newSettings);
       }
       
-      // Parse JSON fields for frontend
-      return {
-        ...settings,
-        paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
-        faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
-      };
+      console.log('✅ Settings found:', settings);
+      return this.formatSettingsResponse(settings);
     } catch (error) {
-      console.error('Error getting settings:', error);
+      console.error('❌ Error getting settings:', error);
       // Return default settings if there's an error
       return {
         id: 'main_settings',
         siteName: 'Lucky Snap',
+        appearance: {
+          siteName: 'Lucky Snap',
+          logoAnimation: 'rotate',
+          colors: {
+            backgroundPrimary: '#111827',
+            backgroundSecondary: '#1f2937',
+            accent: '#ec4899',
+            action: '#0ea5e9',
+          }
+        },
+        contactInfo: {
+          whatsapp: '',
+          email: '',
+        },
+        socialLinks: {
+          facebookUrl: '',
+          instagramUrl: '',
+          twitterUrl: '',
+        },
         paymentAccounts: [],
         faqs: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
     }
+  }
+
+  private formatSettingsResponse(settings: any) {
+    return {
+      id: settings.id,
+      siteName: settings.siteName,
+      appearance: {
+        siteName: settings.siteName,
+        logo: settings.logo,
+        favicon: settings.favicon,
+        logoAnimation: settings.logoAnimation || 'rotate',
+        colors: {
+          backgroundPrimary: settings.primaryColor || '#111827',
+          backgroundSecondary: settings.secondaryColor || '#1f2937',
+          accent: settings.accentColor || '#ec4899',
+          action: settings.actionColor || '#0ea5e9',
+        }
+      },
+      contactInfo: {
+        whatsapp: settings.whatsapp || '',
+        email: settings.email || '',
+      },
+      socialLinks: {
+        facebookUrl: settings.facebookUrl || '',
+        instagramUrl: settings.instagramUrl || '',
+        twitterUrl: settings.twitterUrl || '',
+      },
+      paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
+      faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
+      createdAt: settings.createdAt,
+      updatedAt: settings.updatedAt,
+    };
   }
 
   async testDatabaseConnection() {

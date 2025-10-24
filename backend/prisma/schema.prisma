@@ -109,6 +109,26 @@ model AdminUser {
 model Settings {
   id              String   @id @default(cuid())
   siteName        String   @default("Lucky Snap")
+  
+  // Appearance settings
+  logo            String?
+  favicon         String?
+  logoAnimation   String   @default("rotate")
+  primaryColor    String   @default("#111827")
+  secondaryColor  String   @default("#1f2937")
+  accentColor     String   @default("#ec4899")
+  actionColor     String   @default("#0ea5e9")
+  
+  // Contact info
+  whatsapp        String?
+  email           String?
+  
+  // Social links
+  facebookUrl     String?
+  instagramUrl    String?
+  twitterUrl      String?
+  
+  // Other settings
   paymentAccounts Json?
   faqs            Json?
   createdAt       DateTime @default(now())

@@ -40,23 +40,37 @@ export class PublicController {
   }
 
   @Get('settings')
-  getSettings() {
-    // Return hardcoded settings to ensure the admin panel works
-    // This endpoint works without database connection
+  async getSettings() {
     try {
-      return {
-        id: 'main_settings',
-        siteName: 'Lucky Snap',
-        paymentAccounts: [],
-        faqs: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      console.log('🔧 Public controller: Getting settings...');
+      const settings = await this.publicService.getSettings();
+      console.log('✅ Public controller: Settings retrieved successfully');
+      return settings;
     } catch (error) {
+      console.error('❌ Public controller: Error getting settings:', error);
       // Fallback response if anything fails
       return {
         id: 'main_settings',
         siteName: 'Lucky Snap',
+        appearance: {
+          siteName: 'Lucky Snap',
+          logoAnimation: 'rotate',
+          colors: {
+            backgroundPrimary: '#111827',
+            backgroundSecondary: '#1f2937',
+            accent: '#ec4899',
+            action: '#0ea5e9',
+          }
+        },
+        contactInfo: {
+          whatsapp: '',
+          email: '',
+        },
+        socialLinks: {
+          facebookUrl: '',
+          instagramUrl: '',
+          twitterUrl: '',
+        },
         paymentAccounts: [],
         faqs: [],
         createdAt: new Date().toISOString(),
