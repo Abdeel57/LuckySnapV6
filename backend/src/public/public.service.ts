@@ -126,11 +126,35 @@ export class PublicService {
         instagramUrl: settings.instagramUrl || '',
         twitterUrl: settings.twitterUrl || '',
       },
-      paymentAccounts: settings.paymentAccounts ? JSON.parse(settings.paymentAccounts as string) : [],
-      faqs: settings.faqs ? JSON.parse(settings.faqs as string) : [],
+      paymentAccounts: this.parseJsonField(settings.paymentAccounts),
+      faqs: this.parseJsonField(settings.faqs),
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
+  }
+
+  private parseJsonField(field: any) {
+    try {
+      if (!field) return [];
+      
+      // Handle double serialization
+      if (typeof field === 'string') {
+        // Try to parse as JSON
+        const parsed = JSON.parse(field);
+        
+        // If it's still a string, parse again
+        if (typeof parsed === 'string') {
+          return JSON.parse(parsed);
+        }
+        
+        return parsed;
+      }
+      
+      return field;
+    } catch (error) {
+      console.error('❌ Error parsing JSON field:', error);
+      return [];
+    }
   }
 
   async testDatabaseConnection() {

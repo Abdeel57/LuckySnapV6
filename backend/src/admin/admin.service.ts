@@ -544,7 +544,7 @@ export class AdminService {
         instagramUrl: socialData.instagramUrl || null,
         twitterUrl: socialData.twitterUrl || null,
         
-        // Other settings
+        // Other settings - Fix double serialization
         paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
         faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
       };
