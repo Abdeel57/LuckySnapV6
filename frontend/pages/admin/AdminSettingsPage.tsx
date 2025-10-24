@@ -55,7 +55,33 @@ const AdminSettingsPage = () => {
         setSaving(true);
         try {
             console.log('🔧 Saving settings:', data);
-            const result = await adminUpdateSettings(data);
+            
+            // Validate data before sending
+            const validatedData = {
+                ...data,
+                appearance: {
+                    ...data.appearance,
+                    colors: {
+                        backgroundPrimary: data.appearance?.colors?.backgroundPrimary || '#111827',
+                        backgroundSecondary: data.appearance?.colors?.backgroundSecondary || '#1f2937',
+                        accent: data.appearance?.colors?.accent || '#ec4899',
+                        action: data.appearance?.colors?.action || '#0ea5e9',
+                    }
+                },
+                contactInfo: {
+                    whatsapp: data.contactInfo?.whatsapp || '',
+                    email: data.contactInfo?.email || '',
+                },
+                socialLinks: {
+                    facebookUrl: data.socialLinks?.facebookUrl || '',
+                    instagramUrl: data.socialLinks?.instagramUrl || '',
+                    twitterUrl: data.socialLinks?.twitterUrl || '',
+                },
+                paymentAccounts: data.paymentAccounts || [],
+                faqs: data.faqs || [],
+            };
+            
+            const result = await adminUpdateSettings(validatedData);
             console.log('✅ Settings saved successfully:', result);
             reset(result);
             

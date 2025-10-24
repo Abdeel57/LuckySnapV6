@@ -61,31 +61,44 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       console.log('🎨 Applying appearance colors:', appearance.colors);
       const root = document.documentElement;
       
-      // Apply color variables
-      root.style.setProperty('--color-background-primary', hexToRgb(appearance.colors.backgroundPrimary));
-      root.style.setProperty('--color-background-secondary', hexToRgb(appearance.colors.backgroundSecondary));
-      root.style.setProperty('--color-accent', hexToRgb(appearance.colors.accent));
-      root.style.setProperty('--color-action', hexToRgb(appearance.colors.action));
-      
-      // Apply site name to document title
-      if (appearance.siteName) {
-        document.title = appearance.siteName;
-      }
-      
-      // Apply favicon if available
-      if (appearance.favicon) {
-        const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (faviconLink) {
-          faviconLink.href = appearance.favicon;
-        } else {
-          const link = document.createElement('link');
-          link.rel = 'icon';
-          link.href = appearance.favicon;
-          document.head.appendChild(link);
+      try {
+        // Apply color variables with validation
+        const colors = appearance.colors;
+        if (colors.backgroundPrimary) {
+          root.style.setProperty('--color-background-primary', hexToRgb(colors.backgroundPrimary));
         }
+        if (colors.backgroundSecondary) {
+          root.style.setProperty('--color-background-secondary', hexToRgb(colors.backgroundSecondary));
+        }
+        if (colors.accent) {
+          root.style.setProperty('--color-accent', hexToRgb(colors.accent));
+        }
+        if (colors.action) {
+          root.style.setProperty('--color-action', hexToRgb(colors.action));
+        }
+        
+        // Apply site name to document title
+        if (appearance.siteName) {
+          document.title = appearance.siteName;
+        }
+        
+        // Apply favicon if available
+        if (appearance.favicon) {
+          const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+          if (faviconLink) {
+            faviconLink.href = appearance.favicon;
+          } else {
+            const link = document.createElement('link');
+            link.rel = 'icon';
+            link.href = appearance.favicon;
+            document.head.appendChild(link);
+          }
+        }
+        
+        console.log('✅ Appearance applied successfully');
+      } catch (error) {
+        console.error('❌ Error applying appearance:', error);
       }
-      
-      console.log('✅ Appearance applied successfully');
     }
   }, [appearance, isLoading]);
 

@@ -69,8 +69,17 @@ export const getActiveRaffles = async (): Promise<Raffle[]> => {
         const response = await fetch(`${API_URL}/public/raffles/active`);
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Backend raffles loaded successfully');
-            return data;
+            console.log('✅ Backend raffles loaded successfully:', data);
+            
+            // Ensure we return an array
+            if (Array.isArray(data)) {
+                return data.map(parseRaffleDates);
+            } else if (data.raffles && Array.isArray(data.raffles)) {
+                return data.raffles.map(parseRaffleDates);
+            } else {
+                console.log('⚠️ Unexpected data format, returning empty array');
+                return [];
+            }
         } else {
             console.log('❌ Backend returned error status:', response.status);
         }
@@ -137,7 +146,31 @@ export const getOccupiedTickets = async (raffleId: string): Promise<number[]> =>
 };
 
 export const getPastWinners = async (): Promise<Winner[]> => {
-    console.log('Using local data for winners (backend disabled)');
+    try {
+        console.log('Trying backend for past winners...');
+        const response = await fetch(`${API_URL}/public/winners`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Backend winners loaded successfully:', data);
+            
+            // Ensure we return an array
+            if (Array.isArray(data)) {
+                return data.map(parseWinnerDates);
+            } else if (data.winners && Array.isArray(data.winners)) {
+                return data.winners.map(parseWinnerDates);
+            } else {
+                console.log('⚠️ Unexpected winners format, returning empty array');
+                return [];
+            }
+        } else {
+            console.log('❌ Backend returned error status:', response.status);
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+    }
+    
+    // Fallback to local data
+    console.log('🔄 Using local data for winners');
     const { localApi } = await import('./localApi');
     return localApi.getWinners();
 };
