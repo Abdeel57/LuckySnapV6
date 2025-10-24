@@ -688,15 +688,12 @@ export const releaseOrder = async (id: string): Promise<Order> => {
             console.log('❌ Backend returned error status:', response.status);
             const errorText = await response.text();
             console.log('❌ Error details:', errorText);
+            throw new Error(`Backend error: ${response.status} - ${errorText}`);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        throw error; // Re-lanzar el error para que se maneje en el componente
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for release order');
-    const { localApi } = await import('./localApi');
-    return localApi.updateOrder(id, { status: 'RELEASED' });
 };
 
 // Funciones de clientes
