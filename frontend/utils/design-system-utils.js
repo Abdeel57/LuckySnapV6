@@ -381,10 +381,11 @@ class DesignSystemUtils {
   }
 }
 
-// Exportar para uso en módulos
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DesignSystemUtils;
-}
+// Exportar para uso en módulos ES6
+export { DesignSystemUtils };
+
+// Exportar como default también
+export default DesignSystemUtils;
 
 // Hacer disponible globalmente
 if (typeof window !== 'undefined') {
