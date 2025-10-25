@@ -8,7 +8,8 @@ import {
   XCircle, 
   RefreshCw,
   FileText,
-  Download
+  Download,
+  Clock
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder } from '../../services/api';
