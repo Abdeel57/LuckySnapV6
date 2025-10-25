@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../../components/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
 import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
+import ColorPreview from '../../components/admin/ColorPreview';
+import ColorPresets from '../../components/admin/ColorPresets';
 
 const OptimizedSectionWrapper: React.FC<{ 
     title: string, 
@@ -40,6 +42,12 @@ const AdminSettingsPage = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { updateAppearance } = useTheme();
+    const [previewColors, setPreviewColors] = useState({
+        primary: '#0ea5e9',
+        accent: '#ec4899',
+        background: '#111827',
+        secondaryBackground: '#1f2937'
+    });
 
     const { fields: paymentFields, append: appendPayment, remove: removePayment } = useFieldArray({ control, name: "paymentAccounts" });
     const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
@@ -47,9 +55,55 @@ const AdminSettingsPage = () => {
     useEffect(() => {
         getSettings().then(data => {
             reset(data);
+            if (data.appearance?.colors) {
+                setPreviewColors({
+                    primary: data.appearance.colors.action || '#0ea5e9',
+                    accent: data.appearance.colors.accent || '#ec4899',
+                    background: data.appearance.colors.backgroundPrimary || '#111827',
+                    secondaryBackground: data.appearance.colors.backgroundSecondary || '#1f2937'
+                });
+            }
             setLoading(false);
         });
     }, [reset]);
+
+    const handleColorChange = (colors: {
+        primary: string;
+        accent: string;
+        background: string;
+        secondaryBackground: string;
+    }) => {
+        setPreviewColors(colors);
+        // Aplicar cambios en tiempo real
+        updateAppearance({
+            siteName: 'Lucky Snap',
+            logoAnimation: 'rotate',
+            colors: {
+                backgroundPrimary: colors.background,
+                backgroundSecondary: colors.secondaryBackground,
+                accent: colors.accent,
+                action: colors.primary
+            }
+        });
+    };
+
+    const handlePresetSelect = (preset: any) => {
+        setPreviewColors(preset.colors);
+        // Actualizar el formulario
+        reset({
+            ...reset,
+            appearance: {
+                ...reset.appearance,
+                colors: {
+                    backgroundPrimary: preset.colors.background,
+                    backgroundSecondary: preset.colors.secondaryBackground,
+                    accent: preset.colors.accent,
+                    action: preset.colors.primary
+                }
+            }
+        });
+        handleColorChange(preset.colors);
+    };
     
     const onSubmit = async (data: Settings) => {
         setSaving(true);
@@ -139,6 +193,20 @@ const AdminSettingsPage = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Color Presets */}
+                <ColorPresets 
+                    onPresetSelect={handlePresetSelect}
+                    currentColors={previewColors}
+                />
+
+                {/* Color Preview */}
+                <ColorPreview
+                    primaryColor={previewColors.primary}
+                    accentColor={previewColors.accent}
+                    backgroundColor={previewColors.background}
+                    secondaryBackgroundColor={previewColors.secondaryBackground}
+                    onColorChange={handleColorChange}
+                />
 
                 <OptimizedSectionWrapper
                     title="Apariencia General"
