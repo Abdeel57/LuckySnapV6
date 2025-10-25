@@ -108,29 +108,42 @@ const AdminRafflesPage: React.FC = () => {
     const handleSaveRaffle = async (data: Raffle) => {
         try {
             setRefreshing(true);
-            const cleanedData = cleanRaffleData(data);
             
             console.log('💾 Saving raffle:', {
-                id: data.id,
-                title: cleanedData.title,
-                price: cleanedData.price,
-                tickets: cleanedData.tickets
+                isEdit: !!editingRaffle,
+                originalData: data
             });
             
-            if (data.id) {
-                await updateRaffle(data.id!, cleanedData);
-                console.log('✅ Raffle updated successfully');
-                toast.success('¡Rifa actualizada!', 'Los cambios se guardaron correctamente');
+            const cleanedData = cleanRaffleData(data);
+            console.log('✅ Cleaned data:', cleanedData);
+            
+            let savedRaffle: Raffle;
+            if (editingRaffle?.id) {
+                console.log('📝 Updating existing raffle:', editingRaffle.id);
+                savedRaffle = await updateRaffle(editingRaffle.id, cleanedData);
+                toast.success('¡Rifa actualizada!', 'La rifa se actualizó correctamente');
             } else {
-                await createRaffle(cleanedData as Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>);
-                console.log('✅ Raffle created successfully');
+                console.log('🆕 Creating new raffle');
+                savedRaffle = await createRaffle(cleanedData);
                 toast.success('¡Rifa creada!', 'La rifa se creó exitosamente');
             }
-            await refreshRaffles();
+            
+            console.log('✅ Raffle saved successfully:', savedRaffle);
+            
+            // Actualizar la lista local
+            if (editingRaffle?.id) {
+                setRaffles(prev => prev.map(r => r.id === editingRaffle.id ? savedRaffle : r));
+            } else {
+                setRaffles(prev => [savedRaffle, ...prev]);
+            }
+            
             handleCloseModal();
-        } catch (error) {
+        } catch (error: any) {
             console.error('❌ Error saving raffle:', error);
-            toast.error('Error al guardar', error instanceof Error ? error.message : 'No se pudo guardar la rifa');
+            toast.error(
+                'Error al guardar',
+                error.message || 'No se pudo guardar la rifa. Verifica todos los campos e intenta de nuevo.'
+            );
         } finally {
             setRefreshing(false);
         }

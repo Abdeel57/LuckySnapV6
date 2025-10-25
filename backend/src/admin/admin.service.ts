@@ -426,20 +426,82 @@ export class AdminService {
 
   async updateRaffle(id: string, data: Raffle) {
     try {
-      // Filtrar solo los campos válidos del esquema Prisma
+      // Verificar que la rifa existe
+      const existingRaffle = await this.prisma.raffle.findUnique({ 
+        where: { id },
+        include: { orders: true }
+      });
+      
+      if (!existingRaffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Verificar si tiene boletos vendidos
+      const hasSoldTickets = existingRaffle.sold > 0;
+      const hasPaidOrders = existingRaffle.orders.some(order => order.status === 'PAID');
+
+      console.log('📝 Updating raffle:', id, 'hasSoldTickets:', hasSoldTickets, 'hasPaidOrders:', hasPaidOrders);
+
+      // Filtrar campos según reglas de negocio
       const raffleData: any = {};
       
-      if (data.title !== undefined) raffleData.title = data.title;
-      if (data.description !== undefined) raffleData.description = data.description;
-      if (data.imageUrl !== undefined) raffleData.imageUrl = data.imageUrl;
-      if (data.price !== undefined) raffleData.price = data.price;
-      if (data.tickets !== undefined) raffleData.tickets = data.tickets;
-      if (data.sold !== undefined) raffleData.sold = data.sold;
-      if (data.drawDate !== undefined) raffleData.drawDate = new Date(data.drawDate);
-      if (data.status !== undefined) raffleData.status = data.status;
-      if (data.slug !== undefined) raffleData.slug = data.slug;
+      // Campos siempre editables
+      if (data.title !== undefined) {
+        if (!data.title.trim()) {
+          throw new Error('El título es requerido');
+        }
+        raffleData.title = data.title.trim();
+      }
       
-      console.log('📝 Updating raffle:', id, 'with data:', raffleData);
+      if (data.description !== undefined) {
+        raffleData.description = data.description;
+      }
+      
+      if (data.imageUrl !== undefined) {
+        raffleData.imageUrl = data.imageUrl;
+      }
+      
+      if (data.drawDate !== undefined) {
+        raffleData.drawDate = new Date(data.drawDate);
+      }
+      
+      if (data.status !== undefined) {
+        raffleData.status = data.status;
+      }
+      
+      if (data.slug !== undefined) {
+        raffleData.slug = data.slug;
+      }
+
+      // Campos editables solo si NO tiene boletos vendidos/pagados
+      if (hasSoldTickets || hasPaidOrders) {
+        console.log('⚠️ Rifa tiene boletos vendidos/pagados - limitando edición');
+        
+        // Solo permitir editar campos básicos
+        if (data.price !== undefined) {
+          throw new Error('No se puede cambiar el precio cuando ya hay boletos vendidos');
+        }
+        if (data.tickets !== undefined) {
+          throw new Error('No se puede cambiar el número total de boletos cuando ya hay boletos vendidos');
+        }
+      } else {
+        // Sin boletos vendidos - permitir editar todo
+        if (data.price !== undefined) {
+          if (data.price <= 0) {
+            throw new Error('El precio debe ser mayor a 0');
+          }
+          raffleData.price = Number(data.price);
+        }
+        
+        if (data.tickets !== undefined) {
+          if (data.tickets < 1) {
+            throw new Error('El número de boletos debe ser mayor a 0');
+          }
+          raffleData.tickets = Number(data.tickets);
+        }
+      }
+      
+      console.log('📝 Final update data:', raffleData);
       
       const updatedRaffle = await this.prisma.raffle.update({ 
         where: { id }, 
@@ -450,7 +512,10 @@ export class AdminService {
       return updatedRaffle;
     } catch (error) {
       console.error('❌ Error updating raffle:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Error al actualizar la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al actualizar la rifa');
     }
   }
 

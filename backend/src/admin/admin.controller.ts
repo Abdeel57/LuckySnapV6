@@ -134,8 +134,21 @@ export class AdminController {
   }
 
   @Patch('raffles/:id')
-  updateRaffle(@Param('id') id: string, @Body() data: Raffle) {
-    return this.adminService.updateRaffle(id, data);
+  async updateRaffle(@Param('id') id: string, @Body() data: Raffle) {
+    try {
+      const raffle = await this.adminService.updateRaffle(id, data);
+      return {
+        success: true,
+        message: 'Rifa actualizada exitosamente',
+        data: raffle
+      };
+    } catch (error) {
+      console.error('❌ Error in updateRaffle controller:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al actualizar la rifa',
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
   @Delete('raffles/:id')

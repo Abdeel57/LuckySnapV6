@@ -268,26 +268,43 @@ export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'up
 export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise<Raffle> => {
     try {
         console.log('Trying backend for update raffle...');
+        console.log('Update payload:', { id, raffle });
+        
         const response = await fetch(`${API_URL}/admin/raffles/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(raffle),
         });
+        
         if (response.ok) {
-            const data = await response.json();
+            const result = await response.json();
             console.log('✅ Backend raffle updated successfully');
-            return data;
+            
+            // Si la respuesta tiene estructura { success, data }, extraer data
+            if (result.success && result.data) {
+                return result.data;
+            }
+            return result;
         } else {
+            const errorText = await response.text();
             console.log('❌ Backend returned error status:', response.status);
+            console.log('❌ Error details:', errorText);
+            
+            // Intentar parsear el error como JSON
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.message || errorData.error || 'Error al actualizar la rifa');
+            } catch {
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error; // Re-lanzar el error para que se maneje en el componente
+        }
+        throw new Error('Error desconocido al actualizar la rifa');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for update raffle');
-    const { localApi } = await import('./localApi');
-    return localApi.updateRaffle(id, raffle);
 };
 
 export const deleteRaffle = async (id: string): Promise<void> => {
