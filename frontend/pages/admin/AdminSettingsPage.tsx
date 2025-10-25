@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { getSettings, adminUpdateSettings } from '../../services/api';
 import { Settings, AppearanceSettings } from '../../types';
-import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle } from 'lucide-react';
+import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../../components/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
 import ImageUploaderAdvanced from '../../components/admin/ImageUploaderAdvanced';
-import ColorPreview from '../../components/admin/ColorPreview';
-import ColorPresets from '../../components/admin/ColorPresets';
 
 const OptimizedSectionWrapper: React.FC<{ 
     title: string, 
@@ -37,6 +35,171 @@ const OptimizedSectionWrapper: React.FC<{
 const inputClasses = "w-full mt-1 p-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200";
 const labelClasses = "block text-sm font-semibold text-gray-700 mb-2";
 
+// Componente simplificado de preview de colores
+const SimpleColorPreview: React.FC<{
+    primaryColor: string;
+    accentColor: string;
+    backgroundColor: string;
+    secondaryBackgroundColor: string;
+}> = ({ primaryColor, accentColor, backgroundColor, secondaryBackgroundColor }) => {
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+    return (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 rounded-xl">
+                        <Eye className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-900">Vista Previa de Colores</h3>
+                        <p className="text-sm text-gray-600">Ve cómo se verán los cambios</p>
+                    </div>
+                </div>
+                
+                <button
+                    onClick={() => setIsPreviewOpen(!isPreviewOpen)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                    {isPreviewOpen ? 'Ocultar' : 'Mostrar'} Preview
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {isPreviewOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="border rounded-xl p-4 bg-gray-50">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3">Paleta de Colores Actual</h4>
+                            <div className="grid grid-cols-4 gap-3">
+                                <div className="text-center">
+                                    <div 
+                                        className="w-full h-16 rounded-lg border shadow-sm"
+                                        style={{ backgroundColor: primaryColor }}
+                                    ></div>
+                                    <p className="text-xs text-gray-600 mt-1">Primario</p>
+                                </div>
+                                <div className="text-center">
+                                    <div 
+                                        className="w-full h-16 rounded-lg border shadow-sm"
+                                        style={{ backgroundColor: accentColor }}
+                                    ></div>
+                                    <p className="text-xs text-gray-600 mt-1">Acento</p>
+                                </div>
+                                <div className="text-center">
+                                    <div 
+                                        className="w-full h-16 rounded-lg border shadow-sm"
+                                        style={{ backgroundColor: backgroundColor }}
+                                    ></div>
+                                    <p className="text-xs text-gray-600 mt-1">Fondo</p>
+                                </div>
+                                <div className="text-center">
+                                    <div 
+                                        className="w-full h-16 rounded-lg border shadow-sm"
+                                        style={{ backgroundColor: secondaryBackgroundColor }}
+                                    ></div>
+                                    <p className="text-xs text-gray-600 mt-1">Secundario</p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+// Componente simplificado de presets
+const SimpleColorPresets: React.FC<{
+    onPresetSelect: (preset: any) => void;
+}> = ({ onPresetSelect }) => {
+    const presets = [
+        {
+            name: 'Azul Profesional',
+            colors: {
+                primary: '#3B82F6',
+                accent: '#10B981',
+                background: '#111827',
+                secondaryBackground: '#1F2937'
+            }
+        },
+        {
+            name: 'Púrpura Creativo',
+            colors: {
+                primary: '#8B5CF6',
+                accent: '#F59E0B',
+                background: '#111827',
+                secondaryBackground: '#1F2937'
+            }
+        },
+        {
+            name: 'Verde Naturaleza',
+            colors: {
+                primary: '#10B981',
+                accent: '#F59E0B',
+                background: '#111827',
+                secondaryBackground: '#1F2937'
+            }
+        }
+    ];
+
+    return (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+            <div className="flex items-center space-x-3 mb-6">
+                <div className="p-2 bg-indigo-100 rounded-xl">
+                    <Palette className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">Presets de Colores</h3>
+                    <p className="text-sm text-gray-600">Selecciona una paleta predefinida</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {presets.map((preset, index) => (
+                    <motion.div
+                        key={preset.name}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        onClick={() => onPresetSelect(preset)}
+                        className="p-4 rounded-xl border-2 border-gray-200 cursor-pointer transition-all duration-200 hover:border-blue-500 hover:shadow-md"
+                    >
+                        <h4 className="font-semibold text-gray-900 mb-3">{preset.name}</h4>
+                        
+                        <div className="flex space-x-2">
+                            <div 
+                                className="w-8 h-8 rounded-lg border shadow-sm"
+                                style={{ backgroundColor: preset.colors.primary }}
+                                title="Color primario"
+                            ></div>
+                            <div 
+                                className="w-8 h-8 rounded-lg border shadow-sm"
+                                style={{ backgroundColor: preset.colors.accent }}
+                                title="Color de acento"
+                            ></div>
+                            <div 
+                                className="w-8 h-8 rounded-lg border shadow-sm"
+                                style={{ backgroundColor: preset.colors.background }}
+                                title="Color de fondo"
+                            ></div>
+                            <div 
+                                className="w-8 h-8 rounded-lg border shadow-sm"
+                                style={{ backgroundColor: preset.colors.secondaryBackground }}
+                                title="Color secundario"
+                            ></div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const AdminSettingsPage = () => {
     const { register, control, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm<Settings>();
     const [loading, setLoading] = useState(true);
@@ -63,6 +226,9 @@ const AdminSettingsPage = () => {
                     secondaryBackground: data.appearance.colors.backgroundSecondary || '#1f2937'
                 });
             }
+            setLoading(false);
+        }).catch(error => {
+            console.error('Error loading settings:', error);
             setLoading(false);
         });
     }, [reset]);
@@ -144,7 +310,7 @@ const AdminSettingsPage = () => {
                 updateAppearance(result.appearance);
             }
             
-            // Show success message with more details
+            // Show success message
             alert(`✅ Configuración guardada con éxito!\n\nCambios aplicados:\n- Apariencia: ${result.appearance?.siteName || 'N/A'}\n- Contacto: ${result.contactInfo?.whatsapp ? 'WhatsApp configurado' : 'Sin WhatsApp'}\n- Redes: ${Object.values(result.socialLinks || {}).filter(Boolean).length} redes configuradas`);
         } catch (error) {
             console.error('❌ Error saving settings:', error);
@@ -156,9 +322,9 @@ const AdminSettingsPage = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <Spinner />
+                    <Spinner size="lg" />
                     <p className="mt-4 text-gray-600">Cargando configuración...</p>
                 </div>
             </div>
@@ -166,321 +332,326 @@ const AdminSettingsPage = () => {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Header simplificado */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-3 bg-blue-100 rounded-xl">
-                            <Palette className="w-6 h-6 text-blue-600" />
-                        </div>
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-6xl mx-auto px-4 py-8">
+                <div className="mb-8">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-                            <p className="text-gray-600">Personaliza tu plataforma</p>
+                            <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
+                            <p className="text-gray-600 mt-2">Personaliza la apariencia y configuración de tu plataforma</p>
                         </div>
-                    </div>
-                    
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                            <span>Actualizar</span>
-                        </button>
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                <span>Actualizar</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Color Presets */}
-                <ColorPresets 
-                    onPresetSelect={handlePresetSelect}
-                    currentColors={previewColors}
-                />
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Color Presets */}
+                    <SimpleColorPresets onPresetSelect={handlePresetSelect} />
 
-                {/* Color Preview */}
-                <ColorPreview
-                    primaryColor={previewColors.primary}
-                    accentColor={previewColors.accent}
-                    backgroundColor={previewColors.background}
-                    secondaryBackgroundColor={previewColors.secondaryBackground}
-                    onColorChange={handleColorChange}
-                />
+                    {/* Color Preview */}
+                    <SimpleColorPreview
+                        primaryColor={previewColors.primary}
+                        accentColor={previewColors.accent}
+                        backgroundColor={previewColors.background}
+                        secondaryBackgroundColor={previewColors.secondaryBackground}
+                    />
 
-                <OptimizedSectionWrapper
-                    title="Apariencia General"
-                    icon={Palette}
-                    description="Configura la apariencia visual de tu plataforma"
-                >
-                    <div className="space-y-4">
-                         <div>
-                            <label className={labelClasses}>Nombre del Sitio</label>
-                            <input {...register('appearance.siteName', { required: true })} className={inputClasses} />
+                    {/* Appearance Section */}
+                    <OptimizedSectionWrapper
+                        title="Apariencia General"
+                        icon={Palette}
+                        description="Configura la apariencia visual de tu plataforma"
+                    >
+                        <div className="space-y-4">
+                            <div>
+                                <label className={labelClasses}>Nombre del Sitio</label>
+                                <input {...register('appearance.siteName', { required: true })} className={inputClasses} />
+                            </div>
+                            
+                            <div>
+                                <label className={labelClasses}>Logo del Sitio</label>
+                                <Controller
+                                    name="appearance.logo"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <ImageUploaderAdvanced
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar logo del sitio"
+                                            maxWidth={200}
+                                            maxHeight={200}
+                                            quality={0.9}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className={labelClasses}>Favicon</label>
+                                <Controller
+                                    name="appearance.favicon"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <ImageUploaderAdvanced
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccionar favicon"
+                                            maxWidth={32}
+                                            maxHeight={32}
+                                            quality={0.8}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={labelClasses}>Animación del Logo</label>
+                                <select {...register('appearance.logoAnimation')} className={inputClasses}>
+                                    <option value="rotate">Rotación</option>
+                                    <option value="pulse">Pulso</option>
+                                    <option value="bounce">Rebote</option>
+                                    <option value="none">Ninguna</option>
+                                </select>
+                            </div>
                         </div>
-                        
-                        <div>
-                            <label className={labelClasses}>Logo del Sitio</label>
-                            <Controller
-                                name="appearance.logo"
-                                control={control}
-                                render={({ field }) => (
-                                    <ImageUploaderAdvanced
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Seleccionar logo del sitio"
-                                        maxWidth={200}
-                                        maxHeight={200}
-                                        quality={0.9}
-                                    />
-                                )}
-                            />
+                    </OptimizedSectionWrapper>
+
+                    {/* Colors Section */}
+                    <OptimizedSectionWrapper
+                        title="Colores Personalizados"
+                        icon={Palette}
+                        description="Personaliza los colores de tu plataforma"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={labelClasses}>Color Primario</label>
+                                <input 
+                                    type="color" 
+                                    {...register('appearance.colors.action')} 
+                                    className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColors = { ...previewColors, primary: e.target.value };
+                                        setPreviewColors(newColors);
+                                        handleColorChange(newColors);
+                                    }}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Color principal para botones y elementos destacados</p>
+                            </div>
+                            
+                            <div>
+                                <label className={labelClasses}>Color de Acento</label>
+                                <input 
+                                    type="color" 
+                                    {...register('appearance.colors.accent')} 
+                                    className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColors = { ...previewColors, accent: e.target.value };
+                                        setPreviewColors(newColors);
+                                        handleColorChange(newColors);
+                                    }}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Color secundario para elementos especiales</p>
+                            </div>
+                            
+                            <div>
+                                <label className={labelClasses}>Color de Fondo Principal</label>
+                                <input 
+                                    type="color" 
+                                    {...register('appearance.colors.backgroundPrimary')} 
+                                    className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColors = { ...previewColors, background: e.target.value };
+                                        setPreviewColors(newColors);
+                                        handleColorChange(newColors);
+                                    }}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Color de fondo principal de la página</p>
+                            </div>
+                            
+                            <div>
+                                <label className={labelClasses}>Color de Fondo Secundario</label>
+                                <input 
+                                    type="color" 
+                                    {...register('appearance.colors.backgroundSecondary')} 
+                                    className="w-full h-12 border border-gray-300 rounded-xl cursor-pointer"
+                                    onChange={(e) => {
+                                        const newColors = { ...previewColors, secondaryBackground: e.target.value };
+                                        setPreviewColors(newColors);
+                                        handleColorChange(newColors);
+                                    }}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Color de fondo para secciones y cards</p>
+                            </div>
                         </div>
-                        
-                        <div>
-                            <label className={labelClasses}>Favicon</label>
-                            <Controller
-                                name="appearance.favicon"
-                                control={control}
-                                render={({ field }) => (
-                                    <ImageUploaderAdvanced
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Seleccionar favicon"
-                                        maxWidth={32}
-                                        maxHeight={32}
-                                        quality={0.8}
-                                    />
-                                )}
-                            />
+                    </OptimizedSectionWrapper>
+
+                    {/* Contact Info Section */}
+                    <OptimizedSectionWrapper
+                        title="Información de Contacto"
+                        icon={Globe}
+                        description="Configura la información de contacto visible en tu sitio"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={labelClasses}>WhatsApp</label>
+                                <input {...register('contactInfo.whatsapp')} className={inputClasses} placeholder="+50499999999" />
+                            </div>
+                            <div>
+                                <label className={labelClasses}>Email</label>
+                                <input {...register('contactInfo.email')} className={inputClasses} placeholder="contacto@ejemplo.com" />
+                            </div>
                         </div>
-                        
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {(Object.keys(defaultAppearance.colors) as Array<keyof AppearanceSettings['colors']>).map(colorKey => (
-                                <div key={colorKey}>
-                                    <label className={labelClasses}>Color {colorKey}</label>
-                                    <Controller
-                                        name={`appearance.colors.${colorKey}`}
-                                        control={control}
-                                        render={({ field }) => (
-                                            <div className="space-y-2">
-                                                <input 
-                                                    type="color" 
-                                                    {...field} 
-                                                    className="w-full h-10 p-1 border rounded-md cursor-pointer" 
-                                                />
-                                                <div 
-                                                    className="w-full h-8 rounded-md border"
-                                                    style={{ backgroundColor: field.value }}
-                                                />
-                                                <input 
-                                                    type="text" 
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    className="w-full text-xs p-1 border rounded text-center"
-                                                    placeholder="#000000"
-                                                />
-                                            </div>
-                                        )}
-                                    />
+                    </OptimizedSectionWrapper>
+
+                    {/* Social Links Section */}
+                    <OptimizedSectionWrapper
+                        title="Redes Sociales"
+                        icon={Globe}
+                        description="Configura los enlaces a tus redes sociales"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label className={labelClasses}>Facebook</label>
+                                <input {...register('socialLinks.facebookUrl')} className={inputClasses} placeholder="https://facebook.com/tu-pagina" />
+                            </div>
+                            <div>
+                                <label className={labelClasses}>Instagram</label>
+                                <input {...register('socialLinks.instagramUrl')} className={inputClasses} placeholder="https://instagram.com/tu-perfil" />
+                            </div>
+                            <div>
+                                <label className={labelClasses}>Twitter</label>
+                                <input {...register('socialLinks.twitterUrl')} className={inputClasses} placeholder="https://twitter.com/tu-perfil" />
+                            </div>
+                        </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* Payment Accounts Section */}
+                    <OptimizedSectionWrapper
+                        title="Cuentas de Pago"
+                        icon={CreditCard}
+                        description="Configura las cuentas donde los usuarios pueden realizar pagos"
+                    >
+                        <div className="space-y-4">
+                            {paymentFields.map((field, index) => (
+                                <div key={field.id} className="p-4 border border-gray-200 rounded-xl">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className={labelClasses}>Nombre de la Cuenta</label>
+                                            <input {...register(`paymentAccounts.${index}.name`)} className={inputClasses} placeholder="Banco Atlántida" />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Número de Cuenta</label>
+                                            <input {...register(`paymentAccounts.${index}.number`)} className={inputClasses} placeholder="1234567890" />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Tipo</label>
+                                            <select {...register(`paymentAccounts.${index}.type`)} className={inputClasses}>
+                                                <option value="bank">Banco</option>
+                                                <option value="mobile">Móvil</option>
+                                                <option value="crypto">Criptomoneda</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removePayment(index)}
+                                        className="mt-3 flex items-center space-x-2 text-red-600 hover:text-red-700"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Eliminar</span>
+                                    </button>
                                 </div>
                             ))}
-                        </div>
-                        
-                        {/* Preview section */}
-                        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                            <h3 className="text-lg font-semibold mb-3">Vista Previa</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700 mb-2 block">Colores principales</label>
-                                    <div className="space-y-2">
-                                        <Controller
-                                            name="appearance.colors.backgroundPrimary"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
-                                                    <span className="text-sm text-gray-600">Fondo Principal</span>
-                                                </div>
-                                            )}
-                                        />
-                                        <Controller
-                                            name="appearance.colors.accent"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
-                                                    <span className="text-sm text-gray-600">Color de Acento</span>
-                                                </div>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700 mb-2 block">Colores secundarios</label>
-                                    <div className="space-y-2">
-                                        <Controller
-                                            name="appearance.colors.backgroundSecondary"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
-                                                    <span className="text-sm text-gray-600">Fondo Secundario</span>
-                                                </div>
-                                            )}
-                                        />
-                                        <Controller
-                                            name="appearance.colors.action"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: field.value }}></div>
-                                                    <span className="text-sm text-gray-600">Color de Acción</span>
-                                                </div>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </OptimizedSectionWrapper>
-                
-                <OptimizedSectionWrapper
-                    title="Información de Contacto y Redes"
-                    icon={Globe}
-                    description="Configura la información de contacto y redes sociales"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className={labelClasses}>WhatsApp (con código de país, ej. 521...)</label>
-                            <input {...register('contactInfo.whatsapp')} className={inputClasses} />
-                        </div>
-                         <div>
-                            <label className={labelClasses}>Email de Contacto</label>
-                            <input type="email" {...register('contactInfo.email')} className={inputClasses} />
-                        </div>
-                        <div>
-                            <label className={labelClasses}>URL Facebook</label>
-                            <input type="url" {...register('socialLinks.facebookUrl')} className={inputClasses} />
-                        </div>
-                        <div>
-                            <label className={labelClasses}>URL Instagram</label>
-                            <input type="url" {...register('socialLinks.instagramUrl')} className={inputClasses} />
-                        </div>
-                         <div>
-                            <label className={labelClasses}>URL Twitter</label>
-                            <input type="url" {...register('socialLinks.twitterUrl')} className={inputClasses} />
-                        </div>
-                    </div>
-                </OptimizedSectionWrapper>
-
-                <OptimizedSectionWrapper
-                    title="Cuentas de Pago"
-                    icon={CreditCard}
-                    description="Configura las cuentas para recibir pagos"
-                >
-                    <div className="space-y-4">
-                    {paymentFields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-md bg-gray-50/50 space-y-2 relative">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                                <div>
-                                    <label className={labelClasses}>Banco</label>
-                                    <input {...register(`paymentAccounts.${index}.bank` as const, { required: true })} className={inputClasses} />
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>Titular de la cuenta</label>
-                                    <input {...register(`paymentAccounts.${index}.accountHolder` as const, { required: true })} className={inputClasses} />
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>No. de Cuenta</label>
-                                    <input {...register(`paymentAccounts.${index}.accountNumber` as const)} className={inputClasses} />
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>CLABE</label>
-                                    <input {...register(`paymentAccounts.${index}.clabe` as const, { required: true })} className={inputClasses} />
-                                </div>
-                             </div>
-                            <button type="button" onClick={() => removePayment(index)} className="absolute top-2 right-2 p-1.5 text-red-500 hover:bg-red-100 rounded-full"><Trash2 size={16} /></button>
-                        </div>
-                    ))}
-                    </div>
-                    <button type="button" onClick={() => appendPayment({ id: '', bank: '', accountHolder: '', accountNumber: '', clabe: '' })} className="mt-4 text-sm text-blue-600 font-semibold flex items-center gap-1"><Plus size={14}/>Agregar Cuenta</button>
-                </OptimizedSectionWrapper>
-                
-                <OptimizedSectionWrapper
-                    title="Preguntas Frecuentes (FAQ)"
-                    icon={HelpCircle}
-                    description="Mantén informados a tus usuarios con preguntas frecuentes"
-                >
-                    <div className="space-y-4">
-                        {faqFields.map((field, index) => (
-                            <div key={field.id} className="p-4 border rounded-md bg-gray-50/50 relative">
-                                <div>
-                                    <label className={labelClasses}>Pregunta</label>
-                                    <input {...register(`faqs.${index}.question` as const, { required: true })} className={inputClasses} />
-                                </div>
-                                <div className="mt-2">
-                                    <label className={labelClasses}>Respuesta</label>
-                                    <textarea {...register(`faqs.${index}.answer` as const, { required: true })} className={inputClasses} rows={2}/>
-                                </div>
-                                <button type="button" onClick={() => removeFaq(index)} className="absolute top-2 right-2 p-1.5 text-red-500 hover:bg-red-100 rounded-full"><Trash2 size={16} /></button>
-                            </div>
-                        ))}
-                    </div>
-                     <button type="button" onClick={() => appendFaq({ id: '', question: '', answer: '' })} className="mt-4 text-sm text-blue-600 font-semibold flex items-center gap-1"><Plus size={14}/>Agregar Pregunta</button>
-                </OptimizedSectionWrapper>
-                
-                {/* Botones de acción simplificados */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-                    <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-500">
-                            {isDirty && "Tienes cambios sin guardar"}
-                        </div>
-                        <div className="flex items-center space-x-3">
                             <button
                                 type="button"
-                                onClick={() => window.location.reload()}
-                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                                onClick={() => appendPayment({ name: '', number: '', type: 'bank' })}
+                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
                             >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || saving || !isDirty}
-                                className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting || saving ? (
-                                    <>
-                                        <RefreshCw className="w-4 h-4 animate-spin" />
-                                        <span>Guardando...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="w-4 h-4" />
-                                        <span>Guardar</span>
-                                    </>
-                                )}
+                                <Plus className="w-4 h-4" />
+                                <span>Agregar Cuenta de Pago</span>
                             </button>
                         </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* FAQs Section */}
+                    <OptimizedSectionWrapper
+                        title="Preguntas Frecuentes"
+                        icon={HelpCircle}
+                        description="Configura las preguntas frecuentes que aparecerán en tu sitio"
+                    >
+                        <div className="space-y-4">
+                            {faqFields.map((field, index) => (
+                                <div key={field.id} className="p-4 border border-gray-200 rounded-xl">
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className={labelClasses}>Pregunta</label>
+                                            <input {...register(`faqs.${index}.question`)} className={inputClasses} placeholder="¿Cómo funciona el sistema?" />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Respuesta</label>
+                                            <textarea {...register(`faqs.${index}.answer`)} className={inputClasses} rows={3} placeholder="El sistema funciona de la siguiente manera..." />
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeFaq(index)}
+                                        className="mt-3 flex items-center space-x-2 text-red-600 hover:text-red-700"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Eliminar</span>
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => appendFaq({ question: '', answer: '' })}
+                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Agregar Pregunta Frecuente</span>
+                            </button>
+                        </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end space-x-4 pt-6">
+                        <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || saving}
+                            className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                            {saving ? (
+                                <>
+                                    <Spinner size="sm" />
+                                    <span>Guardando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4" />
+                                    <span>Guardar Configuración</span>
+                                </>
+                            )}
+                        </button>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     );
 };
-
-// Dummy data for color keys mapping.
-const defaultAppearance: AppearanceSettings = {
-  siteName: 'Lucky Snap',
-  logoAnimation: 'rotate',
-  colors: {
-    backgroundPrimary: '#111827',
-    backgroundSecondary: '#1f2937',
-    accent: '#ec4899',
-    action: '#0ea5e9',
-  }
-};
-
 
 export default AdminSettingsPage;
