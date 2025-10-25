@@ -17,30 +17,52 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5 }}
-            className="bg-background-secondary rounded-lg overflow-hidden shadow-lg shadow-black/30 border border-slate-700/50 flex flex-col h-full"
+            className="card h-full flex flex-col group"
         >
-            <Link to={`/sorteo/${raffle.slug}`}>
-                <img 
-                    src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
-                    alt={raffle.title} 
-                    className="w-full h-40 md:h-48 object-cover"
-                    onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
-                    }}
-                />
-            </Link>
-            <div className="p-4 md:p-6 flex flex-col flex-grow">
-                <h3 className="text-lg md:text-xl font-bold text-white mb-2 flex-grow line-clamp-2">{raffle.title}</h3>
-                <div className="my-4">
-                    <div className="w-full bg-slate-700 rounded-full h-2.5">
-                        <div className="bg-accent h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+            <Link to={`/sorteo/${raffle.slug}`} className="block">
+                <div className="relative overflow-hidden rounded-xl mb-6">
+                    <img 
+                        src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
+                        alt={raffle.title} 
+                        className="w-full h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
+                        }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute top-4 right-4">
+                        <span className="bg-primary text-inverse px-3 py-1 rounded-full text-sm font-semibold shadow-md">
+                            {progress.toFixed(0)}% vendido
+                        </span>
                     </div>
-                    <p className="text-right text-sm text-slate-400 mt-2">{progress.toFixed(2)}% vendido</p>
                 </div>
+            </Link>
+            
+            <div className="flex flex-col flex-grow">
+                <h3 className="text-xl md:text-2xl font-bold text-primary mb-4 flex-grow line-clamp-2 group-hover:text-link transition-colors">
+                    {raffle.title}
+                </h3>
+                
+                <div className="mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-secondary">Progreso</span>
+                        <span className="text-sm font-semibold text-primary">{raffle.sold}/{raffle.tickets}</span>
+                    </div>
+                    <div className="w-full bg-light rounded-full h-3 overflow-hidden">
+                        <div 
+                            className="h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{ 
+                                width: `${progress}%`,
+                                background: `linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-accent))`
+                            }}
+                        ></div>
+                    </div>
+                </div>
+                
                 <Link
                     to={`/sorteo/${raffle.slug}`}
-                    className="block w-full text-center bg-action text-white font-bold py-3 md:py-3 px-4 md:px-6 rounded-lg hover:opacity-90 transition-opacity mt-auto text-sm md:text-base"
+                    className="btn-primary w-full text-center mt-auto transition-all duration-300 hover:shadow-brand-sm"
                 >
                     Ver Sorteo
                 </Link>

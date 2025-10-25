@@ -38,89 +38,153 @@ const HomePage = () => {
 
     return (
         <PageAnimator>
-            {/* Main Raffle Block */}
+            {/* Hero Section - Main Raffle */}
             {loading ? (
                 <div className="py-16 md:py-20 flex justify-center">
                     <div className="text-center">
                         <Spinner />
-                        <p className="text-slate-400 mt-4">Cargando sorteos...</p>
+                        <p className="text-muted mt-4">Cargando sorteos...</p>
                     </div>
                 </div>
             ) : mainRaffle ? (
-                <div className="container mx-auto px-4 pt-8 md:pt-16 text-center">
-                    <div className="max-w-4xl mx-auto bg-background-secondary rounded-lg p-4 md:p-6 lg:p-8 border border-slate-700/50 shadow-lg shadow-neon-accent">
-                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6">Próximo Gran Sorteo</h2>
-                        <img src={mainRaffle.imageUrl || mainRaffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800'} alt={mainRaffle.title} className="w-full h-48 md:h-64 lg:h-96 object-cover rounded-lg mb-4 md:mb-6"/>
-                        <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-white mb-4">{mainRaffle.title}</h3>
-                        <div className="mb-6 md:mb-8">
-                            <CountdownTimer targetDate={mainRaffle.drawDate} />
+                <section className="py-16 md:py-24">
+                    <div className="container mx-auto px-4 max-w-7xl">
+                        <div className="text-center mb-12">
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary mb-6 leading-tight">
+                                Próximo Gran Sorteo
+                            </h1>
+                            <p className="text-xl md:text-2xl text-secondary max-w-3xl mx-auto leading-relaxed">
+                                Participa en nuestro sorteo más emocionante y gana premios increíbles
+                            </p>
                         </div>
-                        <Link
-                            to={`/sorteo/${mainRaffle.slug}`}
-                            className="inline-block bg-action text-white font-bold py-3 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity text-sm md:text-lg"
-                        >
-                            ¡Participa Ahora!
-                        </Link>
+                        
+                        <div className="card max-w-5xl mx-auto shadow-brand-md">
+                            <div className="relative overflow-hidden rounded-xl mb-8">
+                                <img 
+                                    src={mainRaffle.imageUrl || mainRaffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop'} 
+                                    alt={mainRaffle.title} 
+                                    className="w-full h-64 md:h-80 lg:h-96 object-cover transition-transform duration-500 hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                                <div className="absolute bottom-6 left-6 right-6">
+                                    <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-inverse mb-4 leading-tight">
+                                        {mainRaffle.title}
+                                    </h2>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center mb-8">
+                                <div className="inline-block p-6 bg-secondary/10 rounded-xl border border-brand">
+                                    <CountdownTimer targetDate={mainRaffle.drawDate} />
+                                </div>
+                            </div>
+                            
+                            <div className="text-center">
+                                <Link
+                                    to={`/sorteo/${mainRaffle.slug}`}
+                                    className="btn-primary text-lg px-12 py-4 shadow-brand-sm hover:shadow-brand-md"
+                                >
+                                    ¡Participa Ahora!
+                                </Link>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </section>
             ) : null}
 
             {/* Other Active Raffles */}
             {!loading && otherRaffles.length > 0 && (
-                <div className="container mx-auto px-4 py-12 md:py-16">
-                    <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-6 md:mb-8">Más Sorteos Disponibles</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                        {otherRaffles.map(raffle => (
-                            <RaffleCard key={raffle.id} raffle={raffle} />
-                        ))}
+                <section className="py-16 md:py-24 bg-tertiary">
+                    <div className="container mx-auto px-4 max-w-7xl">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
+                                Más Sorteos Disponibles
+                            </h2>
+                            <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto">
+                                Explora todos nuestros sorteos activos y encuentra el premio perfecto para ti
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {otherRaffles.map(raffle => (
+                                <RaffleCard key={raffle.id} raffle={raffle} />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </section>
             )}
             
-            { !loading && raffles.length === 0 && (
-                <div className="container mx-auto px-4 py-16 md:py-20 text-center">
-                    <div className="bg-background-secondary rounded-lg p-8 md:p-12 border border-slate-700/50 shadow-lg">
-                        <div className="text-6xl mb-4">🎯</div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">¡Próximamente!</h2>
-                        <p className="text-slate-300 text-lg md:text-xl mb-6">Estamos preparando nuevos sorteos increíbles para ti.</p>
-                        <p className="text-slate-400">¡Vuelve pronto para participar!</p>
+            {/* Empty State */}
+            {!loading && raffles.length === 0 && (
+                <section className="py-16 md:py-24">
+                    <div className="container mx-auto px-4 max-w-4xl text-center">
+                        <div className="card max-w-2xl mx-auto">
+                            <div className="text-8xl mb-8">🎯</div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
+                                ¡Próximamente!
+                            </h2>
+                            <p className="text-lg md:text-xl text-secondary mb-8 leading-relaxed">
+                                Estamos preparando nuevos sorteos increíbles para ti.
+                            </p>
+                            <p className="text-muted">
+                                ¡Vuelve pronto para participar!
+                            </p>
+                        </div>
                     </div>
-                </div>
+                </section>
             )}
 
-            <div className="py-8 md:py-12">
+            {/* How It Works Section */}
+            <section className="py-16 md:py-24 bg-secondary/5">
                 <HowItWorks />
-            </div>
+            </section>
 
             {/* Past Winners */}
             {!loading && winners.length > 0 && (
-                <div className="container mx-auto px-4 py-12 md:py-16">
-                    <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-6 md:mb-8">Nuestros Últimos Ganadores</h2>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                        {winners.map(winner => (
-                            <WinnerCard key={winner.id} winner={winner} />
-                        ))}
+                <section className="py-16 md:py-24">
+                    <div className="container mx-auto px-4 max-w-7xl">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
+                                Nuestros Últimos Ganadores
+                            </h2>
+                            <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto">
+                                Conoce a las personas afortunadas que ya han ganado increíbles premios
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {winners.map(winner => (
+                                <WinnerCard key={winner.id} winner={winner} />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </section>
             )}
 
             {/* Empty Winners State */}
             {!loading && winners.length === 0 && (
-                <div className="container mx-auto px-4 py-12 md:py-16">
-                    <div className="text-center">
-                        <div className="bg-background-secondary rounded-lg p-8 md:p-12 border border-slate-700/50 shadow-lg max-w-2xl mx-auto">
-                            <div className="text-6xl mb-4">🏆</div>
-                            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">¡Sé el Primer Ganador!</h2>
-                            <p className="text-slate-300 text-lg md:text-xl mb-6">Aún no tenemos ganadores, pero eso puede cambiar pronto.</p>
-                            <p className="text-slate-400">¡Participa en nuestros sorteos y podrías ser el primero!</p>
+                <section className="py-16 md:py-24 bg-tertiary">
+                    <div className="container mx-auto px-4 max-w-4xl text-center">
+                        <div className="card max-w-2xl mx-auto">
+                            <div className="text-8xl mb-8">🏆</div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
+                                ¡Sé el Primer Ganador!
+                            </h2>
+                            <p className="text-lg md:text-xl text-secondary mb-8 leading-relaxed">
+                                Aún no tenemos ganadores, pero eso puede cambiar pronto.
+                            </p>
+                            <p className="text-muted">
+                                ¡Participa en nuestros sorteos y podrías ser el primero!
+                            </p>
                         </div>
                     </div>
-                </div>
+                </section>
             )}
             
-            <div className="py-8 md:py-12">
+            {/* FAQ Section */}
+            <section className="py-16 md:py-24 bg-secondary/5">
                 <Faq />
-            </div>
+            </section>
 
         </PageAnimator>
     );
