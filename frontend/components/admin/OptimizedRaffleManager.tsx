@@ -10,10 +10,15 @@ import {
     Filter,
     Grid3X3,
     List,
-    MoreVertical
+    MoreVertical,
+    Download,
+    FileText,
+    FileSpreadsheet
 } from 'lucide-react';
 import RaffleAnalytics from './RaffleAnalytics';
 import { Raffle } from '../../types';
+import { downloadTickets } from '../../services/api';
+import { useToast } from '../../hooks/useToast';
 
 interface OptimizedRaffleManagerProps {
     raffles: Raffle[];
@@ -36,6 +41,30 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
     const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'active' | 'finished'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'title' | 'tickets' | 'sold'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [downloading, setDownloading] = useState<string | null>(null);
+    const toast = useToast();
+
+    // Función para descargar boletos
+    const handleDownloadTickets = async (raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel') => {
+        const downloadKey = `${raffleId}-${tipo}-${formato}`;
+        setDownloading(downloadKey);
+        
+        try {
+            await downloadTickets(raffleId, tipo, formato);
+            toast.success(
+                'Descarga exitosa',
+                `Boletos ${tipo} descargados en formato ${formato.toUpperCase()}`
+            );
+        } catch (error: any) {
+            console.error('Error downloading tickets:', error);
+            toast.error(
+                'Error al descargar',
+                error.message || 'No se pudieron descargar los boletos'
+            );
+        } finally {
+            setDownloading(null);
+        }
+    };
 
 
     // Filtrado y ordenamiento
@@ -210,6 +239,60 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
                                     <span>Ver</span>
                                 </button>
                             </div>
+
+                            {/* Botones de descarga */}
+                            {(raffle.sold > 0) && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Descargar Boletos</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {/* Boletos Apartados */}
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-gray-600">Apartados</p>
+                                            <div className="flex gap-1">
+                                                <button
+                                                    onClick={() => handleDownloadTickets(raffle.id, 'apartados', 'csv')}
+                                                    disabled={downloading === `${raffle.id}-apartados-csv`}
+                                                    className="flex items-center justify-center space-x-1 px-2 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-xs disabled:opacity-50"
+                                                >
+                                                    <FileText className="w-3 h-3" />
+                                                    <span>CSV</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDownloadTickets(raffle.id, 'apartados', 'excel')}
+                                                    disabled={downloading === `${raffle.id}-apartados-excel`}
+                                                    className="flex items-center justify-center space-x-1 px-2 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-xs disabled:opacity-50"
+                                                >
+                                                    <FileSpreadsheet className="w-3 h-3" />
+                                                    <span>Excel</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Boletos Pagados */}
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-gray-600">Pagados</p>
+                                            <div className="flex gap-1">
+                                                <button
+                                                    onClick={() => handleDownloadTickets(raffle.id, 'pagados', 'csv')}
+                                                    disabled={downloading === `${raffle.id}-pagados-csv`}
+                                                    className="flex items-center justify-center space-x-1 px-2 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs disabled:opacity-50"
+                                                >
+                                                    <FileText className="w-3 h-3" />
+                                                    <span>CSV</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDownloadTickets(raffle.id, 'pagados', 'excel')}
+                                                    disabled={downloading === `${raffle.id}-pagados-excel`}
+                                                    className="flex items-center justify-center space-x-1 px-2 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs disabled:opacity-50"
+                                                >
+                                                    <FileSpreadsheet className="w-3 h-3" />
+                                                    <span>Excel</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </motion.div>
                     ))}
                 </AnimatePresence>

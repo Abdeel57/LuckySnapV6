@@ -26,14 +26,16 @@
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "^5.17.0",
     "cors": "^2.8.5",
+    "csv-writer": "^1.6.0",
     "date-fns": "^4.1.0",
     "express": "^5.1.0",
     "node-fetch": "^3.3.2",
     "pg": "^8.12.0",
-    "uuid": "^10.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "typescript": "^5.1.3"
+    "typescript": "^5.1.3",
+    "uuid": "^10.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/schematics": "^10.0.0",

@@ -307,6 +307,54 @@ export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise
     }
 };
 
+export const downloadTickets = async (raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel' = 'csv'): Promise<void> => {
+    try {
+        console.log('📥 Downloading tickets:', { raffleId, tipo, formato });
+        
+        const response = await fetch(`${API_URL}/admin/raffles/${raffleId}/boletos/${tipo}/descargar?formato=${formato}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Tickets downloaded successfully');
+            
+            // Crear y descargar archivo
+            const blob = formato === 'csv' 
+                ? new Blob([result.content], { type: result.contentType })
+                : new Blob([Buffer.from(result.content, 'base64')], { type: result.contentType });
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = result.filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+        } else {
+            const errorText = await response.text();
+            console.log('❌ Backend returned error status:', response.status);
+            console.log('❌ Error details:', errorText);
+            
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.message || errorData.error || 'Error al descargar boletos');
+            } catch {
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Error desconocido al descargar boletos');
+    }
+};
+
 export const deleteRaffle = async (id: string): Promise<void> => {
     try {
         console.log('Trying backend for delete raffle...');

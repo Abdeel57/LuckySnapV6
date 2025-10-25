@@ -151,9 +151,38 @@ export class AdminController {
     }
   }
 
-  @Delete('raffles/:id')
-  deleteRaffle(@Param('id') id: string) {
-    return this.adminService.deleteRaffle(id);
+  @Get('raffles/:id/boletos/apartados/descargar')
+  async downloadApartadosTickets(
+    @Param('id') raffleId: string,
+    @Query('formato') formato: 'csv' | 'excel' = 'csv'
+  ) {
+    try {
+      const result = await this.adminService.downloadTickets(raffleId, 'apartados', formato);
+      return result;
+    } catch (error) {
+      console.error('❌ Error downloading apartados tickets:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al descargar boletos apartados',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get('raffles/:id/boletos/pagados/descargar')
+  async downloadPagadosTickets(
+    @Param('id') raffleId: string,
+    @Query('formato') formato: 'csv' | 'excel' = 'csv'
+  ) {
+    try {
+      const result = await this.adminService.downloadTickets(raffleId, 'pagados', formato);
+      return result;
+    } catch (error) {
+      console.error('❌ Error downloading pagados tickets:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al descargar boletos pagados',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   
   // Winners

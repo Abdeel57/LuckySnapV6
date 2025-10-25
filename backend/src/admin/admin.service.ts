@@ -519,8 +519,162 @@ export class AdminService {
     }
   }
 
-  async deleteRaffle(id: string) {
-    return this.prisma.raffle.delete({ where: { id } });
+  async downloadTickets(raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel'): Promise<{ filename: string; content: string; contentType: string }> {
+    try {
+      console.log('📥 Downloading tickets:', { raffleId, tipo, formato });
+
+      // Verificar que la rifa existe
+      const raffle = await this.prisma.raffle.findUnique({ 
+        where: { id: raffleId },
+        select: { id: true, title: true }
+      });
+      
+      if (!raffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Obtener órdenes según el tipo
+      const statusFilter = tipo === 'apartados' ? 'PENDING' : 'PAID';
+      const orders = await this.prisma.order.findMany({
+        where: { 
+          raffleId,
+          status: statusFilter
+        },
+        include: {
+          user: true,
+          raffle: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      console.log(`📊 Found ${orders.length} orders with status ${statusFilter}`);
+
+      // Preparar datos para exportación
+      const exportData = [];
+      for (const order of orders) {
+        for (const ticketNumber of order.tickets) {
+          exportData.push({
+            numero_boleto: ticketNumber,
+            cliente: order.user.name || 'Sin nombre',
+            telefono: order.user.phone || 'Sin teléfono',
+            email: order.user.email || 'Sin email',
+            fecha_apartado: order.createdAt.toISOString().split('T')[0],
+            fecha_pago: tipo === 'pagados' ? order.updatedAt.toISOString().split('T')[0] : 'Pendiente',
+            metodo_pago: order.paymentMethod || 'No especificado',
+            monto: order.total,
+            folio: order.folio,
+            expira: order.expiresAt.toISOString().split('T')[0]
+          });
+        }
+      }
+
+      if (exportData.length === 0) {
+        throw new Error(`No hay boletos ${tipo} para esta rifa`);
+      }
+
+      // Generar archivo según formato
+      if (formato === 'csv') {
+        return this.generateCSV(exportData, raffle.title, tipo);
+      } else {
+        return this.generateExcel(exportData, raffle.title, tipo);
+      }
+
+    } catch (error) {
+      console.error('❌ Error downloading tickets:', error);
+      throw error;
+    }
+  }
+
+  private generateCSV(data: any[], raffleTitle: string, tipo: string) {
+    const headers = [
+      'Número Boleto',
+      'Cliente', 
+      'Teléfono',
+      'Email',
+      'Fecha Apartado',
+      'Fecha Pago',
+      'Método Pago',
+      'Monto',
+      'Folio',
+      'Expira'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => [
+        row.numero_boleto,
+        `"${row.cliente}"`,
+        `"${row.telefono}"`,
+        `"${row.email}"`,
+        row.fecha_apartado,
+        row.fecha_pago,
+        `"${row.metodo_pago}"`,
+        row.monto,
+        `"${row.folio}"`,
+        row.expira
+      ].join(','))
+    ].join('\n');
+
+    const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    return {
+      filename,
+      content: csvContent,
+      contentType: 'text/csv'
+    };
+  }
+
+  private generateExcel(data: any[], raffleTitle: string, tipo: string) {
+    const XLSX = require('xlsx');
+    
+    // Crear workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Preparar datos para Excel
+    const excelData = data.map(row => ({
+      'Número Boleto': row.numero_boleto,
+      'Cliente': row.cliente,
+      'Teléfono': row.telefono,
+      'Email': row.email,
+      'Fecha Apartado': row.fecha_apartado,
+      'Fecha Pago': row.fecha_pago,
+      'Método Pago': row.metodo_pago,
+      'Monto': row.monto,
+      'Folio': row.folio,
+      'Expira': row.expira
+    }));
+
+    // Crear worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    
+    // Ajustar ancho de columnas
+    const colWidths = [
+      { wch: 15 }, // Número Boleto
+      { wch: 20 }, // Cliente
+      { wch: 15 }, // Teléfono
+      { wch: 25 }, // Email
+      { wch: 15 }, // Fecha Apartado
+      { wch: 15 }, // Fecha Pago
+      { wch: 15 }, // Método Pago
+      { wch: 12 }, // Monto
+      { wch: 20 }, // Folio
+      { wch: 15 }  // Expira
+    ];
+    ws['!cols'] = colWidths;
+
+    // Agregar worksheet al workbook
+    XLSX.utils.book_append_sheet(wb, ws, `Boletos ${tipo}`);
+    
+    // Generar buffer
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    
+    const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    return {
+      filename,
+      content: buffer.toString('base64'),
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
   }
 
   // Winners
