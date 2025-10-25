@@ -544,9 +544,9 @@ export class AdminService {
         instagramUrl: socialData.instagramUrl || null,
         twitterUrl: socialData.twitterUrl || null,
         
-        // Other settings - Fix double serialization
-        paymentAccounts: paymentAccounts ? JSON.stringify(paymentAccounts) : JSON.stringify([]),
-        faqs: faqs ? JSON.stringify(faqs) : JSON.stringify([]),
+        // Other settings - Ensure proper serialization
+        paymentAccounts: this.safeStringify(paymentAccounts),
+        faqs: this.safeStringify(faqs),
       };
       
       console.log('🔧 Settings data to save:', settingsData);
@@ -565,6 +565,28 @@ export class AdminService {
     } catch (error) {
       console.error('❌ Error updating settings:', error);
       throw new Error('Failed to update settings');
+    }
+  }
+
+  private safeStringify(data: any): string {
+    try {
+      if (!data) return JSON.stringify([]);
+      
+      // If it's already a string, check if it's valid JSON
+      if (typeof data === 'string') {
+        try {
+          JSON.parse(data);
+          return data; // It's already valid JSON string
+        } catch {
+          return JSON.stringify([]); // Invalid JSON string, return empty array
+        }
+      }
+      
+      // If it's an object/array, stringify it
+      return JSON.stringify(data);
+    } catch (error) {
+      console.error('❌ Error in safeStringify:', error);
+      return JSON.stringify([]);
     }
   }
 }
