@@ -1,3 +1,6 @@
+/* Importar sistema de Design Tokens */
+@import './styles/design-tokens.css';
+
 /* Mobile optimization utilities */
 .line-clamp-2 {
   display: -webkit-box;
