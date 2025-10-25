@@ -119,36 +119,147 @@ const PurchasePage = () => {
 
     if (createdOrder) {
         return (
-             <PageAnimator>
-                <div className="container mx-auto px-4 py-12 max-w-2xl text-center">
-                    <h1 className="text-3xl font-bold text-accent mb-4">¡Tu Apartado ha sido Creado!</h1>
-                    <p className="text-slate-300 mb-8">Utiliza el siguiente folio como concepto de pago al realizar tu transferencia.</p>
-                     <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 mb-8">
-                        <p className="text-slate-400 text-sm">Folio / Concepto de Pago</p>
-                        <p className="text-4xl font-mono text-white tracking-widest">{createdOrder.folio}</p>
+            <PageAnimator>
+                <div className="container mx-auto px-4 py-12 max-w-4xl">
+                    {/* Header de éxito */}
+                    <div className="text-center mb-8">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-6">
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h1 className="text-4xl font-bold text-white mb-4">¡Apartado Creado Exitosamente!</h1>
+                        <p className="text-slate-300 text-lg">Tu folio ha sido generado. Realiza el pago usando la información a continuación.</p>
                     </div>
-                    
-                    <div className="text-left mb-8">
-                        <h2 className="text-xl font-bold text-white mb-4">Cuentas para Realizar tu Pago</h2>
-                         <div className="space-y-4">
-                            {paymentAccounts.map(acc => (
-                                <div key={acc.id} className="bg-background-secondary p-4 rounded-lg text-sm">
-                                    <p className="font-bold text-white">{acc.bank}</p>
-                                    <p><span className="text-slate-400">Titular:</span> {acc.accountHolder}</p>
-                                    <p><span className="text-slate-400">CLABE:</span> {acc.clabe}</p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Columna izquierda - Información del folio */}
+                        <div className="space-y-6">
+                            {/* Folio destacado */}
+                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-8 rounded-2xl border border-slate-700/50 shadow-xl text-center">
+                                <h2 className="text-xl font-bold text-white mb-4">Tu Folio de Pago</h2>
+                                <div className="bg-background-primary p-6 rounded-xl border border-slate-700/50 mb-4">
+                                    <p className="text-slate-400 text-sm mb-2">Concepto de Pago</p>
+                                    <p className="text-5xl font-mono text-accent tracking-widest font-bold">{createdOrder.folio}</p>
                                 </div>
-                            ))}
+                                <p className="text-slate-300 text-sm">Usa este folio como concepto al realizar tu transferencia</p>
+                            </div>
+
+                            {/* Información del pedido */}
+                            <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                                    <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Detalles del Pedido
+                                </h3>
+                                
+                                <div className="space-y-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-300">Sorteo:</span>
+                                        <span className="text-white font-semibold">{raffle.title}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-300">Boletos:</span>
+                                        <span className="text-white font-semibold">{initialTickets.length}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-300">Total:</span>
+                                        <span className="text-accent font-bold text-lg">LPS {total.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-300">Estado:</span>
+                                        <span className="text-yellow-400 font-semibold">Pendiente de Pago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Columna derecha - Información de pago */}
+                        <div className="space-y-6">
+                            {/* Cuentas de pago */}
+                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                                <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                                    <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                    </svg>
+                                    Cuentas para Transferencia
+                                </h3>
+                                
+                                <div className="space-y-4">
+                                    {paymentAccounts.map(acc => (
+                                        <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h4 className="font-bold text-white">{acc.bank}</h4>
+                                                <span className="bg-accent/20 text-accent px-2 py-1 rounded-full text-xs font-semibold">
+                                                    {acc.type || 'Transferencia'}
+                                                </span>
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Titular:</span>
+                                                    <span className="text-white font-semibold">{acc.accountHolder}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">CLABE:</span>
+                                                    <span className="text-white font-mono">{acc.clabe}</span>
+                                                </div>
+                                                {acc.accountNumber && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-slate-400">No. Cuenta:</span>
+                                                        <span className="text-white font-mono">{acc.accountNumber}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Botón de WhatsApp */}
+                            <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                                <h4 className="text-lg font-bold text-white mb-4">Enviar Comprobante</h4>
+                                <p className="text-slate-300 text-sm mb-4">
+                                    Una vez realizado el pago, envía tu comprobante por WhatsApp para confirmar tu apartado.
+                                </p>
+                                
+                                <a 
+                                    href={`https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=Hola!%20Quiero%20enviar%20mi%20comprobante%20para%20el%20folio%20${createdOrder.folio}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                                    </svg>
+                                    Enviar por WhatsApp
+                                </a>
+                            </div>
+
+                            {/* Instrucciones */}
+                            <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                                <h4 className="text-lg font-bold text-white mb-4">Instrucciones de Pago</h4>
+                                <div className="space-y-3 text-sm text-slate-300">
+                                    <div className="flex items-start">
+                                        <span className="bg-accent text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</span>
+                                        <span>Realiza una transferencia bancaria por el monto exacto: <strong className="text-accent">LPS {total.toFixed(2)}</strong></span>
+                                    </div>
+                                    <div className="flex items-start">
+                                        <span className="bg-accent text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</span>
+                                        <span>Usa el folio <strong className="text-accent">{createdOrder.folio}</strong> como concepto de pago</span>
+                                    </div>
+                                    <div className="flex items-start">
+                                        <span className="bg-accent text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</span>
+                                        <span>Envía tu comprobante por WhatsApp para confirmar</span>
+                                    </div>
+                                    <div className="flex items-start">
+                                        <span className="bg-accent text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</span>
+                                        <span>Recibirás confirmación de tu apartado en minutos</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <a 
-                        href={`https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=Hola!%20Quiero%20enviar%20mi%20comprobante%20para%20el%20folio%20${createdOrder.folio}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block w-full text-center bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
-                    >
-                       Enviar Comprobante de Pago
-                    </a>
                 </div>
             </PageAnimator>
         );
@@ -156,79 +267,219 @@ const PurchasePage = () => {
     
     return (
         <PageAnimator>
-             <div className="container mx-auto px-4 py-12 max-w-2xl">
-                <h1 className="text-3xl font-bold text-center text-white mb-2">Confirmar Compra</h1>
-                <p className="text-center text-slate-300 mb-8">Estás a un paso de apartar tus boletos para: {raffle.title}</p>
-                 <div className="bg-background-secondary p-4 md:p-8 rounded-lg border border-slate-700/50 shadow-lg">
-                    <RaffleGallery 
-                        images={(() => {
-                            // Priorizar galería si existe, sino usar heroImage, sino imagen por defecto
-                            if (raffle.gallery && raffle.gallery.length > 0) {
-                                console.log('🖼️ Using gallery images:', raffle.gallery.length);
-                                return raffle.gallery;
-                            } else if (raffle.heroImage) {
-                                console.log('🖼️ Using heroImage:', raffle.heroImage.substring(0, 50) + '...');
-                                return [raffle.heroImage];
-                            } else {
-                                console.log('🖼️ Using default image');
-                                return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
-                            }
-                        })()}
-                        title={raffle.title}
-                        className="w-full max-w-md mx-auto mb-6"
-                    />
-                    <div className="mb-4 md:mb-6">
-                        <h3 className="text-base md:text-lg font-bold text-white mb-3">Boletos Seleccionados</h3>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {initialTickets.map(t => <span key={t} className="bg-background-primary px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-mono">{t}</span>)}
+            <div className="container mx-auto px-4 py-8 max-w-6xl">
+                {/* Header mejorado */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-accent to-action rounded-full mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                    </div>
+                    <h1 className="text-4xl font-bold text-white mb-2">Confirmar tu Compra</h1>
+                    <p className="text-slate-300 text-lg">Estás a un paso de apartar tus boletos</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Columna izquierda - Información del producto */}
+                    <div className="space-y-6">
+                        {/* Información del sorteo */}
+                        <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                            <h2 className="text-2xl font-bold text-white mb-4">{raffle.title}</h2>
+                            
+                            {/* Galería mejorada */}
+                            <div className="mb-6">
+                                <RaffleGallery 
+                                    images={(() => {
+                                        if (raffle.gallery && raffle.gallery.length > 0) {
+                                            return raffle.gallery;
+                                        } else if (raffle.heroImage) {
+                                            return [raffle.heroImage];
+                                        } else {
+                                            return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
+                                        }
+                                    })()}
+                                    title={raffle.title}
+                                    className="w-full h-64"
+                                />
+                            </div>
+
+                            {/* Información del sorteo */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="bg-background-primary/50 p-3 rounded-lg">
+                                    <p className="text-slate-400">Fecha del sorteo</p>
+                                    <p className="text-white font-semibold">
+                                        {raffle.drawDate ? new Date(raffle.drawDate).toLocaleDateString('es-HN') : 'Por definir'}
+                                    </p>
+                                </div>
+                                <div className="bg-background-primary/50 p-3 rounded-lg">
+                                    <p className="text-slate-400">Precio por boleto</p>
+                                    <p className="text-accent font-bold text-lg">LPS {pricePerTicket.toFixed(2)}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-background-primary rounded-lg p-4 border border-slate-700/50">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-slate-300">Precio por boleto:</span>
-                                <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
+
+                        {/* Boletos seleccionados */}
+                        <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                </svg>
+                                Tus Boletos
+                            </h3>
+                            
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {initialTickets.map(t => (
+                                    <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
+                                        #{t.toString().padStart(3, '0')}
+                                    </span>
+                                ))}
                             </div>
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-slate-300">Cantidad:</span>
-                                <span className="text-white font-bold">{initialTickets.length} boleto(s)</span>
-                            </div>
-                            <div className="border-t border-slate-700/50 pt-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-white font-bold text-lg">Total:</span>
-                                    <span className="text-accent font-bold text-xl">LPS {total.toFixed(2)}</span>
+                            
+                            <div className="bg-background-primary rounded-xl p-4 border border-slate-700/50">
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-slate-300">Cantidad de boletos:</span>
+                                    <span className="text-white font-bold text-lg">{initialTickets.length}</span>
+                                </div>
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-slate-300">Precio unitario:</span>
+                                    <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
+                                </div>
+                                <div className="border-t border-slate-700/50 pt-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-white font-bold text-xl">Total a pagar:</span>
+                                        <span className="text-accent font-bold text-2xl">LPS {total.toFixed(2)}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <h3 className="text-base md:text-lg font-bold text-white border-t border-slate-700/50 pt-4 md:pt-6">Completa tus datos</h3>
-                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-white mb-1">Nombre Completo</label>
-                            <input id="name" {...register('name', { required: 'El nombre es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
-                            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+
+                    {/* Columna derecha - Formulario */}
+                    <div className="space-y-6">
+                        {/* Formulario mejorado */}
+                        <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                            <h3 className="text-xl font-bold text-white mb-6 flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Información Personal
+                            </h3>
+                            
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                                <div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+                                        Nombre Completo *
+                                    </label>
+                                    <input 
+                                        id="name" 
+                                        {...register('name', { required: 'El nombre es requerido' })} 
+                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                        placeholder="Tu nombre completo"
+                                    />
+                                    {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
+                                </div>
+                                
+                                <div>
+                                    <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
+                                        Teléfono *
+                                    </label>
+                                    <input 
+                                        id="phone" 
+                                        type="tel" 
+                                        {...register('phone', { 
+                                            required: 'El teléfono es requerido', 
+                                            pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos'} 
+                                        })} 
+                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                        placeholder="12345678"
+                                    />
+                                    {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>}
+                                </div>
+                                
+                                <div>
+                                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                                        Email (opcional)
+                                    </label>
+                                    <input 
+                                        id="email" 
+                                        type="email" 
+                                        {...register('email', { 
+                                            pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Ingresa un email válido'} 
+                                        })} 
+                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                        placeholder="tu@email.com"
+                                    />
+                                    {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
+                                </div>
+                                
+                                <div>
+                                    <label htmlFor="district" className="block text-sm font-medium text-white mb-2">
+                                        Distrito *
+                                    </label>
+                                    <input 
+                                        id="district" 
+                                        {...register('district', { required: 'El distrito es requerido' })} 
+                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                        placeholder="Tu distrito"
+                                    />
+                                    {errors.district && <p className="text-red-400 text-sm mt-1">{errors.district.message}</p>}
+                                </div>
+                                
+                                {/* Botón mejorado */}
+                                <div className="pt-6">
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmitting || initialTickets.length === 0} 
+                                        className="w-full bg-gradient-to-r from-action to-accent text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                                    >
+                                        {isSubmitting ? (
+                                            <div className="flex items-center justify-center">
+                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Generando folio...
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center">
+                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                                </svg>
+                                                Generar Folio - LPS {total.toFixed(2)}
+                                            </div>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <div>
-                            <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">Teléfono (8 dígitos)</label>
-                            <input id="phone" type="tel" {...register('phone', { required: 'El teléfono es requerido', pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
-                            {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>}
+
+                        {/* Elementos de confianza */}
+                        <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                            <h4 className="text-lg font-bold text-white mb-4">¿Por qué elegirnos?</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-slate-300 text-sm">Transacciones 100% seguras</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span className="text-slate-300 text-sm">Confirmación inmediata</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
+                                    </svg>
+                                    <span className="text-slate-300 text-sm">Soporte 24/7</span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-white mb-1">Email (opcional)</label>
-                            <input id="email" type="email" {...register('email', { pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Ingresa un email válido' } })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
-                            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
-                        </div>
-                        <div>
-                            <label htmlFor="district" className="block text-sm font-medium text-white mb-1">Distrito</label>
-                            <input id="district" {...register('district', { required: 'El distrito es requerido' })} className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 md:py-2 px-3 text-white focus:ring-accent focus:border-accent text-base" />
-                            {errors.district && <p className="text-red-400 text-xs mt-1">{errors.district.message}</p>}
-                        </div>
-                         <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-slate-700 text-center">
-                            <button type="submit" disabled={isSubmitting || initialTickets.length === 0} className="w-full bg-action text-white font-bold py-4 md:py-3 px-6 md:px-12 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-base md:text-base">
-                                {isSubmitting ? 'Apartando...' : `Generar Folio para Pagar - LPS ${total.toFixed(2)}`}
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-             </div>
+            </div>
         </PageAnimator>
     );
 };
