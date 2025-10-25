@@ -12,7 +12,6 @@ import metaPixelService from '../services/metaPixel';
 type FormData = {
     name: string;
     phone: string;
-    email: string;
     department: string;
 };
 
@@ -102,7 +101,7 @@ const PurchasePage = () => {
             const userData = {
                 name: data.name,
                 phone: data.phone,
-                email: data.email || '',
+                email: '',
                 district: data.department
             };
             
@@ -416,22 +415,6 @@ const PurchasePage = () => {
                                         placeholder="12345678"
                                     />
                                     {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>}
-                                </div>
-                                
-                                <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                                        Email (opcional)
-                                    </label>
-                                    <input 
-                                        id="email" 
-                                        type="email" 
-                                        {...register('email', { 
-                                            pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Ingresa un email válido'} 
-                                        })} 
-                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
-                                        placeholder="tu@email.com"
-                                    />
-                                    {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
                                 </div>
                                 
                                 <div>
