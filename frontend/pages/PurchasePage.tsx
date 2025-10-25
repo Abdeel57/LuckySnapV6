@@ -13,7 +13,7 @@ type FormData = {
     name: string;
     phone: string;
     email: string;
-    district: string;
+    department: string;
 };
 
 const PurchasePage = () => {
@@ -29,6 +29,28 @@ const PurchasePage = () => {
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     
     const initialTickets = searchParams.get('tickets')?.split(',').map(Number).filter(n => !isNaN(n)) || [];
+
+    // Lista de departamentos de Honduras
+    const honduranDepartments = [
+        'Atlántida',
+        'Choluteca',
+        'Colón',
+        'Comayagua',
+        'Copán',
+        'Cortés',
+        'El Paraíso',
+        'Francisco Morazán',
+        'Gracias a Dios',
+        'Intibucá',
+        'Islas de la Bahía',
+        'La Paz',
+        'Lempira',
+        'Ocotepeque',
+        'Olancho',
+        'Santa Bárbara',
+        'Valle',
+        'Yoro'
+    ];
 
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
     
@@ -81,7 +103,7 @@ const PurchasePage = () => {
                 name: data.name,
                 phone: data.phone,
                 email: data.email || '',
-                district: data.district
+                district: data.department
             };
             
             // Crear usuario temporal (en una app real esto sería más complejo)
@@ -413,16 +435,22 @@ const PurchasePage = () => {
                                 </div>
                                 
                                 <div>
-                                    <label htmlFor="district" className="block text-sm font-medium text-white mb-2">
-                                        Distrito *
+                                    <label htmlFor="department" className="block text-sm font-medium text-white mb-2">
+                                        Departamento *
                                     </label>
-                                    <input 
-                                        id="district" 
-                                        {...register('district', { required: 'El distrito es requerido' })} 
-                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
-                                        placeholder="Tu distrito"
-                                    />
-                                    {errors.district && <p className="text-red-400 text-sm mt-1">{errors.district.message}</p>}
+                                    <select 
+                                        id="department" 
+                                        {...register('department', { required: 'El departamento es requerido' })} 
+                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+                                    >
+                                        <option value="">Selecciona tu departamento</option>
+                                        {honduranDepartments.map(dept => (
+                                            <option key={dept} value={dept} className="bg-slate-800 text-white">
+                                                {dept}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {errors.department && <p className="text-red-400 text-sm mt-1">{errors.department.message}</p>}
                                 </div>
                                 
                                 {/* Botón mejorado */}
