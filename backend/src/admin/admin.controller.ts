@@ -116,8 +116,21 @@ export class AdminController {
   }
 
   @Post('raffles')
-  createRaffle(@Body() data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
-    return this.adminService.createRaffle(data);
+  async createRaffle(@Body() data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
+    try {
+      const raffle = await this.adminService.createRaffle(data);
+      return {
+        success: true,
+        message: 'Rifa creada exitosamente',
+        data: raffle
+      };
+    } catch (error) {
+      console.error('❌ Error in createRaffle controller:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al crear la rifa',
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 
   @Patch('raffles/:id')

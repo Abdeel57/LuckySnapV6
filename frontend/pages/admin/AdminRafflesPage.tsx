@@ -76,19 +76,32 @@ const AdminRafflesPage: React.FC = () => {
 
     // Función para limpiar datos antes de enviar - SOLO campos válidos del esquema Prisma
     const cleanRaffleData = (data: Raffle) => {
+        // Validar campos requeridos
+        if (!data.title || data.title.trim() === '') {
+            throw new Error('El título es requerido');
+        }
+        if (!data.tickets || data.tickets < 1) {
+            throw new Error('El número de boletos debe ser mayor a 0');
+        }
+        if (!data.price || data.price <= 0) {
+            throw new Error('El precio debe ser mayor a 0');
+        }
+        if (!data.drawDate) {
+            throw new Error('La fecha del sorteo es requerida');
+        }
+
         const gallery = data.gallery || [];
         return {
-            title: data.title,
+            title: data.title.trim(),
             description: data.description || null,
             imageUrl: gallery.length > 0 ? gallery[0] : (data.imageUrl || data.heroImage || null),
-            price: data.price || 50,
-            tickets: data.tickets,
-            drawDate: data.drawDate,
+            price: Number(data.price),
+            tickets: Number(data.tickets),
+            drawDate: new Date(data.drawDate),
             status: data.status || 'draft',
-            slug: data.slug || null,
-            sold: data.sold || 0
-            // NO enviar: packs, gallery, bonuses, heroImage, startDate, terms, featured
-            // Estos no existen en el esquema Prisma
+            slug: data.slug || null
+            // NO enviar: packs, gallery, bonuses, heroImage, sold, createdAt, updatedAt
+            // Estos no existen en el esquema Prisma o son generados automáticamente
         };
     };
 

@@ -16,16 +16,21 @@ export interface Pack {
 export interface Raffle {
     id: string;
     title: string;
-    slug: string;
-    description: string;
-    heroImage: string;
-    gallery: string[];
+    slug?: string;
+    description?: string;
+    imageUrl?: string;
+    price: number;
     tickets: number;
     sold: number;
     drawDate: Date;
-    packs: Pack[];
-    bonuses: string[];
     status: 'draft' | 'active' | 'finished';
+    createdAt?: Date;
+    updatedAt?: Date;
+    // Campos adicionales para el frontend (no se envían al backend)
+    heroImage?: string;
+    gallery?: string[];
+    packs?: Pack[];
+    bonuses?: string[];
 }
 
 export interface Winner {

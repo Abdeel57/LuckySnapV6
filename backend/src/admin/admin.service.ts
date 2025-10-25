@@ -369,6 +369,20 @@ export class AdminService {
   
   async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
     try {
+      // Validar campos requeridos
+      if (!data.title || data.title.trim() === '') {
+        throw new Error('El título es requerido');
+      }
+      if (!data.tickets || data.tickets < 1) {
+        throw new Error('El número de boletos debe ser mayor a 0');
+      }
+      if (!data.price || data.price <= 0) {
+        throw new Error('El precio debe ser mayor a 0');
+      }
+      if (!data.drawDate) {
+        throw new Error('La fecha del sorteo es requerida');
+      }
+
       // Generar slug automático si no existe
       const autoSlug = data.slug || data.title
         .toLowerCase()
@@ -382,11 +396,11 @@ export class AdminService {
       
       // Filtrar solo los campos que existen en el esquema de Prisma
       const raffleData = {
-        title: data.title,
+        title: data.title.trim(),
         description: data.description || null,
         imageUrl: data.imageUrl || defaultImage,
-        price: data.price || 50,
-        tickets: data.tickets,
+        price: Number(data.price),
+        tickets: Number(data.tickets),
         sold: 0,
         drawDate: new Date(data.drawDate),
         status: data.status || 'draft',
@@ -403,7 +417,10 @@ export class AdminService {
       return createdRaffle;
     } catch (error) {
       console.error('❌ Error creating raffle:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Error al crear la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al crear la rifa');
     }
   }
 
