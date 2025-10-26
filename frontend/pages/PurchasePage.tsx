@@ -316,7 +316,10 @@ const PurchasePage = () => {
                             <div className="mb-6">
                                 <RaffleGallery 
                                     images={(() => {
-                                        if (raffle.gallery && raffle.gallery.length > 0) {
+                                        // Priorizar imageUrl (campo real de Prisma), sino galería, sino heroImage
+                                        if (raffle.imageUrl) {
+                                            return [raffle.imageUrl];
+                                        } else if (raffle.gallery && raffle.gallery.length > 0) {
                                             return raffle.gallery;
                                         } else if (raffle.heroImage) {
                                             return [raffle.heroImage];
