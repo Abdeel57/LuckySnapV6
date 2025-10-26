@@ -213,6 +213,7 @@ const RaffleDetailPage = () => {
                 totalPrice={totalPrice}
                 onRemoveTicket={handleTicketClick}
                 isSubmitting={false}
+                raffle={raffle}
             />
         </PageAnimator>
     );
