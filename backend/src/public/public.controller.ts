@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Req, HttpException, HttpStatus } from '@nestjs/common';
 import { PublicService } from './public.service';
 import { TrackingService } from '../tracking/tracking.service';
 // FIX: Using `import type` for the Prisma namespace to aid module resolution.
