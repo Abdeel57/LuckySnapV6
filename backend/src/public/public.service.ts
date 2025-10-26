@@ -240,9 +240,95 @@ export class PublicService {
     }
   }
 
-  async getOrderByFolio(folio: string) {
-    return this.prisma.order.findUnique({
-      where: { folio: folio.toUpperCase() },
-    });
+  async verifyTicket(data: { codigo_qr?: string; numero_boleto?: number; sorteo_id?: string }) {
+    try {
+      console.log('🔍 Verifying ticket:', data);
+
+      let ticketNumber: number;
+      let raffleId: string;
+
+      // Si viene código QR, decodificarlo
+      if (data.codigo_qr) {
+        try {
+          const qrData = JSON.parse(data.codigo_qr);
+          ticketNumber = qrData.numero_boleto;
+          raffleId = qrData.sorteo_id;
+          console.log('📱 QR decoded:', { ticketNumber, raffleId });
+        } catch (error) {
+          throw new Error('Código QR inválido');
+        }
+      } else if (data.numero_boleto && data.sorteo_id) {
+        ticketNumber = data.numero_boleto;
+        raffleId = data.sorteo_id;
+      } else {
+        throw new Error('Se requiere código QR o número de boleto con ID de sorteo');
+      }
+
+      // Buscar la orden que contiene este boleto
+      const order = await this.prisma.order.findFirst({
+        where: {
+          raffleId,
+          tickets: {
+            has: ticketNumber
+          }
+        },
+        include: {
+          user: true,
+          raffle: true
+        }
+      });
+
+      if (!order) {
+        return {
+          valido: false,
+          mensaje: 'Boleto no encontrado',
+          boleto: null
+        };
+      }
+
+      // Verificar estado del boleto
+      const isValid = order.status === 'PAID';
+      const message = isValid 
+        ? 'Boleto válido y pagado' 
+        : order.status === 'PENDING' 
+          ? 'Boleto apartado pero no pagado'
+          : 'Boleto no válido';
+
+      return {
+        valido: isValid,
+        mensaje: message,
+        boleto: {
+          numero: ticketNumber,
+          sorteo: order.raffle.title,
+          cliente: order.user.name || 'Sin nombre',
+          estado: order.status,
+          fecha_pago: order.status === 'PAID' ? order.updatedAt : null,
+          folio: order.folio,
+          monto: order.total
+        }
+      };
+
+    } catch (error) {
+      console.error('❌ Error verifying ticket:', error);
+      throw error;
+    }
+  }
+
+  async generateTicketQR(ticketNumber: number, raffleId: string): Promise<string> {
+    try {
+      const QRCode = require('qrcode');
+      
+      const qrData = {
+        numero_boleto: ticketNumber,
+        sorteo_id: raffleId,
+        timestamp: new Date().toISOString()
+      };
+
+      const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
+      return qrCode;
+    } catch (error) {
+      console.error('❌ Error generating QR:', error);
+      throw new Error('Error al generar código QR');
+    }
   }
 }

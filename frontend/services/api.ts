@@ -307,6 +307,41 @@ export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise
     }
 };
 
+export const verifyTicket = async (data: { codigo_qr?: string; numero_boleto?: number; sorteo_id?: string }): Promise<any> => {
+    try {
+        console.log('🔍 Verifying ticket:', data);
+        
+        const response = await fetch(`${API_URL}/public/verificar-boleto`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Ticket verification successful');
+            return result.data;
+        } else {
+            const errorText = await response.text();
+            console.log('❌ Backend returned error status:', response.status);
+            console.log('❌ Error details:', errorText);
+            
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.message || errorData.error || 'Error al verificar el boleto');
+            } catch {
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
+        }
+    } catch (error) {
+        console.log('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('Error desconocido al verificar el boleto');
+    }
+};
+
 export const downloadTickets = async (raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel' = 'csv'): Promise<void> => {
     try {
         console.log('📥 Downloading tickets:', { raffleId, tipo, formato });

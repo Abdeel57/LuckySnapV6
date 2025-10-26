@@ -181,12 +181,20 @@ export class PublicController {
     return order;
   }
 
-  @Get('orders/folio/:folio')
-  async getOrderByFolio(@Param('folio') folio: string) {
-     const order = await this.publicService.getOrderByFolio(folio);
-     if (!order) {
-       throw new NotFoundException(`Order with folio ${folio} not found`);
-     }
-     return order;
+  @Post('verificar-boleto')
+  async verifyTicket(@Body() body: { codigo_qr?: string; numero_boleto?: number; sorteo_id?: string }) {
+    try {
+      const result = await this.publicService.verifyTicket(body);
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error('❌ Error verifying ticket:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al verificar el boleto',
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
 }
