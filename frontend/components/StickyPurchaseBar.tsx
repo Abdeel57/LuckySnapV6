@@ -63,22 +63,15 @@ const StickyPurchaseBar = ({ raffleSlug, selectedTickets, totalPrice, onRemoveTi
                                     {ticket} &times;
                                 </button>
                             ))}
-                            {/* Boletos de regalo (simulados) */}
-                            {boletosAdicionales > 0 && (
-                                <>
-                                    {Array.from({ length: Math.min(boletosAdicionales, 20) }).map((_, index) => (
-                                        <span key={`gift-${index}`} className="bg-green-600 text-xs text-white px-2 py-1 rounded-full animate-pulse">
-                                            🎁
-                                        </span>
-                                    ))}
-                                    {boletosAdicionales > 20 && (
-                                        <span className="bg-green-600 text-xs text-white px-2 py-1 rounded-full">
-                                            +{boletosAdicionales - 20} más
-                                        </span>
-                                    )}
-                                </>
-                            )}
                         </div>
+                        {/* Boletos de regalo - mensaje compacto */}
+                        {boletosAdicionales > 0 && (
+                            <div className="text-center mb-3">
+                                <span className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold px-4 py-2 rounded-full inline-flex items-center gap-2 shadow-lg">
+                                    🎁 + {boletosAdicionales} boletos de regalo
+                                </span>
+                            </div>
+                        )}
                         <button 
                             onClick={handlePurchase} 
                             disabled={isSubmitting}

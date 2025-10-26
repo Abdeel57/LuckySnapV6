@@ -89,6 +89,11 @@ const PurchasePage = () => {
     // Usar el precio base del esquema Prisma (no packs)
     const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     const total = initialTickets.length * pricePerTicket;
+    
+    // Calcular boletos de regalo si tiene oportunidades
+    const boletosAdicionales = raffle?.boletosConOportunidades && raffle?.numeroOportunidades > 1
+        ? initialTickets.length * (raffle.numeroOportunidades - 1)
+        : 0;
 
     const onSubmit = async (data: FormData) => {
         if (!raffle || initialTickets.length === 0) return;
@@ -348,6 +353,7 @@ const PurchasePage = () => {
                                 Tus Boletos
                             </h3>
                             
+                            {/* Boletos comprados */}
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {initialTickets.map(t => (
                                     <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
@@ -356,11 +362,32 @@ const PurchasePage = () => {
                                 ))}
                             </div>
                             
+                            {/* Boletos de regalo */}
+                            {boletosAdicionales > 0 && (
+                                <div className="mb-4">
+                                    <h4 className="text-green-400 font-semibold mb-2 flex items-center">
+                                        <span className="mr-2">🎁</span>
+                                        Boletos de Regalo ({boletosAdicionales})
+                                    </h4>
+                                    <div className="bg-green-900/20 border border-green-700/50 rounded-xl p-3">
+                                        <p className="text-green-300 text-sm">
+                                            Recibirás {boletosAdicionales} boleto{boletosAdicionales > 1 ? 's' : ''} adicional{boletosAdicionales > 1 ? 'es' : ''} de regalo para aumentar tus probabilidades de ganar.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <div className="bg-background-primary rounded-xl p-4 border border-slate-700/50">
                                 <div className="flex justify-between items-center mb-3">
                                     <span className="text-slate-300">Cantidad de boletos:</span>
                                     <span className="text-white font-bold text-lg">{initialTickets.length}</span>
                                 </div>
+                                {boletosAdicionales > 0 && (
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-green-400">Boletos de regalo:</span>
+                                        <span className="text-green-400 font-bold">+ {boletosAdicionales}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center mb-3">
                                     <span className="text-slate-300">Precio unitario:</span>
                                     <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
