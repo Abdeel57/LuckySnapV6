@@ -180,6 +180,65 @@ export class PublicService {
       
       console.log('✅ Raffle found:', raffle.title);
       
+      // Lógica de múltiples oportunidades
+      let ticketsToSave = orderData.tickets;
+      if (raffle.boletosConOportunidades && raffle.numeroOportunidades > 1) {
+        console.log(`🎁 Generando boletos adicionales: ${raffle.numeroOportunidades - 1} por cada boleto comprado`);
+        
+        const totalEmisiones = raffle.tickets * raffle.numeroOportunidades;
+        const boletosAdicionales: number[] = [];
+        
+        // Obtener todas las órdenes existentes para evitar duplicados
+        const existingOrders = await this.prisma.order.findMany({
+          where: { raffleId: orderData.raffleId },
+          select: { tickets: true }
+        });
+        
+        const ticketsUsados = new Set<number>();
+        existingOrders.forEach(order => {
+          order.tickets.forEach(ticket => ticketsUsados.add(ticket));
+        });
+        
+        // Añadir tickets de esta orden a los usados
+        orderData.tickets.forEach(ticket => ticketsUsados.add(ticket));
+        
+        console.log(`📊 Tickets ya usados: ${ticketsUsados.size}`);
+        console.log(`📊 Rango total de emisiones: ${totalEmisiones}`);
+        
+        // Para cada boleto comprado, generar boletos adicionales aleatorios
+        for (const ticketNum of orderData.tickets) {
+          for (let i = 0; i < raffle.numeroOportunidades - 1; i++) {
+            // Generar número aleatorio del rango extendido (tickets + 1 hasta totalEmisiones)
+            let randomTicket: number;
+            let attempts = 0;
+            const maxAttempts = 1000; // Aumentado para escalas grandes
+            
+            do {
+              randomTicket = Math.floor(Math.random() * (totalEmisiones - raffle.tickets) + raffle.tickets + 1);
+              attempts++;
+              
+              // Prevenir bucle infinito
+              if (attempts > maxAttempts) {
+                console.warn(`⚠️ No se pudo generar boleto único después de ${maxAttempts} intentos`);
+                // Como último recurso, generar un número secuencial basado en timestamp
+                randomTicket = raffle.tickets + (Date.now() % (totalEmisiones - raffle.tickets)) + 1;
+                break;
+              }
+            } while (ticketsUsados.has(randomTicket) || ticketNum === randomTicket || boletosAdicionales.includes(randomTicket));
+            
+            if (attempts <= maxAttempts) {
+              boletosAdicionales.push(randomTicket);
+              ticketsUsados.add(randomTicket); // Marcar como usado
+            }
+          }
+        }
+        
+        // Combinar boletos originales con los adicionales
+        ticketsToSave = [...orderData.tickets, ...boletosAdicionales];
+        console.log(`✅ Boletos generados: ${ticketsToSave.length} total (${orderData.tickets.length} comprados + ${boletosAdicionales.length} de regalo)`);
+        console.log(`📦 Boletos de regalo asignados: ${boletosAdicionales.join(', ')}`);
+      }
+      
       // Crear o buscar el usuario
       let user;
       const userData = orderData.userData || {};
@@ -204,13 +263,13 @@ export class PublicService {
         console.log('✅ Existing user found:', user.id);
       }
       
-      // Crear la orden
+      // Crear la orden con todos los tickets (comprados + de regalo)
       const newOrder = await this.prisma.order.create({
         data: {
           folio: `LKSNP-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
           raffleId: orderData.raffleId,
           userId: user.id,
-          tickets: orderData.tickets,
+          tickets: ticketsToSave, // Incluye tickets originales + boletos adicionales
           total: orderData.total,
           status: 'PENDING',
           paymentMethod: orderData.paymentMethod || 'transfer',
@@ -224,8 +283,9 @@ export class PublicService {
       });
 
       console.log('✅ Order created:', newOrder.folio);
+      console.log('📦 Tickets en la orden:', ticketsToSave.length, 'total');
 
-      // Actualizar boletos vendidos
+      // Actualizar boletos vendidos (solo los comprados, no los de regalo)
       await this.prisma.raffle.update({
         where: { id: orderData.raffleId },
         data: { sold: { increment: Array.isArray(orderData.tickets) ? orderData.tickets.length : 0 } },

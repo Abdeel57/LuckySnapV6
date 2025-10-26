@@ -31,10 +31,15 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                         }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="absolute top-4 right-4">
+                    <div className="absolute top-4 right-4 flex flex-col gap-2">
                         <span className="bg-primary text-inverse px-3 py-1 rounded-full text-sm font-semibold shadow-md">
                             {progress.toFixed(0)}% vendido
                         </span>
+                        {raffle.boletosConOportunidades && raffle.numeroOportunidades > 1 && (
+                            <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                🎯 {raffle.numeroOportunidades}x Oportunidades
+                            </span>
+                        )}
                     </div>
                 </div>
             </Link>

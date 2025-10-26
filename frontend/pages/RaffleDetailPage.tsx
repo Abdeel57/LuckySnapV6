@@ -69,6 +69,11 @@ const RaffleDetailPage = () => {
     const progress = (raffle.sold / raffle.tickets) * 100;
     const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     const totalPrice = selectedTickets.length * pricePerTicket;
+    
+    // Calcular boletos adicionales si tiene oportunidades
+    const boletosAdicionales = raffle.boletosConOportunidades && raffle.numeroOportunidades > 1
+        ? selectedTickets.length * (raffle.numeroOportunidades - 1)
+        : 0;
 
     return (
         <PageAnimator>
@@ -129,10 +134,23 @@ const RaffleDetailPage = () => {
                                 </div>
                                 <div className="text-center mb-4">
                                     <p className="text-slate-400 mb-2">Selecciona tus boletos de la tabla de abajo para comenzar.</p>
-                                    <div className="bg-background-primary rounded-lg p-3 border border-slate-700/50">
+                                    <div className="bg-background-primary rounded-lg p-3 border border-slate-700/50 mb-4">
                                         <p className="text-sm text-slate-300">Precio por boleto:</p>
                                         <p className="text-xl font-bold text-accent">LPS {pricePerTicket.toFixed(2)}</p>
                                     </div>
+                                    {raffle.boletosConOportunidades && raffle.numeroOportunidades > 1 && (
+                                        <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border-2 border-green-500/50 rounded-xl p-4 shadow-lg">
+                                            <div className="flex items-center justify-center space-x-2 mb-2">
+                                                <span className="text-2xl">🎯</span>
+                                                <h4 className="text-green-400 font-bold text-lg">
+                                                    {raffle.numeroOportunidades}x Oportunidades
+                                                </h4>
+                                            </div>
+                                            <p className="text-green-300 text-sm">
+                                                Cada boleto que compres recibirá <span className="font-bold text-white">{raffle.numeroOportunidades - 1} boleto{raffle.numeroOportunidades > 2 ? 's' : ''} adicional{raffle.numeroOportunidades > 2 ? 'es' : ''}</span> de regalo para aumentar tus probabilidades
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
@@ -152,6 +170,12 @@ const RaffleDetailPage = () => {
                                             <span>Boletos seleccionados:</span>
                                             <span>{selectedTickets.length}</span>
                                         </div>
+                                        {boletosAdicionales > 0 && (
+                                            <div className="flex justify-between text-green-400 font-semibold">
+                                                <span>🎁 Boletos de regalo:</span>
+                                                <span>+{boletosAdicionales}</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-slate-300">
                                             <span>Precio por boleto:</span>
                                             <span>LPS {pricePerTicket.toFixed(2)}</span>
@@ -162,6 +186,14 @@ const RaffleDetailPage = () => {
                                                 <span className="text-accent">LPS {totalPrice.toFixed(2)}</span>
                                             </div>
                                         </div>
+                                        {boletosAdicionales > 0 && (
+                                            <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 mt-3">
+                                                <p className="text-green-400 text-sm font-medium text-center">
+                                                    🎯 Recibirás {selectedTickets.length + boletosAdicionales} boletos en total<br/>
+                                                    ({selectedTickets.length} comprados + {boletosAdicionales} de regalo)
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                     <Link
                                         to={`/comprar/${raffle.slug}?tickets=${selectedTickets.join(',')}`}
