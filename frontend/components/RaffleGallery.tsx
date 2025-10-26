@@ -45,16 +45,12 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                 {/* Imagen principal con diseño creativo */}
                 <div className="relative group">
                     {/* Contenedor con aspecto cuadrado y efectos visuales */}
-                    <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl border-2 border-slate-700/50 gallery-hover-effect gradient-border">
-                        <div className="gradient-border-inner w-full h-full">
-                        {/* Efecto de brillo sutil */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
-                        
+                    <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl border-2 border-slate-700/50">
                         {/* Imagen principal */}
                         <img
                             src={images[currentIndex] || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
                             alt={`${title} - Imagen ${currentIndex + 1}`}
-                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
+                            className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
                             onClick={() => openModal(currentIndex)}
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -62,54 +58,15 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                             }}
                         />
                         
-                        {/* Overlay con información elegante */}
-                        {images.length > 1 && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                <div className="absolute bottom-4 left-4 right-4">
-                                    <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-white text-sm font-medium">
-                                                {currentIndex + 1} de {images.length}
-                                            </span>
-                                            <div className="flex space-x-1">
-                                                {images.map((_, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                                                            index === currentIndex 
-                                                                ? 'bg-white' 
-                                                                : 'bg-white/40'
-                                                        }`}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
                         {/* Indicador de galería */}
                         {images.length > 1 && (
-                            <div className="absolute top-4 right-4 glass-effect rounded-full px-3 py-1">
+                            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
                                 <span className="text-white text-xs font-medium">
                                     {images.length} fotos
                                 </span>
                             </div>
                         )}
-                        </div>
                     </div>
-                    
-                    {/* Overlay con información */}
-                    {images.length > 1 && (
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 rounded-lg flex items-center justify-center">
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <span className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
-                                    {currentIndex + 1} de {images.length}
-                                </span>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Controles de navegación elegantes */}
@@ -117,14 +74,14 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                     <>
                         <button
                             onClick={prevImage}
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 glass-effect text-white p-3 rounded-full hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 shadow-lg pulse-glow"
+                            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/70 transition-all z-10"
                             aria-label="Imagen anterior"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={nextImage}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 glass-effect text-white p-3 rounded-full hover:bg-white/20 transition-all opacity-0 group-hover:opacity-100 shadow-lg pulse-glow"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/70 transition-all z-10"
                             aria-label="Siguiente imagen"
                         >
                             <ChevronRight className="w-5 h-5" />
@@ -139,27 +96,21 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                             <button
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
-                                className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 transform hover:scale-105 ${
+                                className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
                                     index === currentIndex 
-                                        ? 'border-accent ring-4 ring-accent/30 shadow-lg shadow-accent/20' 
-                                        : 'border-slate-600 hover:border-slate-400 shadow-md'
+                                        ? 'border-accent shadow-lg shadow-accent/20' 
+                                        : 'border-slate-600 hover:border-slate-400'
                                 }`}
                             >
                                 <img
                                     src={image || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
                                     alt={`${title} - Miniatura ${index + 1}`}
-                                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                                    className="w-full h-full object-cover"
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
                                         target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
                                     }}
                                 />
-                                {/* Indicador de imagen activa */}
-                                {index === currentIndex && (
-                                    <div className="absolute inset-0 bg-accent/20 flex items-center justify-center">
-                                        <div className="w-3 h-3 bg-accent rounded-full shadow-lg"></div>
-                                    </div>
-                                )}
                             </button>
                         ))}
                     </div>
