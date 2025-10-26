@@ -37,6 +37,8 @@ model Raffle {
   drawDate    DateTime
   status      String   @default("draft")
   slug        String?  @unique
+  boletosConOportunidades Boolean  @default(false)
+  numeroOportunidades    Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

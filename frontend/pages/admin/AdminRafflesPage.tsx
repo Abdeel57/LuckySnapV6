@@ -99,7 +99,9 @@ const AdminRafflesPage: React.FC = () => {
             tickets: Number(data.tickets),
             drawDate: new Date(data.drawDate),
             status: data.status || 'draft',
-            slug: data.slug || null
+            slug: data.slug || null,
+            boletosConOportunidades: data.boletosConOportunidades || false,
+            numeroOportunidades: data.numeroOportunidades || 1
             // NO enviar: packs, gallery, bonuses, heroImage, sold, createdAt, updatedAt
             // Estos no existen en el esquema Prisma o son generados automáticamente
         };

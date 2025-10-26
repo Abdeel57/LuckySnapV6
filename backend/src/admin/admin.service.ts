@@ -405,6 +405,8 @@ export class AdminService {
         drawDate: new Date(data.drawDate),
         status: data.status || 'draft',
         slug: autoSlug,
+        boletosConOportunidades: data.boletosConOportunidades || false,
+        numeroOportunidades: data.numeroOportunidades || 1,
       };
 
       console.log('📝 Creating raffle with data:', raffleData);
@@ -471,6 +473,17 @@ export class AdminService {
       
       if (data.slug !== undefined) {
         raffleData.slug = data.slug;
+      }
+
+      if (data.boletosConOportunidades !== undefined) {
+        raffleData.boletosConOportunidades = data.boletosConOportunidades;
+      }
+
+      if (data.numeroOportunidades !== undefined) {
+        if (data.numeroOportunidades < 1 || data.numeroOportunidades > 10) {
+          throw new Error('El número de oportunidades debe estar entre 1 y 10');
+        }
+        raffleData.numeroOportunidades = Number(data.numeroOportunidades);
       }
 
       // Campos editables solo si NO tiene boletos vendidos/pagados

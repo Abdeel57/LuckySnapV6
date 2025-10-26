@@ -34,6 +34,8 @@ interface AdvancedRaffleFormProps {
 type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
     id?: string;
     bonuses: { value: string }[];
+    boletosConOportunidades?: boolean;
+    numeroOportunidades?: number;
 };
 
 const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
@@ -541,6 +543,49 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                             </div>
                                         </div>
 
+                                        {/* Boletos con Múltiples Oportunidades */}
+                                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                                            <div className="flex items-center space-x-2 mb-4">
+                                                <Gift className="w-5 h-5 text-blue-600" />
+                                                <h3 className="font-semibold text-blue-900">Múltiples Oportunidades</h3>
+                                            </div>
+                                            
+                                            <div className="space-y-4">
+                                                <div className="flex items-center space-x-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('boletosConOportunidades')}
+                                                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <label className="text-gray-700 font-medium">
+                                                        Boletos con Múltiples Oportunidades
+                                                    </label>
+                                                </div>
+                                                
+                                                {watch('boletosConOportunidades') && (
+                                                    <div>
+                                                        <label className={labelClasses}>
+                                                            Número de Oportunidades (1-10)
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            {...register('numeroOportunidades', { 
+                                                                min: 1, 
+                                                                max: 10,
+                                                                valueAsNumber: true
+                                                            })}
+                                                            className={inputClasses}
+                                                            placeholder="2"
+                                                            defaultValue={raffle?.numeroOportunidades || 2}
+                                                        />
+                                                        <p className="text-gray-500 text-sm mt-1">
+                                                            Cada boleto participará X veces en el sorteo
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                                             <div className="flex items-center space-x-2 mb-2">
                                                 <AlertCircle className="w-5 h-5 text-yellow-600" />
@@ -551,6 +596,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                                 <li>• Los boletos vendidos no pueden exceder el total de boletos</li>
                                                 <li>• Una vez activada, la rifa será visible públicamente</li>
                                                 <li>• Las imágenes se optimizan automáticamente</li>
+                                                <li>• Las múltiples oportunidades permiten que cada boleto participe varias veces</li>
                                             </ul>
                                         </div>
                                     </motion.div>

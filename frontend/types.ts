@@ -24,6 +24,8 @@ export interface Raffle {
     sold: number;
     drawDate: Date;
     status: 'draft' | 'active' | 'finished';
+    boletosConOportunidades?: boolean;
+    numeroOportunidades?: number;
     createdAt?: Date;
     updatedAt?: Date;
     // Campos adicionales para el frontend (no se envían al backend)
