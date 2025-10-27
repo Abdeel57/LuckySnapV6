@@ -213,32 +213,41 @@ const PurchasePage = () => {
                                 </h3>
                                 
                                 <div className="space-y-4">
-                                    {paymentAccounts.map(acc => (
-                                        <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h4 className="font-bold text-white">{acc.bank}</h4>
-                                                <span className="bg-accent/20 text-accent px-2 py-1 rounded-full text-xs font-semibold">
-                                                    {acc.type || 'Transferencia'}
-                                                </span>
-                                            </div>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-400">Titular:</span>
-                                                    <span className="text-white font-semibold">{acc.accountHolder}</span>
+                                    {paymentAccounts.map(acc => {
+                                        const copyAccountNumber = () => {
+                                            if (acc.accountNumber) {
+                                                navigator.clipboard.writeText(acc.accountNumber).then(() => {
+                                                    alert('Número de cuenta copiado al portapapeles');
+                                                });
+                                            }
+                                        };
+                                        
+                                        return (
+                                            <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h4 className="font-bold text-white">{acc.bank}</h4>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-slate-400">CLABE:</span>
-                                                    <span className="text-white font-mono">{acc.clabe}</span>
-                                                </div>
-                                                {acc.accountNumber && (
+                                                <div className="space-y-2 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span className="text-slate-400">No. Cuenta:</span>
-                                                        <span className="text-white font-mono">{acc.accountNumber}</span>
+                                                        <span className="text-slate-400">Titular:</span>
+                                                        <span className="text-white font-semibold">{acc.accountHolder}</span>
                                                     </div>
-                                                )}
+                                                    {acc.accountNumber && (
+                                                        <div 
+                                                            className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
+                                                            onClick={copyAccountNumber}
+                                                            title="Click para copiar"
+                                                        >
+                                                            <span className="text-slate-400">No. Cuenta:</span>
+                                                            <span className="text-white font-mono hover:text-accent transition-colors">
+                                                                {acc.accountNumber} 📋
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
