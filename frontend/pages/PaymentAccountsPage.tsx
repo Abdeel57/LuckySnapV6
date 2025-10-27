@@ -31,7 +31,6 @@ const PaymentAccountsPage = () => {
                                 <div className="space-y-2 text-sm">
                                     <p><span className="font-semibold text-slate-300">Titular:</span> {acc.accountHolder}</p>
                                     <p><span className="font-semibold text-slate-300">No. de Cuenta:</span> {acc.accountNumber}</p>
-                                    <p><span className="font-semibold text-slate-300">CLABE:</span> {acc.clabe}</p>
                                 </div>
                             </div>
                         ))}

@@ -544,20 +544,16 @@ const AdminSettingsPage = () => {
                                 <div key={field.id} className="p-4 border border-gray-200 rounded-xl">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
-                                            <label className={labelClasses}>Nombre de la Cuenta</label>
-                                            <input {...register(`paymentAccounts.${index}.name`)} className={inputClasses} placeholder="Banco Atlántida" />
+                                            <label className={labelClasses}>Nombre del Banco</label>
+                                            <input {...register(`paymentAccounts.${index}.bank`)} className={inputClasses} placeholder="Banco Atlántida" />
                                         </div>
                                         <div>
                                             <label className={labelClasses}>Número de Cuenta</label>
-                                            <input {...register(`paymentAccounts.${index}.number`)} className={inputClasses} placeholder="1234567890" />
+                                            <input {...register(`paymentAccounts.${index}.accountNumber`)} className={inputClasses} placeholder="1234567890" />
                                         </div>
                                         <div>
-                                            <label className={labelClasses}>Tipo</label>
-                                            <select {...register(`paymentAccounts.${index}.type`)} className={inputClasses}>
-                                                <option value="bank">Banco</option>
-                                                <option value="mobile">Móvil</option>
-                                                <option value="crypto">Criptomoneda</option>
-                                            </select>
+                                            <label className={labelClasses}>Nombre del Titular</label>
+                                            <input {...register(`paymentAccounts.${index}.accountHolder`)} className={inputClasses} placeholder="Juan Pérez" />
                                         </div>
                                     </div>
                                     <button
@@ -572,7 +568,7 @@ const AdminSettingsPage = () => {
                             ))}
                             <button
                                 type="button"
-                                onClick={() => appendPayment({ name: '', number: '', type: 'bank' })}
+                                onClick={() => appendPayment({ bank: '', accountNumber: '', accountHolder: '' })}
                                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
                             >
                                 <Plus className="w-4 h-4" />

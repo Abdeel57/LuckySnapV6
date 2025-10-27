@@ -82,9 +82,8 @@ export interface Order {
 export interface PaymentAccount {
     id: string;
     bank: string;
-    accountHolder: string;
     accountNumber: string;
-    clabe: string;
+    accountHolder: string;
 }
 
 export interface FaqItemData {
