@@ -71,6 +71,16 @@
   animation: pulse-glow 2s infinite;
 }
 
+/* Animación de brillo para la barra de progreso */
+@keyframes axios {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Responsive design mejorado */
 @media (max-width: 768px) {
   .gallery-mobile {

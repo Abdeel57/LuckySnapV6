@@ -24,11 +24,12 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
             className="card h-full flex flex-col group"
         >
             <Link to={`/sorteo/${raffle.slug}`} className="block">
-                <div className="relative overflow-hidden rounded-xl mb-6">
+                {/* Imagen cuadrada sin bordes redondeados */}
+                <div className="relative overflow-hidden aspect-square mb-0">
                     <img 
                         src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
                         alt={raffle.title} 
-                        className="w-full h-48 md:h-56 object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
@@ -82,18 +83,34 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 )}
                 
                 <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-secondary">Progreso</span>
-                        <span className="text-sm font-semibold text-primary">{raffle.sold}/{raffle.tickets}</span>
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm font-semibold text-gray-700">Boletos vendidos</span>
+                        <span className="text-sm font-bold text-primary">{raffle.sold} / {raffle.tickets}</span>
                     </div>
-                    <div className="w-full bg-light rounded-full h-3 overflow-hidden">
+                    {/* Barra de progreso mejorada */}
+                    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner border border-gray-300">
                         <div 
-                            className="h-3 rounded-full transition-all duration-500 ease-out"
+                            className="h-4 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
                             style={{ 
                                 width: `${progress}%`,
-                                background: `linear-gradient(90deg, var(--color-brand-primary), var(--color-brand-accent))`
+                                background: `linear-gradient(90deg, #10b981, #34d399)`,
+                                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
                             }}
-                        ></div>
+                        >
+                            {/* Efecto de brillo */}
+                            <div 
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                                style={{
+                                    animation: 'axios 2s ease-in-out infinite'
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+                    {/* Indicador de porcentaje encima de la barra */}
+                    <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-gray-500">0%</span>
+                        <span className="text-xs font-bold text-green-600">{progress.toFixed(0)}% vendido</span>
+                        <span className="text-xs text-gray-500">100%</span>
                     </div>
                 </div>
                 
