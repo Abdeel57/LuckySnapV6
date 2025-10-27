@@ -62,10 +62,17 @@ const AdminCustomersPage: React.FC = () => {
             const name = o.customer?.name?.toLowerCase?.() || '';
             const phone = o.customer?.phone || '';
             const district = o.customer?.district?.toLowerCase?.() || '';
+            const folio = o.folio?.toLowerCase() || '';
+            // Buscar en los números de boleto
+            const ticketsMatch = o.tickets?.some(ticket => 
+                ticket.toString().includes(searchTerm)
+            ) || false;
             return (
                 name.includes(term) ||
                 phone.includes(searchTerm) ||
-                district.includes(term)
+                district.includes(term) ||
+                folio.includes(term) ||
+                ticketsMatch
             );
         });
     }, [orders, searchTerm]);
@@ -174,7 +181,7 @@ const AdminCustomersPage: React.FC = () => {
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar por nombre, teléfono o distrito..."
+                                    placeholder="Buscar por nombre, teléfono, distrito, folio o número de boleto..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
