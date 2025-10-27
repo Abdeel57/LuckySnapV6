@@ -72,13 +72,13 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
                 <React.Fragment key={unit.label}>
                     <div className="flex flex-col items-center">
                         <div className="relative">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                                 {String(unit.value).padStart(2, '0').split('').map((digit, i) => (
                                     <motion.div
                                         key={`${unit.label}-${digit}-${i}`}
                                         className="relative"
                                     >
-                                        <div className="w-12 h-16 sm:w-14 sm:h-20 md:w-16 md:h-24 bg-inverse rounded-xl shadow-xl overflow-hidden border-2 border-accent/30">
+                                        <div className="w-10 h-14 sm:w-12 sm:h-16 md:w-14 md:h-20 bg-white/10 backdrop-blur-sm rounded-lg overflow-hidden border border-white/20 shadow-lg">
                                             <AnimatePresence mode="wait">
                                                 <motion.div
                                                     key={digit}
@@ -86,32 +86,26 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
                                                     animate={{ y: '0%', opacity: 1 }}
                                                     exit={{ y: '100%', opacity: 0 }}
                                                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                    className="absolute inset-0 flex items-center justify-center text-2xl sm:text-3xl md:text-5xl font-bold text-accent"
+                                                    className="absolute inset-0 flex items-center justify-center text-xl sm:text-2xl md:text-4xl font-bold text-white"
                                                 >
                                                     {digit}
                                                 </motion.div>
                                             </AnimatePresence>
-                                            {/* Efecto de brillo */}
-                                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
                                         </div>
                                     </motion.div>
                                 ))}
                             </div>
-                            <div className="mt-2 text-center">
-                                <span className="text-xs sm:text-sm text-muted font-semibold uppercase tracking-wider">
+                            <div className="mt-1.5 text-center">
+                                <span className="text-xs text-white/70 font-medium uppercase">
                                     {unit.label}
                                 </span>
                             </div>
                         </div>
                     </div>
                     {index < timeUnits.length - 1 && (
-                        <motion.div
-                            className="text-accent text-4xl sm:text-5xl md:text-6xl font-bold mt-6"
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                        >
+                        <div className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mt-8">
                             :
-                        </motion.div>
+                        </div>
                     )}
                 </React.Fragment>
             ))}
