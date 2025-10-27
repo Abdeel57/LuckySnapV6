@@ -1,0 +1,1 @@
+import{j as i,m as t}from"./ui-CC9fDAxl.js";const a=({children:a})=>i.jsx(t.div,{initial:{opacity:0,y:20},animate:{opacity:1,y:0},exit:{opacity:0,y:-20},transition:{duration:.3},children:a});export{a as P};
