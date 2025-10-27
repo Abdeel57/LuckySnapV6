@@ -9,6 +9,7 @@ import WinnerCard from '../components/WinnerCard';
 import HowItWorks from '../components/HowItWorks';
 import Faq from '../components/Faq';
 import CountdownTimer from '../components/CountdownTimer';
+import HeroRaffle from '../components/HeroRaffle';
 import { useAnalytics } from '../contexts/AnalyticsContext';
 
 const HomePage = () => {
@@ -47,49 +48,7 @@ const HomePage = () => {
                     </div>
                 </div>
             ) : mainRaffle ? (
-                <section className="py-16 md:py-24">
-                    <div className="container mx-auto px-4 max-w-7xl">
-                        <div className="text-center mb-12">
-                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary mb-6 leading-tight">
-                                Próximo Gran Sorteo
-                            </h1>
-                            <p className="text-xl md:text-2xl text-secondary max-w-3xl mx-auto leading-relaxed">
-                                Participa en nuestro sorteo más emocionante y gana premios increíbles
-                            </p>
-                        </div>
-                        
-                        <div className="card max-w-5xl mx-auto shadow-brand-md">
-                            <div className="relative overflow-hidden rounded-xl mb-8">
-                                <img 
-                                    src={mainRaffle.imageUrl || mainRaffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop'} 
-                                    alt={mainRaffle.title} 
-                                    className="w-full h-64 md:h-80 lg:h-96 object-cover transition-transform duration-500 hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                                <div className="absolute bottom-6 left-6 right-6">
-                                    <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-inverse mb-4 leading-tight">
-                                        {mainRaffle.title}
-                                    </h2>
-                                </div>
-                            </div>
-                            
-                            <div className="text-center mb-8">
-                                <div className="inline-block p-6 bg-secondary/10 rounded-xl border border-brand">
-                                    <CountdownTimer targetDate={mainRaffle.drawDate} />
-                                </div>
-                            </div>
-                            
-                            <div className="text-center">
-                                <Link
-                                    to={`/sorteo/${mainRaffle.slug}`}
-                                    className="btn-primary text-lg px-12 py-4 shadow-brand-sm hover:shadow-brand-md"
-                                >
-                                    ¡Participa Ahora!
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                <HeroRaffle raffle={mainRaffle} />
             ) : null}
 
             {/* Other Active Raffles */}

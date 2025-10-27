@@ -67,34 +67,51 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
     }
 
     return (
-        <div className="flex justify-center items-center gap-1 sm:gap-3 flex-wrap">
+        <div className="flex justify-center items-center gap-2 sm:gap-4">
             {timeUnits.map((unit, index) => (
                 <React.Fragment key={unit.label}>
                     <div className="flex flex-col items-center">
-                        <span className="text-xs sm:text-sm text-slate-300 mb-2">{unit.label}{unit.value !== 1 ? 's' : ''}</span>
-                        <div className="flex gap-1">
-                             {String(unit.value).padStart(2, '0').split('').map((digit, i) => (
-                                <div key={i} className="relative w-6 h-8 sm:w-10 sm:h-12 md:w-12 md:h-16 bg-background-primary rounded-md shadow-lg overflow-hidden border border-slate-600">
-                                     <AnimatePresence>
-                                        <motion.div
-                                            key={digit}
-                                            initial={{ y: '-100%' }}
-                                            animate={{ y: '0%' }}
-                                            exit={{ y: '100%' }}
-                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                            className="absolute inset-0 flex items-center justify-center text-lg sm:text-2xl md:text-4xl font-bold text-white"
-                                        >
-                                            {digit}
-                                        </motion.div>
-                                    </AnimatePresence>
-                                     <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30"></div>
-                                     <div className="absolute top-1/2 left-0 w-full h-px bg-black/40"></div>
-                                </div>
-                             ))}
+                        <div className="relative">
+                            <div className="grid grid-cols-2 gap-2">
+                                {String(unit.value).padStart(2, '0').split('').map((digit, i) => (
+                                    <motion.div
+                                        key={`${unit.label}-${digit}-${i}`}
+                                        className="relative"
+                                    >
+                                        <div className="w-12 h-16 sm:w-14 sm:h-20 md:w-16 md:h-24 bg-inverse rounded-xl shadow-xl overflow-hidden border-2 border-accent/30">
+                                            <AnimatePresence mode="wait">
+                                                <motion.div
+                                                    key={digit}
+                                                    initial={{ y: '-100%', opacity: 0 }}
+                                                    animate={{ y: '0%', opacity: 1 }}
+                                                    exit={{ y: '100%', opacity: 0 }}
+                                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                    className="absolute inset-0 flex items-center justify-center text-2xl sm:text-3xl md:text-5xl font-bold text-accent"
+                                                >
+                                                    {digit}
+                                                </motion.div>
+                                            </AnimatePresence>
+                                            {/* Efecto de brillo */}
+                                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                            <div className="mt-2 text-center">
+                                <span className="text-xs sm:text-sm text-muted font-semibold uppercase tracking-wider">
+                                    {unit.label}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     {index < timeUnits.length - 1 && (
-                        <div className="text-xl sm:text-2xl md:text-3xl text-slate-400 mt-4 font-bold">:</div>
+                        <motion.div
+                            className="text-accent text-4xl sm:text-5xl md:text-6xl font-bold mt-6"
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            :
+                        </motion.div>
                     )}
                 </React.Fragment>
             ))}
