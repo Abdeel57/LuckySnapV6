@@ -197,10 +197,10 @@ const AdminCustomersPage: React.FC = () => {
                             >
                                 {/* Información esencial */}
                                 <div className="mb-4">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name}</h3>
+                                    {order.customer && <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name || 'Sin nombre'}</h3>}
                                     <div className="space-y-1 text-sm text-gray-600">
-                                        <p>📞 {order.customer.phone}</p>
-                                        <p>🎫 Boletos: {order.tickets.join(', ')}</p>
+                                        {order.customer && <p>📞 {order.customer.phone || 'Sin teléfono'}</p>}
+                                        <p>🎫 Boletos: {order.tickets?.join(', ') || 'N/A'}</p>
                                         <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -277,15 +277,19 @@ const AdminCustomersPage: React.FC = () => {
                                     <div className="bg-gray-50 rounded-xl p-4">
                                         <h3 className="font-semibold text-gray-900 mb-3">Información</h3>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <span className="text-sm text-gray-600">Nombre:</span>
-                                                <p className="font-medium">{selectedOrder.customer.name}</p>
-                                            </div>
-                                            <div>
-                                                <span className="text-sm text-gray-600">Teléfono:</span>
-                                                <p className="font-medium">{selectedOrder.customer.phone}</p>
-                                            </div>
-                                            {selectedOrder.customer.district && (
+                                            {selectedOrder.customer && (
+                                                <>
+                                                    <div>
+                                                        <span className="text-sm text-gray-600">Nombre:</span>
+                                                        <p className="font-medium">{selectedOrder.customer.name || 'Sin nombre'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-gray-600">Teléfono:</span>
+                                                        <p className="font-medium">{selectedOrder.customer.phone || 'Sin teléfono'}</p>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {selectedOrder.customer?.district && (
                                                 <div>
                                                     <span className="text-sm text-gray-600">Distrito:</span>
                                                     <p className="font-medium">{selectedOrder.customer.district}</p>
