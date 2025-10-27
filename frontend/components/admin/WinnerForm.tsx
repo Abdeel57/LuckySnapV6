@@ -21,6 +21,7 @@ const WinnerForm: React.FC<WinnerFormProps> = ({ raffles, onSave, onCancel }) =>
         imagePreview: ''
     });
     
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,30 +40,62 @@ const WinnerForm: React.FC<WinnerFormProps> = ({ raffles, onSave, onCancel }) =>
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         
-        const selectedRaffle = raffles.find(r => r.id === formData.raffleId);
-        if (!selectedRaffle) {
-            alert('Por favor selecciona un sorteo');
-            return;
+        try {
+            const selectedRaffle = raffles.find(r => r.id === formData.raffleId);
+            if (!selectedRaffle) {
+                alert('Por favor selecciona un sorteo');
+                return;
+            }
+
+            // Convertir imagen a base64 si existe
+            let imageUrl = selectedRaffle.heroImage || '';
+            if (formData.imageFile) {
+                try {
+                    const base64 = await convertFileToBase64(formData.imageFile);
+                    imageUrl = `data:${formData.imageFile.type};base64,${base64}`;
+                } catch (error) {
+                    console.error('Error converting image:', error);
+                    alert('Error al procesar la imagen. Usando imagen por defecto.');
+                }
+            } else if (formData.imagePreview) {
+                imageUrl = formData.imagePreview;
+            }
+
+            const winnerData = {
+                name: formData.name,
+                raffleId: formData.raffleId,
+                raffleTitle: selectedRaffle.title,
+                prize: selectedRaffle.title,
+                drawDate: new Date(),
+                ticketNumber: formData.ticketNumber ? parseInt(formData.ticketNumber) : undefined,
+                phone: formData.phone || undefined,
+                city: formData.city || undefined,
+                testimonial: formData.testimonial || undefined,
+                imageUrl: imageUrl
+            };
+
+            await onSave(winnerData);
+        } finally {
+            setIsSubmitting(false);
         }
+    };
 
-        const winnerData = {
-            name: formData.name,
-            raffleId: formData.raffleId,
-            raffleTitle: selectedRaffle.title,
-            prize: selectedRaffle.title,
-            drawDate: new Date(),
-            ticketNumber: formData.ticketNumber ? parseInt(formData.ticketNumber) : undefined,
-            phone: formData.phone || undefined,
-            city: formData.city || undefined,
-            testimonial: formData.testimonial || undefined,
-            imageUrl: formData.imagePreview || selectedRaffle.heroImage || '',
-            imageFile: formData.imageFile
-        };
-
-        onSave(winnerData);
+    const convertFileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result as string;
+                // Remover el prefijo "data:image/...;base64,"
+                const base64Data = base64.split(',')[1];
+                resolve(base64Data);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     };
 
     return (
@@ -220,15 +253,17 @@ const WinnerForm: React.FC<WinnerFormProps> = ({ raffles, onSave, onCancel }) =>
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    disabled={isSubmitting}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
-                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+                    disabled={isSubmitting}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Guardar Ganador
+                    {isSubmitting ? 'Guardando...' : 'Guardar Ganador'}
                 </button>
             </div>
         </form>
