@@ -20,7 +20,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   tickets Ticket[]
-  winners Winner[]
   orders  Order[]
 
   @@map("users")
@@ -43,7 +42,6 @@ model Raffle {
   updatedAt   DateTime @updatedAt
 
   ticketOrders Ticket[]
-  winners Winner[]
   orders  Order[]
 
   @@map("raffles")
@@ -58,7 +56,6 @@ model Ticket {
 
   raffle Raffle @relation(fields: [raffleId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
-  winners Winner[]
 
   @@map("tickets")
 }
@@ -84,15 +81,18 @@ model Order {
 }
 
 model Winner {
-  id        String   @id @default(cuid())
-  raffleId  String
-  userId    String
-  ticketId  String
-  createdAt DateTime @default(now())
-
-  raffle Raffle @relation(fields: [raffleId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
-  ticket Ticket @relation(fields: [ticketId], references: [id])
+  id          String   @id @default(cuid())
+  name        String
+  prize       String
+  imageUrl    String
+  raffleTitle String
+  drawDate    DateTime
+  ticketNumber Int?
+  testimonial String?
+  phone       String?
+  city        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("winners")
 }
