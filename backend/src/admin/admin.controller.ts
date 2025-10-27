@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, HttpException, HttpStatus, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Raffle, type Winner, type Prisma } from '@prisma/client';
@@ -175,11 +176,26 @@ export class AdminController {
   @Get('raffles/:id/boletos/apartados/descargar')
   async downloadApartadosTickets(
     @Param('id') raffleId: string,
-    @Query('formato') formato: 'csv' | 'excel' = 'csv'
+    @Query('formato') formato: 'csv' | 'excel' = 'csv',
+    @Res() res: Response
   ) {
     try {
       const result = await this.adminService.downloadTickets(raffleId, 'apartados', formato);
-      return result;
+      
+      // Configurar headers para la descarga
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      
+      // Enviar el contenido
+      if (formato === 'excel') {
+        // Para Excel, el contenido viene en base64, convertirlo a buffer
+        const buffer = Buffer.from(result.content, 'base64');
+        res.send(buffer);
+      } else {
+        // Para CSV, enviar como string con UTF-8 BOM
+        res.send(Buffer.from(result.content, 'utf-8'));
+      }
+      
     } catch (error) {
       console.error('❌ Error downloading apartados tickets:', error);
       throw new HttpException(
@@ -192,11 +208,26 @@ export class AdminController {
   @Get('raffles/:id/boletos/pagados/descargar')
   async downloadPagadosTickets(
     @Param('id') raffleId: string,
-    @Query('formato') formato: 'csv' | 'excel' = 'csv'
+    @Query('formato') formato: 'csv' | 'excel' = 'csv',
+    @Res() res: Response
   ) {
     try {
       const result = await this.adminService.downloadTickets(raffleId, 'pagados', formato);
-      return result;
+      
+      // Configurar headers para la descarga
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      
+      // Enviar el contenido
+      if (formato === 'excel') {
+        // Para Excel, el contenido viene en base64, convertirlo a buffer
+        const buffer = Buffer.from(result.content, 'base64');
+        res.send(buffer);
+      } else {
+        // Para CSV, enviar como string con UTF-8 BOM
+        res.send(Buffer.from(result.content, 'utf-8'));
+      }
+      
     } catch (error) {
       console.error('❌ Error downloading pagados tickets:', error);
       throw new HttpException(

@@ -353,26 +353,42 @@ export const downloadTickets = async (raffleId: string, tipo: 'apartados' | 'pag
         
         const response = await fetch(`${API_URL}/admin/raffles/${raffleId}/boletos/${tipo}/descargar?formato=${formato}`, {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
         });
         
         if (response.ok) {
-            const result = await response.json();
             console.log('✅ Tickets downloaded successfully');
             
-            // Crear y descargar archivo
-            const blob = formato === 'csv' 
-                ? new Blob([result.content], { type: result.contentType })
-                : new Blob([Buffer.from(result.content, 'base64')], { type: result.contentType });
+            // Obtener el nombre del archivo del header Content-Disposition
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `boletos-${tipo}-${raffleId}.${formato === 'excel' ? 'xlsx' : 'csv'}`;
             
-            const url = window.URL.createObjectURL(blob);
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1];
+                }
+            }
+            
+            // Obtener el tipo de contenido
+            const contentType = response.headers.get('Content-Type') || 
+                (formato === 'excel' 
+                    ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                    : 'text/csv');
+            
+            // Obtener el contenido como blob
+            const blob = await response.blob();
+            
+            // Crear y descargar archivo
+            const url = window.URL.createObjectURL(new Blob([blob], { type: contentType }));
             const link = document.createElement('a');
             link.href = url;
-            link.download = result.filename;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
+            
+            console.log('✅ File downloaded:', filename);
             
         } else {
             const errorText = await response.text();
