@@ -247,9 +247,14 @@ export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'up
             body: JSON.stringify(raffle),
         });
         if (response.ok) {
-            const data = await response.json();
+            const result = await response.json();
             console.log('✅ Backend raffle created successfully');
-            return data;
+            
+            // Si la respuesta tiene estructura { success, data }, extraer data
+            if (result.success && result.data) {
+                return result.data;
+            }
+            return result;
         } else {
             console.log('❌ Backend returned error status:', response.status);
             const errorText = await response.text();
@@ -401,9 +406,23 @@ export const deleteRaffle = async (id: string): Promise<void> => {
             return;
         } else {
             console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error details:', errorText);
+            
+            // Intentar parsear el error como JSON
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.message || errorData.error || 'Error al eliminar la rifa');
+            } catch {
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error; // Re-lanzar el error para que se maneje en el componente
+        }
+        throw new Error('Error desconocido al eliminar la rifa');
     }
     
     // Fallback to local data

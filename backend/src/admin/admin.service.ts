@@ -532,6 +532,42 @@ export class AdminService {
     }
   }
 
+  async deleteRaffle(id: string) {
+    try {
+      // Verificar que la rifa existe
+      const existingRaffle = await this.prisma.raffle.findUnique({ 
+        where: { id },
+        include: { orders: true }
+      });
+      
+      if (!existingRaffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Verificar si tiene órdenes asociadas
+      if (existingRaffle.orders && existingRaffle.orders.length > 0) {
+        const hasPaidOrders = existingRaffle.orders.some(order => order.status === 'PAID');
+        if (hasPaidOrders) {
+          throw new Error('No se puede eliminar una rifa con órdenes pagadas');
+        }
+      }
+
+      console.log('🗑️ Deleting raffle:', id);
+      
+      // Eliminar la rifa
+      await this.prisma.raffle.delete({ where: { id } });
+      
+      console.log('✅ Raffle deleted successfully');
+      return { message: 'Rifa eliminada exitosamente' };
+    } catch (error) {
+      console.error('❌ Error deleting raffle:', error);
+      if (error instanceof Error) {
+        throw new Error(`Error al eliminar la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al eliminar la rifa');
+    }
+  }
+
   async downloadTickets(raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel'): Promise<{ filename: string; content: string; contentType: string }> {
     try {
       console.log('📥 Downloading tickets:', { raffleId, tipo, formato });

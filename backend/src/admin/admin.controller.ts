@@ -151,6 +151,24 @@ export class AdminController {
     }
   }
 
+  @Delete('raffles/:id')
+  async deleteRaffle(@Param('id') id: string) {
+    try {
+      const result = await this.adminService.deleteRaffle(id);
+      return {
+        success: true,
+        message: 'Rifa eliminada exitosamente',
+        data: result
+      };
+    } catch (error) {
+      console.error('❌ Error in deleteRaffle controller:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al eliminar la rifa',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
   @Get('raffles/:id/boletos/apartados/descargar')
   async downloadApartadosTickets(
     @Param('id') raffleId: string,
