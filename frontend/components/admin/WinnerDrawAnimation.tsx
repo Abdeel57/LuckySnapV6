@@ -5,27 +5,67 @@ import { Trophy, Sparkles } from 'lucide-react';
 interface WinnerDrawAnimationProps {
     isRunning: boolean;
     winnerNumber: number | null;
-    onComplete: () => void;
+    onComplete?: () => void;
 }
 
 const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, winnerNumber, onComplete }) => {
     const [displayNumber, setDisplayNumber] = useState<number>(0);
-    const [countdown, setCountdown] = useState<number>(5);
+    const [countdown, setCountdown] = useState<number>(3);
+    const [showResult, setShowResult] = useState(false);
 
     useEffect(() => {
-        if (isRunning && countdown > 0) {
-            const timer = setTimeout(() => {
-                setCountdown(countdown - 1);
-                setDisplayNumber(Math.floor(Math.random() * 1000) + 1);
+        if (isRunning) {
+            // Reset states
+            setShowResult(false);
+            setCountdown(3);
+            
+            // Fast random numbers
+            const interval = setInterval(() => {
+                if (countdown > 0) {
+                    setDisplayNumber(Math.floor(Math.random() * 1000) + 1);
+                }
             }, 100);
-            return () => clearTimeout(timer);
-        } else if (countdown === 0 && winnerNumber !== null) {
-            setDisplayNumber(winnerNumber);
-            setTimeout(() => {
-                onComplete();
-            }, 2000);
+
+            // Countdown timer
+            const countdownInterval = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(countdownInterval);
+                        // Show winner number after countdown
+                        setTimeout(() => {
+                            if (winnerNumber !== null) {
+                                setDisplayNumber(winnerNumber);
+                                setShowResult(true);
+                                // Call onComplete after showing result
+                                setTimeout(() => {
+                                    onComplete?.();
+                                }, 2000);
+                            }
+                        }, 100);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => {
+                clearInterval(interval);
+                clearInterval(countdownInterval);
+            };
         }
-    }, [isRunning, countdown, winnerNumber, onComplete]);
+    }, [isRunning, winnerNumber, onComplete, countdown]);
+
+    // Si el sorteo no está corriendo y hay un ganador, mostrar el resultado
+    useEffect(() => {
+        if (!isRunning && winnerNumber !== null && !showResult) {
+            setDisplayNumber(winnerNumber);
+            setShowResult(true);
+        }
+    }, [isRunning, winnerNumber, showResult]);
+
+    if (!isRunning && !showResult) {
+        return null;
+    }
 
     return (
         <div className="relative w-full h-96 flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 rounded-2xl overflow-hidden">
@@ -57,7 +97,8 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
 
             {/* Contenido principal */}
             <div className="relative z-10 text-center">
-                {isRunning && countdown > 0 ? (
+                {!showResult ? (
+                    // Animación de selección
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1, rotate: 360 }}
@@ -96,11 +137,14 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                             className="flex items-center justify-center gap-2 text-white"
                         >
                             <Sparkles className="w-6 h-6 text-yellow-400" />
-                            <span className="text-2xl font-bold">Seleccionando ganador en {countdown}...</span>
+                            <span className="text-2xl font-bold">
+                                {countdown > 0 ? `Seleccionando ganador en ${countdown}...` : 'Decidiendo ganador...'}
+                            </span>
                             <Sparkles className="w-6 h-6 text-yellow-400" />
                         </motion.div>
                     </motion.div>
-                ) : winnerNumber !== null ? (
+                ) : (
+                    // Resultado final
                     <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -150,13 +194,13 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
                         >
-                            <p className="text-3xl font-bold text-white mb-4">¡Ganador!</p>
+                            <p className="text-3xl font-bold text-white mb-4">¡¡¡ GANADOR !!!</p>
                             <div className="text-9xl font-bold text-yellow-400 drop-shadow-2xl">
-                                {winnerNumber.toString().padStart(4, '0')}
+                                {displayNumber.toString().padStart(4, '0')}
                             </div>
                         </motion.div>
                     </motion.div>
-                ) : null}
+                )}
             </div>
         </div>
     );

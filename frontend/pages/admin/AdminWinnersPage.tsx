@@ -51,17 +51,21 @@ const AdminWinnersPage = () => {
         setAnimationComplete(false);
         
         try {
-            // Obtener el ganador inmediatamente
-            const winnerData = await drawWinner(selectedRaffle);
-            
-            // Esperar un momento antes de mostrar el resultado
-            await new Promise(resolve => setTimeout(resolve, 7000));
-            
-            setWinner(winnerData);
+            // Obtener el ganador después de la animación
+            setTimeout(async () => {
+                try {
+                    const winnerData = await drawWinner(selectedRaffle);
+                    setWinner(winnerData);
+                } catch (err: any) {
+                    setError(err.message || "Ocurrió un error al realizar el sorteo.");
+                    setShowAnimation(false);
+                } finally {
+                    setIsDrawing(false);
+                }
+            }, 4000); // Tiempo para que termine la animación (3s countdown + 1s de margen)
         } catch (err: any) {
             setError(err.message || "Ocurrió un error al realizar el sorteo.");
             setShowAnimation(false);
-        } finally {
             setIsDrawing(false);
         }
     };
@@ -196,10 +200,18 @@ const AdminWinnersPage = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="mb-6"
                         >
-                            {showAnimation && !winner && !error ? (
+                            {showAnimation && !error && winner ? (
+                                // Mostrar animación con el número ganador
                                 <WinnerDrawAnimation
                                     isRunning={isDrawing}
-                                    winnerNumber={winner?.ticket || null}
+                                    winnerNumber={winner.ticket}
+                                    onComplete={handleAnimationComplete}
+                                />
+                            ) : showAnimation && !winner && !error ? (
+                                // Mostrar animación mientras se busca el ganador
+                                <WinnerDrawAnimation
+                                    isRunning={isDrawing}
+                                    winnerNumber={null}
                                     onComplete={handleAnimationComplete}
                                 />
                             ) : error ? (
@@ -207,6 +219,7 @@ const AdminWinnersPage = () => {
                                     <p className="text-center text-red-600 font-semibold">{error}</p>
                                 </div>
                             ) : winner && !showAnimation ? (
+                                // Panel de información del ganador
                                 <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                                     <div className="text-center">
                                         <Trophy className="mx-auto h-16 w-16 text-yellow-400 mb-4" />
@@ -218,12 +231,20 @@ const AdminWinnersPage = () => {
                                             </span>
                                         </p>
                                         <p className="text-gray-500 mb-4">Folio: {winner.order.folio}</p>
-                                        <button 
-                                            onClick={handleSaveWinner} 
-                                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-colors"
-                                        >
-                                            Guardar y Publicar Ganador
-                                        </button>
+                                        <div className="flex justify-center gap-4">
+                                            <button 
+                                                onClick={() => { setWinner(null); setShowAnimation(false); }} 
+                                                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-xl transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button 
+                                                onClick={handleSaveWinner} 
+                                                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-colors"
+                                            >
+                                                Guardar y Publicar Ganador
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ) : null}
