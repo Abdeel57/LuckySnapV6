@@ -44,6 +44,10 @@ export interface Winner {
     imageUrl: string;
     raffleTitle: string;
     drawDate: Date;
+    ticketNumber?: number;
+    testimonial?: string;
+    phone?: string;
+    city?: string;
 }
 
 export interface Customer {
