@@ -36,7 +36,6 @@ type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
     bonuses: { value: string }[];
     boletosConOportunidades?: boolean;
     numeroOportunidades?: number;
-    giftTickets?: number;
 };
 
 const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
@@ -581,36 +580,6 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                             </div>
                                         </div>
 
-                                        {/* Boletos de Regalo */}
-                                        <div className="bg-pink-50 border border-pink-200 rounded-xl p-6">
-                                            <div className="flex items-center space-x-2 mb-4">
-                                                <Gift className="w-5 h-5 text-pink-600" />
-                                                <h3 className="font-semibold text-pink-900">Boletos de Regalo</h3>
-                                            </div>
-                                            <p className="text-pink-700 text-sm mb-4">
-                                                Los boletos de regalo se asignan automáticamente al comprar uno o más boletos del sorteo.
-                                            </p>
-                                            
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    Cantidad de Boletos de Regalo
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    {...register('giftTickets', { 
-                                                        min: 0, 
-                                                        max: 50,
-                                                        valueAsNumber: true
-                                                    })}
-                                                    className={inputClasses}
-                                                    placeholder="0"
-                                                    defaultValue={raffle?.giftTickets || 0}
-                                                />
-                                                <p className="text-gray-500 text-sm mt-1">
-                                                    Boletos que se regalan automáticamente (máximo 50)
-                                                </p>
-                                            </div>
-                                        </div>
 
                                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                                             <div className="flex items-center space-x-2 mb-2">

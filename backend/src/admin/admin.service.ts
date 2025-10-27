@@ -431,7 +431,6 @@ export class AdminService {
         slug: autoSlug,
         boletosConOportunidades: data.boletosConOportunidades || false,
         numeroOportunidades: data.numeroOportunidades || 1,
-        giftTickets: data.giftTickets || 0,
       };
 
       console.log('📝 Creating raffle with data:', raffleData);
