@@ -223,29 +223,17 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
 
 // --- Admin API Calls ---
 
-export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'updatedAt'>): Promise<Raffle> => {
+export const createRaffle = async (raffle: any): Promise<Raffle> => {
     try {
-        console.log('Trying backend for create raffle...');
-        console.log('Payload size:', JSON.stringify(raffle).length, 'bytes');
-        console.log('Payload preview:', {
-            title: raffle.title,
-            gallery: raffle.gallery?.length || 0,
-            packs: raffle.packs?.length || 0,
-            heroImage: raffle.heroImage ? (raffle.heroImage.startsWith('data:') ? 'BASE64' : 'URL') : 'NONE'
-        });
-        
-        // Verificar si hay imágenes base64
-        const hasBase64Images = raffle.heroImage?.startsWith('data:') || 
-                               raffle.gallery?.some(img => img.startsWith('data:'));
-        if (hasBase64Images) {
-            console.log('⚠️ ADVERTENCIA: Se detectaron imágenes base64 que pueden causar error 413');
-        }
+        console.log('🚀 Trying backend for create raffle...');
+        console.log('📤 Payload:', raffle);
         
         const response = await fetch(`${API_URL}/admin/raffles`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(raffle),
         });
+        
         if (response.ok) {
             const result = await response.json();
             console.log('✅ Backend raffle created successfully');
@@ -256,18 +244,25 @@ export const createRaffle = async (raffle: Omit<Raffle, 'id' | 'createdAt' | 'up
             }
             return result;
         } else {
-            console.log('❌ Backend returned error status:', response.status);
             const errorText = await response.text();
+            console.log('❌ Backend returned error status:', response.status);
             console.log('❌ Error details:', errorText);
+            
+            // Intentar parsear el error como JSON
+            try {
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.message || errorData.error || 'Error al crear la rifa');
+            } catch {
+                throw new Error(`Error ${response.status}: ${errorText}`);
+            }
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        if (error instanceof Error) {
+            throw error; // Re-lanzar el error para que se maneje en el componente
+        }
+        throw new Error('Error desconocido al crear la rifa');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for create raffle');
-    const { localApi } = await import('./localApi');
-    return localApi.createRaffle(raffle);
 };
 
 export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise<Raffle> => {
