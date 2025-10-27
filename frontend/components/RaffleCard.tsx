@@ -21,11 +21,11 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.5 }}
-            className="card h-full flex flex-col group"
+            className="card h-full flex flex-col group overflow-hidden"
         >
             <Link to={`/sorteo/${raffle.slug}`} className="block">
                 {/* Imagen cuadrada sin bordes redondeados */}
-                <div className="relative overflow-hidden aspect-square mb-0">
+                <div className="relative overflow-hidden rounded-t-2xl aspect-square mb-0">
                     <img 
                         src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
                         alt={raffle.title} 
