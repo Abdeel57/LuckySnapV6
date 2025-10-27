@@ -194,26 +194,39 @@ const AdminWinnersPage = () => {
 
                 {/* Animación o Resultado */}
                 <AnimatePresence>
-                    {(showAnimation || winner || error) && (
+                    {error && (
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }} 
                             animate={{ opacity: 1, y: 0 }} 
                             exit={{ opacity: 0, y: -20 }}
                             className="mb-6"
                         >
-                            {showAnimation && !error ? (
-                                // Mostrar animación
-                                <WinnerDrawAnimation
-                                    isRunning={isDrawing}
-                                    winnerNumber={winner?.ticket || null}
-                                    onComplete={handleAnimationComplete}
-                                />
-                            ) : error ? (
-                                <div className="bg-white p-6 rounded-xl shadow-lg border border-red-200">
-                                    <p className="text-center text-red-600 font-semibold">{error}</p>
-                                </div>
-                            ) : winner && !showAnimation ? (
-                                // Panel de información del ganador
+                            <div className="bg-white p-6 rounded-xl shadow-lg border border-red-200">
+                                <p className="text-center text-red-600 font-semibold">{error}</p>
+                            </div>
+                        </motion.div>
+                    )}
+                    {showAnimation && !error && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0, y: -20 }}
+                            className="mb-6"
+                        >
+                            <WinnerDrawAnimation
+                                isRunning={isDrawing}
+                                winnerNumber={winner?.ticket || null}
+                                onComplete={handleAnimationComplete}
+                            />
+                        </motion.div>
+                    )}
+                    {!showAnimation && winner && !error && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            exit={{ opacity: 0, y: -20 }}
+                            className="mb-6"
+                        >
                                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-4 border-yellow-400 rounded-2xl shadow-2xl p-8">
                                     <div className="text-center">
                                         <div className="flex justify-center mb-4">
@@ -289,7 +302,6 @@ const AdminWinnersPage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ) : null}
                         </motion.div>
                     )}
                 </AnimatePresence>
