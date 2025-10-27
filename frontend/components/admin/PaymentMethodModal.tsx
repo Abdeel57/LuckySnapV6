@@ -114,5 +114,3 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({ isOpen, onClose
 
 export default PaymentMethodModal;
 
-了一定程度的战术执行
-

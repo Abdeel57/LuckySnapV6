@@ -1,9 +1,11 @@
 import { ReactNode } from 'react';
 
 export enum OrderStatus {
-    PENDING = 'pending',
-    PAID = 'paid',
-    CANCELLED = 'cancelled',
+    PENDING = 'PENDING',
+    PAID = 'PAID',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED',
+    RELEASED = 'RELEASED',
 }
 
 export interface Pack {
