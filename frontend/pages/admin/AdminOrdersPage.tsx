@@ -15,6 +15,7 @@ import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder } from '../../services/api';
 import { getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
+import PaymentMethodModal from '../../components/admin/PaymentMethodModal';
 
 const AdminOrdersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -27,6 +28,8 @@ const AdminOrdersPage: React.FC = () => {
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isLoadingAction, setIsLoadingAction] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<string | null>(null);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -74,24 +77,49 @@ const AdminOrdersPage: React.FC = () => {
         return matchesSearch;
     });
 
+    // Abrir modal de método de pago
+    const handleOpenPaymentModal = (orderId: string) => {
+        setSelectedOrderForPayment(orderId);
+        setIsPaymentModalOpen(true);
+    };
+
+    // Confirmar pago con método y notas
+    const handleConfirmPayment = async (paymentMethod: string, notes: string) => {
+        if (!selectedOrderForPayment) return;
+        
+        try {
+            setRefreshing(true);
+            await markOrderPaid(selectedOrderForPayment, paymentMethod, notes);
+            console.log('✅ Order marked as paid:', { orderId: selectedOrderForPayment, paymentMethod, notes });
+            alert('Orden marcada como pagada exitosamente');
+            await refreshData();
+            setIsPaymentModalOpen(false);
+            setSelectedOrderForPayment(null);
+        } catch (error: any) {
+            console.error('❌ Error marking order as paid:', error);
+            alert(`Error al marcar la orden como pagada: ${error.message || 'Error desconocido'}`);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
     // Actualizar estado de orden
     const handleUpdateStatus = async (orderId: string, newStatus: string) => {
         try {
             setRefreshing(true);
             
-            // Usar función específica para marcar como pagado
+            // Para COMPLETED, abrir modal de método de pago
             if (newStatus === 'COMPLETED') {
-                await markOrderPaid(orderId);
-                console.log('✅ Order marked as paid:', { orderId });
-                alert('Orden marcada como pagada exitosamente');
-            } else {
-                await updateOrder(orderId, { status: newStatus });
-                console.log('✅ Order status updated:', { orderId, newStatus });
-                alert(`Estado de la orden actualizado a: ${newStatus}`);
+                handleOpenPaymentModal(orderId);
+                return;
             }
             
+            await updateOrder(orderId, { status: newStatus });
+            console.log('✅ Order status updated:', { orderId, newStatus });
+            alert(`Estado de la orden actualizado a: ${newStatus}`);
+            
             await refreshData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('❌ Error updating order status:', error);
             alert(`Error al actualizar el estado de la orden: ${error.message || 'Error desconocido'}`);
         } finally {
@@ -476,8 +504,18 @@ const AdminOrdersPage: React.FC = () => {
                             </div>
                         </motion.div>
                     </motion.div>
-                )}
+                    )}
             </AnimatePresence>
+
+            {/* Modal de método de pago */}
+            <PaymentMethodModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => {
+                    setIsPaymentModalOpen(false);
+                    setSelectedOrderForPayment(null);
+                }}
+                onSave={handleConfirmPayment}
+            />
 
             {/* Modal de edición */}
             <AnimatePresence>

@@ -189,16 +189,30 @@ export class AdminService {
     }
   }
 
-  async markOrderPaid(id: string) {
+  async markOrderPaid(id: string, paymentMethod?: string, notes?: string) {
     const order = await this.prisma.order.findUnique({ where: { id } });
     if (!order) throw new NotFoundException('Order not found');
     if (order.status === 'PAID') return order;
 
-    // Vincular/crear cliente (admin_users no es clientes; asumimos tabla user existente)
-    // Aquí solo marcamos como pagado y actualizamos updatedAt
+    // Preparar datos de actualización
+    const updateData: any = { 
+      status: 'PAID' as any, 
+      updatedAt: new Date() 
+    };
+
+    // Agregar método de pago si se proporcionó
+    if (paymentMethod) {
+      updateData.paymentMethod = paymentMethod;
+    }
+
+    // Agregar notas si se proporcionaron
+    if (notes) {
+      updateData.notes = notes;
+    }
+
     const updated = await this.prisma.order.update({
       where: { id },
-      data: { status: 'PAID' as any, updatedAt: new Date() },
+      data: updateData,
       include: { raffle: true, user: true },
     });
 
@@ -620,7 +634,6 @@ export class AdminService {
             numero_boleto: ticketNumber,
             cliente: order.user.name || 'Sin nombre',
             telefono: order.user.phone || 'Sin teléfono',
-            email: order.user.email || 'Sin email',
             distrito: order.user.district || 'No especificado',
             fecha_apartado: this.formatDate(order.createdAt),
             fecha_pago: tipo === 'pagados' ? this.formatDate(order.updatedAt) : 'Pendiente',
@@ -669,7 +682,6 @@ export class AdminService {
       'Número Boleto',
       'Cliente', 
       'Teléfono',
-      'Email',
       'Distrito',
       'Fecha Apartado',
       'Fecha Pago',
@@ -688,7 +700,6 @@ export class AdminService {
         row.numero_boleto,
         `"${(row.cliente || '').replace(/"/g, '""')}"`,
         `"${(row.telefono || '').replace(/"/g, '""')}"`,
-        `"${(row.email || '').replace(/"/g, '""')}"`,
         `"${(row.distrito || '').replace(/"/g, '""')}"`,
         `"${row.fecha_apartado}"`,
         `"${row.fecha_pago}"`,
@@ -722,7 +733,6 @@ export class AdminService {
       'Número Boleto': row.numero_boleto,
       'Cliente': row.cliente,
       'Teléfono': row.telefono,
-      'Email': row.email,
       'Distrito': row.distrito,
       'Fecha Apartado': row.fecha_apartado,
       'Fecha Pago': row.fecha_pago,
@@ -743,7 +753,6 @@ export class AdminService {
       { wch: 15 }, // Número Boleto
       { wch: 25 }, // Cliente
       { wch: 15 }, // Teléfono
-      { wch: 30 }, // Email
       { wch: 20 }, // Distrito
       { wch: 18 }, // Fecha Apartado
       { wch: 18 }, // Fecha Pago

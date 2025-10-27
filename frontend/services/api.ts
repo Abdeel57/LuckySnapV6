@@ -772,12 +772,13 @@ export const deleteOrder = async (id: string): Promise<void> => {
 };
 
 // Nuevas funciones específicas de órdenes según especificaciones
-export const markOrderPaid = async (id: string): Promise<Order> => {
+export const markOrderPaid = async (id: string, paymentMethod?: string, notes?: string): Promise<Order> => {
     try {
         console.log('🚀 Trying backend for mark order paid...');
         const response = await fetch(`${API_URL}/admin/orders/${id}/mark-paid`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentMethod, notes }),
         });
         if (response.ok) {
             const data = await response.json();

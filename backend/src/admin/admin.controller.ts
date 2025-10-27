@@ -60,9 +60,12 @@ export class AdminController {
   }
 
   @Put('orders/:id/mark-paid')
-  async markOrderPaid(@Param('id') id: string) {
+  async markOrderPaid(
+    @Param('id') id: string,
+    @Body() body: { paymentMethod?: string; notes?: string }
+  ) {
     try {
-      return await this.adminService.markOrderPaid(id);
+      return await this.adminService.markOrderPaid(id, body.paymentMethod, body.notes);
     } catch (error) {
       console.error('Error marking order as paid:', error);
       throw new HttpException('Error al marcar la orden como pagada', HttpStatus.INTERNAL_SERVER_ERROR);

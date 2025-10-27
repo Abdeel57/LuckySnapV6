@@ -12,7 +12,6 @@ interface EditOrderFormProps {
 interface FormData {
     customerName: string;
     customerPhone: string;
-    customerEmail: string;
     customerDistrict: string;
     notes: string;
 }
@@ -24,7 +23,6 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
         defaultValues: {
             customerName: order.customer.name,
             customerPhone: order.customer.phone,
-            customerEmail: order.customer.email || '',
             customerDistrict: order.customer.district,
             notes: order.notes || ''
         }
@@ -39,7 +37,6 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                     ...order.customer,
                     name: data.customerName,
                     phone: data.customerPhone,
-                    email: data.customerEmail,
                     district: data.customerDistrict
                 },
                 notes: data.notes,
@@ -93,25 +90,6 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                         />
                         {errors.customerPhone && (
                             <p className="text-red-500 text-sm mt-1">{errors.customerPhone.message}</p>
-                        )}
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            {...register('customerEmail', {
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: 'Email inválido'
-                                }
-                            })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        {errors.customerEmail && (
-                            <p className="text-red-500 text-sm mt-1">{errors.customerEmail.message}</p>
                         )}
                     </div>
                     
