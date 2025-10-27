@@ -72,6 +72,7 @@ const AdminWinnersPage = () => {
 
     const handleAnimationComplete = () => {
         setAnimationComplete(true);
+        setShowAnimation(false);
     };
     
     const handleSaveWinner = async () => {
@@ -200,18 +201,11 @@ const AdminWinnersPage = () => {
                             exit={{ opacity: 0, y: -20 }}
                             className="mb-6"
                         >
-                            {showAnimation && !error && winner ? (
-                                // Mostrar animación con el número ganador
+                            {showAnimation && !error ? (
+                                // Mostrar animación
                                 <WinnerDrawAnimation
                                     isRunning={isDrawing}
-                                    winnerNumber={winner.ticket}
-                                    onComplete={handleAnimationComplete}
-                                />
-                            ) : showAnimation && !winner && !error ? (
-                                // Mostrar animación mientras se busca el ganador
-                                <WinnerDrawAnimation
-                                    isRunning={isDrawing}
-                                    winnerNumber={null}
+                                    winnerNumber={winner?.ticket || null}
                                     onComplete={handleAnimationComplete}
                                 />
                             ) : error ? (
