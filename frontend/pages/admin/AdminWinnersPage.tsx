@@ -88,8 +88,17 @@ const AdminWinnersPage = () => {
         }
 
         try {
+            const winnerName = winner.order.customer?.name || winner.order.name;
+            
+            console.log('🔍 Debug info:');
+            console.log('Winner object:', winner);
+            console.log('Winner.order:', winner.order);
+            console.log('Winner.order.customer:', winner.order.customer);
+            console.log('Winner.order.name:', winner.order.name);
+            console.log('Winner Name result:', winnerName);
+            
             const winnerData = {
-                name: winner.order.customer?.name || winner.order.name,
+                name: winnerName,
                 prize: raffle.title,
                 imageUrl: raffle.heroImage || raffle.imageUrl,
                 raffleTitle: raffle.title,
@@ -99,7 +108,7 @@ const AdminWinnersPage = () => {
                 city: winner.order.customer?.district
             };
             
-            console.log('💾 Guardando ganador:', winnerData);
+            console.log('💾 Guardando ganador con datos:', JSON.stringify(winnerData, null, 2));
             await saveWinner(winnerData);
             console.log('✅ Ganador guardado exitosamente');
             
