@@ -36,6 +36,7 @@ interface MobileOptimizedRaffleFormProps {
 type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
     id?: string;
     bonuses: { value: string }[];
+    giftTickets?: number;
 };
 
 const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
@@ -476,14 +477,30 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
 
                                                 <div>
                                                     <label className={labelClasses}>
-                                                        <CheckCircle className="w-4 h-4 inline mr-2" />
-                                                        Mostrar en Página Principal
+                                                        <Gift className="w-4 h-4 inline mr-2" />
+                                                        Boletos de Regalo
                                                     </label>
-                                                    <select {...register('featured')} className={inputClasses}>
-                                                        <option value="true">Sí</option>
-                                                        <option value="false">No</option>
-                                                    </select>
+                                                    <input
+                                                        {...register('giftTickets', { min: 0, max: 50 })}
+                                                        type="number"
+                                                        className={inputClasses}
+                                                        placeholder="0"
+                                                    />
+                                                    <small className="text-xs text-gray-500 mt-1 block">
+                                                        Se regalan automáticamente (máx. 50)
+                                                    </small>
                                                 </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className={labelClasses}>
+                                                    <CheckCircle className="w-4 h-4 inline mr-2" />
+                                                    Mostrar en Página Principal
+                                                </label>
+                                                <select {...register('featured')} className={inputClasses}>
+                                                    <option value="true">Sí</option>
+                                                    <option value="false">No</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>

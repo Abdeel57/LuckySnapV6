@@ -36,6 +36,7 @@ type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
     bonuses: { value: string }[];
     boletosConOportunidades?: boolean;
     numeroOportunidades?: number;
+    giftTickets?: number;
 };
 
 const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
@@ -461,38 +462,32 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                                             <div className="flex items-center space-x-2 mb-2">
                                                 <ImageIcon className="w-5 h-5 text-green-600" />
-                                                <h3 className="font-semibold text-green-900">Imagen Principal</h3>
+                                                <h3 className="font-semibold text-green-900">Imágenes del Premio</h3>
                                             </div>
                                             <p className="text-green-700 text-sm">
-                                                Sube la imagen principal del premio (opcional). Se usará una imagen por defecto si no subes ninguna.
+                                                Sube las imágenes del premio desde tu dispositivo. La primera imagen será la principal.
                                             </p>
                                         </div>
 
                                         <div>
                                             <label className={labelClasses}>
                                                 <ImageIcon className="w-4 h-4 inline mr-2" />
-                                                URL de Imagen
+                                                Subir Imágenes
                                             </label>
-                                            <input
-                                                {...register('imageUrl')}
-                                                className={inputClasses}
-                                                placeholder="https://ejemplo.com/imagen.jpg"
+                                            <Controller
+                                                name="gallery"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <MultiImageUploader
+                                                        images={field.value || []}
+                                                        onChange={field.onChange}
+                                                        maxImages={10}
+                                                    />
+                                                )}
                                             />
                                             <p className="text-gray-500 text-sm mt-1">
-                                                Pega una URL de imagen o déjalo vacío para usar imagen por defecto
+                                                Máximo 10 imágenes. JPG, PNG o GIF. Max 10MB cada una.
                                             </p>
-                                            {watchedData.imageUrl && (
-                                                <div className="mt-3">
-                                                    <img 
-                                                        src={watchedData.imageUrl} 
-                                                        alt="Preview" 
-                                                        className="w-full max-w-md h-48 object-cover rounded-xl border border-gray-300"
-                                                        onError={(e) => {
-                                                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
                                         </div>
                                     </motion.div>
                                 )}
@@ -583,6 +578,37 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                                         </p>
                                                     </div>
                                                 )}
+                                            </div>
+                                        </div>
+
+                                        {/* Boletos de Regalo */}
+                                        <div className="bg-pink-50 border border-pink-200 rounded-xl p-6">
+                                            <div className="flex items-center space-x-2 mb-4">
+                                                <Gift className="w-5 h-5 text-pink-600" />
+                                                <h3 className="font-semibold text-pink-900">Boletos de Regalo</h3>
+                                            </div>
+                                            <p className="text-pink-700 text-sm mb-4">
+                                                Los boletos de regalo se asignan automáticamente al comprar uno o más boletos del sorteo.
+                                            </p>
+                                            
+                                            <div>
+                                                <label className={labelClasses}>
+                                                    Cantidad de Boletos de Regalo
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    {...register('giftTickets', { 
+                                                        min: 0, 
+                                                        max: 50,
+                                                        valueAsNumber: true
+                                                    })}
+                                                    className={inputClasses}
+                                                    placeholder="0"
+                                                    defaultValue={raffle?.giftTickets || 0}
+                                                />
+                                                <p className="text-gray-500 text-sm mt-1">
+                                                    Boletos que se regalan automáticamente (máximo 50)
+                                                </p>
                                             </div>
                                         </div>
 
