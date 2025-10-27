@@ -220,29 +220,77 @@ const AdminWinnersPage = () => {
                                 </div>
                             ) : winner && !showAnimation ? (
                                 // Panel de información del ganador
-                                <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-4 border-yellow-400 rounded-2xl shadow-2xl p-8">
                                     <div className="text-center">
-                                        <Trophy className="mx-auto h-16 w-16 text-yellow-400 mb-4" />
-                                        <p className="text-gray-600 mb-2">¡El boleto ganador es el!</p>
-                                        <p className="text-6xl font-bold text-blue-600 my-2">{winner.ticket}</p>
-                                        <p className="text-2xl font-semibold text-gray-800">
-                                            Felicidades a <span className="text-blue-500">
-                                                {winner.order.customer?.name || winner.order.name}
-                                            </span>
-                                        </p>
-                                        <p className="text-gray-500 mb-4">Folio: {winner.order.folio}</p>
-                                        <div className="flex justify-center gap-4">
+                                        <div className="flex justify-center mb-4">
+                                            <Trophy className="h-20 w-20 text-yellow-500" />
+                                        </div>
+                                        
+                                        <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                                            ¡¡¡ GANADOR !!!
+                                        </h2>
+                                        
+                                        {/* Boleto ganador destacado */}
+                                        <div className="bg-white rounded-2xl shadow-xl border-4 border-yellow-400 p-8 mb-6 transform hover:scale-105 transition-transform">
+                                            <p className="text-lg font-semibold text-gray-600 mb-2">Boleto Ganador</p>
+                                            <p className="text-8xl font-bold text-yellow-500 my-4 drop-shadow-lg">
+                                                {winner.ticket}
+                                            </p>
+                                            <div className="border-t-2 border-gray-200 pt-4 mt-4">
+                                                <p className="text-2xl font-bold text-gray-900 mb-2">
+                                                    {winner.order.customer?.name || winner.order.name}
+                                                </p>
+                                                <p className="text-sm text-gray-600">Folio: {winner.order.folio}</p>
+                                                {winner.order.customer?.phone && (
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        Teléfono: {winner.order.customer.phone}
+                                                    </p>
+                                                )}
+                                                {winner.order.customer?.district && (
+                                                    <p className="text-sm text-gray-600 mt-1">
+                                                        Ciudad: {winner.order.customer.district}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Información del premio */}
+                                        <div className="bg-blue-100 rounded-xl p-4 mb-6">
+                                            <p className="text-lg font-semibold text-blue-900">
+                                                Rifa: {finishedRaffles.find(r => r.id === selectedRaffle)?.title || 'Sin título'}
+                                            </p>
+                                            <p className="text-sm text-blue-700">
+                                                Fecha de sorteo: {new Date(finishedRaffles.find(r => r.id === selectedRaffle)?.drawDate || new Date()).toLocaleDateString('es-ES', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </p>
+                                        </div>
+                                        
+                                        {/* Botones de acción */}
+                                        <div className="flex flex-col sm:flex-row justify-center gap-4">
                                             <button 
-                                                onClick={() => { setWinner(null); setShowAnimation(false); }} 
-                                                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-xl transition-colors"
+                                                onClick={() => { 
+                                                    setWinner(null); 
+                                                    setShowAnimation(false); 
+                                                    setSelectedRaffle('');
+                                                }} 
+                                                className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg"
                                             >
-                                                Cancelar
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Volver a Seleccionar
                                             </button>
                                             <button 
                                                 onClick={handleSaveWinner} 
-                                                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-xl transition-colors"
+                                                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105 shadow-lg"
                                             >
-                                                Guardar y Publicar Ganador
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Confirmar Ganador
                                             </button>
                                         </div>
                                     </div>
