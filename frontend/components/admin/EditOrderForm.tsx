@@ -19,7 +19,7 @@ interface FormData {
 const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     
- момент    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         defaultValues: {
             customerName: order.customer?.name || '',
             customerPhone: order.customer?.phone || '',
