@@ -76,26 +76,42 @@ const AdminWinnersPage = () => {
     };
     
     const handleSaveWinner = async () => {
-        if (!winner) return;
+        if (!winner) {
+            alert('No hay ganador para guardar');
+            return;
+        }
 
         const raffle = finishedRaffles.find(r => r.id === selectedRaffle);
-        if (!raffle) return;
+        if (!raffle) {
+            alert('No se encontró la rifa seleccionada');
+            return;
+        }
 
-        const winnerData = {
-            name: winner.order.customer?.name || winner.order.name,
-            prize: raffle.title,
-            imageUrl: raffle.heroImage || raffle.imageUrl,
-            raffleTitle: raffle.title,
-            drawDate: raffle.drawDate,
-            ticketNumber: winner.ticket
-        };
-        
-        await saveWinner(winnerData);
-        alert(`¡Ganador ${winner.order.customer?.name || winner.order.name} guardado con éxito!`);
-        setWinner(null);
-        setSelectedRaffle('');
-        setAnimationComplete(false);
-        loadData();
+        try {
+            const winnerData = {
+                name: winner.order.customer?.name || winner.order.name,
+                prize: raffle.title,
+                imageUrl: raffle.heroImage || raffle.imageUrl,
+                raffleTitle: raffle.title,
+                drawDate: raffle.drawDate,
+                ticketNumber: winner.ticket,
+                phone: winner.order.customer?.phone,
+                city: winner.order.customer?.district
+            };
+            
+            console.log('💾 Guardando ganador:', winnerData);
+            await saveWinner(winnerData);
+            console.log('✅ Ganador guardado exitosamente');
+            
+            alert(`¡Ganador ${winner.order.customer?.name || winner.order.name} guardado con éxito!`);
+            setWinner(null);
+            setSelectedRaffle('');
+            setAnimationComplete(false);
+            loadData();
+        } catch (err: any) {
+            console.error('❌ Error al guardar ganador:', err);
+            alert(`Error al guardar ganador: ${err.message}`);
+        }
     };
 
     const handleSaveManualWinner = async (winnerData: any) => {
