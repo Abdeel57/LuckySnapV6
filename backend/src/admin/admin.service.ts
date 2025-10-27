@@ -423,6 +423,7 @@ export class AdminService {
         title: data.title.trim(),
         description: data.description || null,
         imageUrl: data.imageUrl || defaultImage,
+        gallery: data.gallery || null,
         price: Number(data.price),
         tickets: Number(data.tickets),
         sold: 0,
@@ -485,6 +486,10 @@ export class AdminService {
       
       if (data.imageUrl !== undefined) {
         raffleData.imageUrl = data.imageUrl;
+      }
+      
+      if (data.gallery !== undefined) {
+        raffleData.gallery = data.gallery;
       }
       
       if (data.drawDate !== undefined) {

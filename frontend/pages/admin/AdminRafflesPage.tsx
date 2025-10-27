@@ -95,6 +95,7 @@ const AdminRafflesPage: React.FC = () => {
             title: data.title.trim(),
             description: data.description || null,
             imageUrl: gallery.length > 0 ? gallery[0] : (data.imageUrl || data.heroImage || null),
+            gallery: gallery.length > 0 ? gallery : null,
             price: Number(data.price),
             tickets: Number(data.tickets),
             drawDate: new Date(data.drawDate),
@@ -102,7 +103,7 @@ const AdminRafflesPage: React.FC = () => {
             slug: data.slug || null,
             boletosConOportunidades: data.boletosConOportunidades || false,
             numeroOportunidades: data.numeroOportunidades || 1
-            // NO enviar: packs, gallery, bonuses, heroImage, sold, createdAt, updatedAt
+            // NO enviar: packs, bonuses, heroImage, sold, createdAt, updatedAt
             // Estos no existen en el esquema Prisma o son generados automáticamente
         };
     };

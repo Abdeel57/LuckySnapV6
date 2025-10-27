@@ -30,6 +30,7 @@ model Raffle {
   title       String
   description String?
   imageUrl    String?
+  gallery     Json?    // Array de imágenes
   price       Float    @default(50.0)
   tickets     Int
   sold        Int      @default(0)
