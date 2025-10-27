@@ -61,12 +61,10 @@ const AdminCustomersPage: React.FC = () => {
         return base.filter(o => {
             const name = o.customer?.name?.toLowerCase?.() || '';
             const phone = o.customer?.phone || '';
-            const email = o.customer?.email?.toLowerCase?.() || '';
             const district = o.customer?.district?.toLowerCase?.() || '';
             return (
                 name.includes(term) ||
                 phone.includes(searchTerm) ||
-                email.includes(term) ||
                 district.includes(term)
             );
         });
@@ -176,7 +174,7 @@ const AdminCustomersPage: React.FC = () => {
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar por nombre, teléfono, email o distrito..."
+                                    placeholder="Buscar por nombre, teléfono o distrito..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -202,7 +200,6 @@ const AdminCustomersPage: React.FC = () => {
                                     <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name}</h3>
                                     <div className="space-y-1 text-sm text-gray-600">
                                         <p>📞 {order.customer.phone}</p>
-                                        {order.customer.email && <p>📧 {order.customer.email}</p>}
                                         <p>🎫 Boletos: {order.tickets.join(', ')}</p>
                                         <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                     </div>
@@ -288,12 +285,6 @@ const AdminCustomersPage: React.FC = () => {
                                                 <span className="text-sm text-gray-600">Teléfono:</span>
                                                 <p className="font-medium">{selectedOrder.customer.phone}</p>
                                             </div>
-                                            {selectedOrder.customer.email && (
-                                                <div>
-                                                    <span className="text-sm text-gray-600">Email:</span>
-                                                    <p className="font-medium">{selectedOrder.customer.email}</p>
-                                                </div>
-                                            )}
                                             {selectedOrder.customer.district && (
                                                 <div>
                                                     <span className="text-sm text-gray-600">Distrito:</span>

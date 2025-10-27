@@ -72,7 +72,7 @@ const AdminOrdersPage: React.FC = () => {
             order.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.phone.includes(searchTerm) ||
-            order.customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+            order.customer.district.toLowerCase().includes(searchTerm.toLowerCase());
         
         return matchesSearch;
     });
@@ -429,12 +429,6 @@ const AdminOrdersPage: React.FC = () => {
                                                 <span className="text-sm text-gray-600">Teléfono:</span>
                                                 <p className="font-medium">{selectedOrder.customer.phone}</p>
                                             </div>
-                                            {selectedOrder.customer.email && (
-                                                <div>
-                                                    <span className="text-sm text-gray-600">Email:</span>
-                                                    <p className="font-medium">{selectedOrder.customer.email}</p>
-                                                </div>
-                                            )}
                                             {selectedOrder.customer.district && (
                                                 <div>
                                                     <span className="text-sm text-gray-600">Distrito:</span>
