@@ -464,11 +464,11 @@ const AdminOrdersPage: React.FC = () => {
                                         <div className="space-y-2">
                                             <div>
                                                 <span className="text-sm text-gray-600">Cantidad:</span>
-                                                <p className="font-medium">{selectedOrder.tickets.length}</p>
+                                                <p className="font-medium">{selectedOrder.tickets?.length || 0}</p>
                                             </div>
                                             <div>
                                                 <span className="text-sm text-gray-600">Números:</span>
-                                                <p className="font-medium">{selectedOrder.tickets.join(', ')}</p>
+                                                <p className="font-medium">{selectedOrder.tickets?.join(', ') || 'N/A'}</p>
                                             </div>
                                         </div>
                                     </div>

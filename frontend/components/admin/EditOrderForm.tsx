@@ -19,11 +19,11 @@ interface FormData {
 const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+ момент    const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         defaultValues: {
-            customerName: order.customer.name,
-            customerPhone: order.customer.phone,
-            customerDistrict: order.customer.district,
+            customerName: order.customer?.name || '',
+            customerPhone: order.customer?.phone || '',
+            customerDistrict: order.customer?.district || '',
             notes: order.notes || ''
         }
     });
@@ -37,7 +37,8 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
                     ...order.customer,
                     name: data.customerName,
                     phone: data.customerPhone,
-                    district: data.customerDistrict
+                    district: data.customerDistrict,
+                    email: order.customer?.email || ''
                 },
                 notes: data.notes,
                 updatedAt: new Date()
