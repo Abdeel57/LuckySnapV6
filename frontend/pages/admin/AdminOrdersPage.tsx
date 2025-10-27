@@ -68,11 +68,14 @@ const AdminOrdersPage: React.FC = () => {
         // Solo mostrar órdenes PENDING
         if (order.status !== 'PENDING') return false;
         
+        // Validar que customer existe
+        if (!order.customer) return false;
+        
         const matchesSearch = 
             order.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customer.phone.includes(searchTerm) ||
-            order.customer.district.toLowerCase().includes(searchTerm.toLowerCase());
+            order.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.customer.phone?.includes(searchTerm) ||
+            order.customer.district?.toLowerCase().includes(searchTerm.toLowerCase());
         
         return matchesSearch;
     });
@@ -206,14 +209,23 @@ const AdminOrdersPage: React.FC = () => {
 
     // Exportar órdenes
     const handleExportOrders = () => {
-        const dataStr = JSON.stringify(orders, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        const exportFileDefaultName = `ordenes-${new Date().toISOString().split('T')[0]}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
+        try {
+            // Filtrar solo órdenes con datos válidos
+            const validOrders = orders.filter(order => order.customer && order.tickets);
+            const dataStr = JSON.stringify(validOrders, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = `ordenes-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            document.body.appendChild(linkElement);
+            linkElement.click();
+            document.body.removeChild(linkElement);
+        } catch (error) {
+            console.error('Error exporting orders:', error);
+            alert('Error al exportar las órdenes');
+        }
     };
 
     if (loading) {
@@ -300,9 +312,13 @@ const AdminOrdersPage: React.FC = () => {
                                     <div className="mb-4">
                                         <h3 className="text-lg font-bold text-gray-900 mb-2">{order.folio}</h3>
                                         <div className="space-y-1 text-sm text-gray-600">
-                                            <p>👤 {order.customer.name}</p>
-                                            <p>📞 {order.customer.phone}</p>
-                                            <p>🎫 Boletos: {order.tickets.join(', ')}</p>
+                                            {order.customer && (
+                                                <>
+                                                    <p>👤 {order.customer.name || 'Sin nombre'}</p>
+                                                    <p>📞 {order.customer.phone || 'Sin teléfono'}</p>
+                                                </>
+                                            )}
+                                            <p>🎫 Boletos: {order.tickets?.join(', ') || 'N/A'}</p>
                                             <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                         </div>
                                     </div>
@@ -421,14 +437,18 @@ const AdminOrdersPage: React.FC = () => {
                                     <div className="bg-gray-50 rounded-xl p-4">
                                         <h3 className="font-semibold text-gray-900 mb-3">Cliente</h3>
                                         <div className="space-y-2">
-                                            <div>
-                                                <span className="text-sm text-gray-600">Nombre:</span>
-                                                <p className="font-medium">{selectedOrder.customer.name}</p>
-                                            </div>
-                                            <div>
-                                                <span className="text-sm text-gray-600">Teléfono:</span>
-                                                <p className="font-medium">{selectedOrder.customer.phone}</p>
-                                            </div>
+                                            {selectedOrder.customer && (
+                                                <>
+                                                    <div>
+                                                        <span className="text-sm text-gray-600">Nombre:</span>
+                                                        <p className="font-medium">{selectedOrder.customer.name || 'Sin nombre'}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-gray-600">Teléfono:</span>
+                                                        <p className="font-medium">{selectedOrder.customer.phone || 'Sin teléfono'}</p>
+                                                    </div>
+                                                </>
+                                            )}
                                             {selectedOrder.customer.district && (
                                                 <div>
                                                     <span className="text-sm text-gray-600">Distrito:</span>
