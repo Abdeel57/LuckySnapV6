@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/gallery.css';
@@ -12,6 +12,16 @@ interface RaffleGalleryProps {
 const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className = '' }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Cambio automático de imágenes cada 5 segundos (solo si hay múltiples imágenes)
+    useEffect(() => {
+        if (images && images.length > 1 && !isModalOpen) {
+            const interval = setInterval(() => {
+                setCurrentIndex((prev) => (prev + 1) % images.length);
+            }, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [images.length, isModalOpen]);
 
     if (!images || images.length === 0) {
         return (
@@ -46,17 +56,24 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                 <div className="relative group">
                     {/* Contenedor con aspecto cuadrado y efectos visuales */}
                     <div className="relative w-full aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl border-2 border-slate-700/50">
-                        {/* Imagen principal */}
-                        <img
-                            src={images[currentIndex] || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
-                            alt={`${title} - Imagen ${currentIndex + 1}`}
-                            className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                            onClick={() => openModal(currentIndex)}
-                            onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
-                            }}
-                        />
+                        {/* Imagen principal con transición automática */}
+                        <AnimatePresence mode="wait">
+                            <motion.img
+                                key={currentIndex}
+                                src={images[currentIndex] || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
+                                alt={`${title} - Imagen ${currentIndex + 1}`}
+                                initial={{ opacity: 0, scale: 1.1 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.5 }}
+                                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                onClick={() => openModal(currentIndex)}
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+                                }}
+                            />
+                        </AnimatePresence>
                         
                         {/* Indicador de galería */}
                         {images.length > 1 && (
