@@ -21,9 +21,7 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
             
             // Fast random numbers
             const interval = setInterval(() => {
-                if (countdown > 0) {
-                    setDisplayNumber(Math.floor(Math.random() * 1000) + 1);
-                }
+                setDisplayNumber(Math.floor(Math.random() * 1000) + 1);
             }, 100);
 
             // Countdown timer
@@ -31,6 +29,7 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                 setCountdown((prev) => {
                     if (prev <= 1) {
                         clearInterval(countdownInterval);
+                        clearInterval(interval);
                         // Show winner number after countdown
                         setTimeout(() => {
                             if (winnerNumber !== null) {
@@ -40,6 +39,11 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                                 setTimeout(() => {
                                     onComplete?.();
                                 }, 2000);
+                            } else {
+                                // No hay ganador aún, ocultar animación
+                                setTimeout(() => {
+                                    onComplete?.();
+                                }, 1000);
                             }
                         }, 100);
                         return 0;
@@ -53,7 +57,7 @@ const WinnerDrawAnimation: React.FC<WinnerDrawAnimationProps> = ({ isRunning, wi
                 clearInterval(countdownInterval);
             };
         }
-    }, [isRunning, winnerNumber, onComplete, countdown]);
+    }, [isRunning, winnerNumber, onComplete]);
 
     // Si el sorteo no está corriendo y hay un ganador, mostrar el resultado
     useEffect(() => {
