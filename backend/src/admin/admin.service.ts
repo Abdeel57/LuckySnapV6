@@ -378,7 +378,17 @@ export class AdminService {
   }
 
   async getFinishedRaffles() {
-    return this.prisma.raffle.findMany({ where: { status: 'finished' } });
+    const now = new Date();
+    // Buscar rifas que estén finalizadas por estado O que ya hayan pasado la fecha de sorteo
+    return this.prisma.raffle.findMany({ 
+      where: { 
+        OR: [
+          { status: 'finished' },
+          { drawDate: { lte: now }, status: { not: 'draft' } }
+        ]
+      },
+      orderBy: { drawDate: 'desc' }
+    });
   }
   
   async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
