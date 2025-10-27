@@ -77,46 +77,46 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                         
                         {/* Indicador de galería */}
                         {images.length > 1 && (
-                            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-                                <span className="text-white text-xs font-medium">
-                                    {images.length} fotos
+                            <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black/70 backdrop-blur-md rounded-full px-2 py-1 sm:px-3 sm:py-1.5 shadow-lg">
+                                <span className="text-white text-xs sm:text-sm font-semibold">
+                                    📷 {currentIndex + 1}/{images.length}
                                 </span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Controles de navegación elegantes */}
+                {/* Controles de navegación elegantes - Optimizados para móvil */}
                 {images.length > 1 && (
                     <>
                         <button
                             onClick={prevImage}
-                            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/70 transition-all z-10"
+                            className="absolute left-1 sm:left-2 top-1/2 transform -translate-y-1/2 bg-black/70 backdrop-blur-md text-white p-2 sm:p-2.5 rounded-full hover:bg-black/90 active:scale-95 transition-all z-10 shadow-lg border border-white/20"
                             aria-label="Imagen anterior"
                         >
-                            <ChevronLeft className="w-5 h-5" />
+                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                         <button
                             onClick={nextImage}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/70 transition-all z-10"
+                            className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 bg-black/70 backdrop-blur-md text-white p-2 sm:p-2.5 rounded-full hover:bg-black/90 active:scale-95 transition-all z-10 shadow-lg border border-white/20"
                             aria-label="Siguiente imagen"
                         >
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </>
                 )}
 
-                {/* Miniaturas elegantes */}
+                {/* Miniaturas elegantes - Optimizadas para móvil */}
                 {images.length > 1 && (
-                    <div className="flex space-x-3 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="flex space-x-2 sm:space-x-3 mt-3 sm:mt-4 overflow-x-auto pb-2 scrollbar-hide">
                         {images.map((image, index) => (
                             <button
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
-                                className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                                className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all duration-300 ${
                                     index === currentIndex 
-                                        ? 'border-accent shadow-lg shadow-accent/20' 
-                                        : 'border-slate-600 hover:border-slate-400'
+                                        ? 'border-accent shadow-lg shadow-accent/20 scale-105' 
+                                        : 'border-slate-600 hover:border-slate-400 active:scale-95'
                                 }`}
                             >
                                 <img
@@ -134,24 +134,24 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                 )}
             </div>
 
-            {/* Modal de imagen completa */}
+            {/* Modal de imagen completa - Optimizado para móvil */}
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div
-                        className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-2 sm:p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={closeModal}
                     >
-                        <div className="relative max-w-4xl max-h-full">
-                            {/* Botón cerrar */}
+                        <div className="relative max-w-4xl max-h-full w-full">
+                            {/* Botón cerrar - Optimizado para móvil */}
                             <button
                                 onClick={closeModal}
-                                className="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                                className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 bg-black/70 backdrop-blur-md text-white p-3 sm:p-4 rounded-full hover:bg-black/90 active:scale-95 transition-all shadow-lg border border-white/20"
                                 aria-label="Cerrar"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
 
                             {/* Imagen en modal */}
@@ -170,7 +170,7 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                                 }}
                             />
 
-                            {/* Controles en modal */}
+                            {/* Controles en modal - Optimizados para móvil */}
                             {images.length > 1 && (
                                 <>
                                     <button
@@ -178,28 +178,28 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                                             e.stopPropagation();
                                             prevImage();
                                         }}
-                                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all"
+                                        className="absolute left-1 sm:left-4 top-1/2 transform -translate-y-1/2 bg-black/70 backdrop-blur-md text-white p-3 sm:p-4 rounded-full hover:bg-black/90 active:scale-95 transition-all shadow-lg border border-white/20"
                                         aria-label="Imagen anterior"
                                     >
-                                        <ChevronLeft className="w-6 h-6" />
+                                        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             nextImage();
                                         }}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all"
+                                        className="absolute right-1 sm:right-4 top-1/2 transform -translate-y-1/2 bg-black/70 backdrop-blur-md text-white p-3 sm:p-4 rounded-full hover:bg-black/90 active:scale-95 transition-all shadow-lg border border-white/20"
                                         aria-label="Siguiente imagen"
                                     >
-                                        <ChevronRight className="w-6 h-6" />
+                                        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                 </>
                             )}
 
-                            {/* Indicador de posición */}
+                            {/* Indicador de posición - Optimizado para móvil */}
                             {images.length > 1 && (
-                                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
-                                    {currentIndex + 1} de {images.length}
+                                <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-lg border border-white/20">
+                                    📷 {currentIndex + 1} de {images.length}
                                 </div>
                             )}
                         </div>
