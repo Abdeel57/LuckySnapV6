@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Order } from '../../types';
-import { User, Phone, Mail, MapPin, ShoppingCart, DollarSign, FileText, Save, X } from 'lucide-react';
+import { User, Phone, MapPin, ShoppingCart, DollarSign, FileText, Save, X } from 'lucide-react';
 
 interface EditOrderFormProps {
     order: Order;
