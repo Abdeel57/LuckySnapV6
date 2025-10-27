@@ -821,7 +821,35 @@ export class AdminService {
   }
 
   async saveWinner(data: Omit<Winner, 'id' | 'createdAt' | 'updatedAt'>) {
-    return this.prisma.winner.create({ data: data as any });
+    console.log('💾 Saving winner with data:', data);
+    
+    // Validar que el campo 'name' existe y no está vacío
+    if (!data.name || data.name.trim() === '') {
+      throw new BadRequestException('El campo "name" es requerido para guardar un ganador');
+    }
+    
+    const winnerData = {
+      name: data.name.trim(),
+      prize: data.prize,
+      imageUrl: data.imageUrl,
+      raffleTitle: data.raffleTitle,
+      drawDate: data.drawDate,
+      ticketNumber: data.ticketNumber || null,
+      testimonial: data.testimonial || null,
+      phone: data.phone || null,
+      city: data.city || null,
+    };
+    
+    console.log('💾 Winner data to create:', winnerData);
+    
+    try {
+      const result = await this.prisma.winner.create({ data: winnerData });
+      console.log('✅ Winner created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error creating winner:', error);
+      throw error;
+    }
   }
 
   async deleteWinner(id: string) {
