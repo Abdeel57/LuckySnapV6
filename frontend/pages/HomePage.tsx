@@ -111,7 +111,13 @@ const HomePage = () => {
                             </p>
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className={`${
+                            winners.length === 1 
+                                ? 'flex justify-center' 
+                                : winners.length === 2 
+                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto' 
+                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'
+                        }`}>
                             {winners.map(winner => (
                                 <WinnerCard key={winner.id} winner={winner} />
                             ))}
