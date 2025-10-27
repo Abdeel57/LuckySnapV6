@@ -128,23 +128,6 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                     )}
                 </motion.div>
             </div>
-
-            {/* Indicadores de slide (abajo en el centro) */}
-            {allImages.length > 1 && (
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
-                    {allImages.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={`transition-all rounded-full ${
-                                index === currentImageIndex 
-                                    ? 'bg-accent w-8 h-2' 
-                                    : 'bg-white/40 hover:bg-white/60 w-2 h-2'
-                            }`}
-                        />
-                    ))}
-                </div>
-            )}
         </section>
     );
 };
