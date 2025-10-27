@@ -490,12 +490,23 @@ export class AdminService {
       if (hasSoldTickets || hasPaidOrders) {
         console.log('⚠️ Rifa tiene boletos vendidos/pagados - limitando edición');
         
-        // Solo permitir editar campos básicos
-        if (data.price !== undefined) {
+        // Solo rechazar cambios si el valor REALMENTE cambió
+        if (data.price !== undefined && data.price !== existingRaffle.price) {
+          console.log(`❌ Intento de cambiar precio: ${existingRaffle.price} -> ${data.price}`);
           throw new Error('No se puede cambiar el precio cuando ya hay boletos vendidos');
         }
-        if (data.tickets !== undefined) {
+        
+        if (data.tickets !== undefined && data.tickets !== existingRaffle.tickets) {
+          console.log(`❌ Intento de cambiar boletos: ${existingRaffle.tickets} -> ${data.tickets}`);
           throw new Error('No se puede cambiar el número total de boletos cuando ya hay boletos vendidos');
+        }
+        
+        // Si los valores son iguales, simplemente no agregarlos al objeto de actualización
+        if (data.price !== undefined && data.price === existingRaffle.price) {
+          console.log('✅ Precio no cambió, omitiendo del update');
+        }
+        if (data.tickets !== undefined && data.tickets === existingRaffle.tickets) {
+          console.log('✅ Número de boletos no cambió, omitiendo del update');
         }
       } else {
         // Sin boletos vendidos - permitir editar todo
