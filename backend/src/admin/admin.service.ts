@@ -798,7 +798,8 @@ export class AdminService {
   
   async drawWinner(raffleId: string) {
     const paidOrders = await this.prisma.order.findMany({
-        where: { raffleId, status: 'PAID' }
+        where: { raffleId, status: 'PAID' },
+        include: { user: true }
     });
     
     if (paidOrders.length === 0) {
@@ -817,7 +818,19 @@ export class AdminService {
          throw new Error("Error interno al encontrar al ganador.");
     }
 
-    return { ticket: winningTicket, order: winningOrder };
+    // Formatear la orden con los datos del usuario como customer
+    const formattedOrder = {
+        ...winningOrder,
+        customer: winningOrder.user ? {
+            id: winningOrder.user.id,
+            name: winningOrder.user.name || 'Sin nombre',
+            phone: winningOrder.user.phone || 'Sin teléfono',
+            email: winningOrder.user.email || '',
+            district: winningOrder.user.district || 'Sin distrito'
+        } : null
+    };
+
+    return { ticket: winningTicket, order: formattedOrder };
   }
 
   async saveWinner(data: Omit<Winner, 'id' | 'createdAt' | 'updatedAt'>) {
