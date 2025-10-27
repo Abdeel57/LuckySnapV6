@@ -9,7 +9,11 @@ interface RaffleCardProps {
 
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
 const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
     const progress = (raffle.sold / raffle.tickets) * 100;
+
+    // Detectar si la descripción es larga
+    const isLongDescription = raffle.description && raffle.description.length > 120;
 
     return (
         <motion.div
@@ -44,10 +48,38 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 </div>
             </Link>
             
-            <div className="flex flex-col flex-grow">
-                <h3 className="text-xl md:text-2xl font-bold text-primary mb-4 flex-grow line-clamp-2 group-hover:text-link transition-colors">
+            <div className="flex flex-col flex-grow p-6">
+                {/* Título */}
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                     {raffle.title}
                 </h3>
+                
+                {/* Descripción con interacción */}
+                {raffle.description && (
+                    <div 
+                        className="mb-4 relative"
+                        onMouseEnter={() => isLongDescription && setIsDescriptionExpanded(true)}
+                        onMouseLeave={() => setIsDescriptionExpanded(false)}
+                    >
+                        <p 
+                            className={`text-sm md:text-base text-gray-600 leading-relaxed transition-all duration-300 ${
+                                isLongDescription && !isDescriptionExpanded 
+                                    ? 'line-clamp-3 cursor-pointer' 
+                                    : ''
+                            }`}
+                            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                        >
+                            {raffle.description}
+                        </p>
+                        
+                        {/* Indicador de "ver más" */}
+                        {isLongDescription && !isDescriptionExpanded && (
+                            <div className="absolute bottom-0 right-0 text-primary text-xs font-semibold bg-white/80 backdrop-blur-sm px-2 py-1 rounded-tl-lg border-l border-t border-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                📖 Pasa el cursor para leer más
+                            </div>
+                        )}
+                    </div>
+                )}
                 
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-2">
