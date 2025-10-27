@@ -609,21 +609,28 @@ export class AdminService {
 
       console.log(`📊 Found ${orders.length} orders with status ${statusFilter}`);
 
-      // Preparar datos para exportación
+      // Preparar datos para exportación con información completa
       const exportData = [];
       for (const order of orders) {
+        const totalBoletos = order.tickets.length;
+        const montoPorBoleto = order.total / totalBoletos;
+        
         for (const ticketNumber of order.tickets) {
           exportData.push({
             numero_boleto: ticketNumber,
             cliente: order.user.name || 'Sin nombre',
             telefono: order.user.phone || 'Sin teléfono',
             email: order.user.email || 'Sin email',
-            fecha_apartado: order.createdAt.toISOString().split('T')[0],
-            fecha_pago: tipo === 'pagados' ? order.updatedAt.toISOString().split('T')[0] : 'Pendiente',
+            distrito: order.user.district || 'No especificado',
+            fecha_apartado: this.formatDate(order.createdAt),
+            fecha_pago: tipo === 'pagados' ? this.formatDate(order.updatedAt) : 'Pendiente',
             metodo_pago: order.paymentMethod || 'No especificado',
-            monto: order.total,
+            monto_total: order.total,
+            monto_boleto: montoPorBoleto,
             folio: order.folio,
-            expira: order.expiresAt.toISOString().split('T')[0]
+            expira: this.formatDate(order.expiresAt),
+            notas: order.notes || 'Sin notas',
+            estado: order.status
           });
         }
       }
@@ -645,33 +652,53 @@ export class AdminService {
     }
   }
 
+  private formatDate(date: Date): string {
+    return date.toLocaleString('es-HN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   private generateCSV(data: any[], raffleTitle: string, tipo: string) {
+    // UTF-8 BOM para mejor compatibilidad con Excel
+    const BOM = '\uFEFF';
     const headers = [
       'Número Boleto',
       'Cliente', 
       'Teléfono',
       'Email',
+      'Distrito',
       'Fecha Apartado',
       'Fecha Pago',
       'Método Pago',
-      'Monto',
+      'Monto Total',
+      'Monto por Boleto',
       'Folio',
-      'Expira'
+      'Fecha Expira',
+      'Notas',
+      'Estado'
     ];
 
-    const csvContent = [
+    const csvContent = BOM + [
       headers.join(','),
       ...data.map(row => [
         row.numero_boleto,
-        `"${row.cliente}"`,
-        `"${row.telefono}"`,
-        `"${row.email}"`,
-        row.fecha_apartado,
-        row.fecha_pago,
-        `"${row.metodo_pago}"`,
-        row.monto,
+        `"${(row.cliente || '').replace(/"/g, '""')}"`,
+        `"${(row.telefono || '').replace(/"/g, '""')}"`,
+        `"${(row.email || '').replace(/"/g, '""')}"`,
+        `"${(row.distrito || '').replace(/"/g, '""')}"`,
+        `"${row.fecha_apartado}"`,
+        `"${row.fecha_pago}"`,
+        `"${(row.metodo_pago || '').replace(/"/g, '""')}"`,
+        row.monto_total,
+        row.monto_boleto,
         `"${row.folio}"`,
-        row.expira
+        `"${row.expira}"`,
+        `"${(row.notas || '').replace(/"/g, '""')}"`,
+        `"${row.estado}"`
       ].join(','))
     ].join('\n');
 
@@ -696,12 +723,16 @@ export class AdminService {
       'Cliente': row.cliente,
       'Teléfono': row.telefono,
       'Email': row.email,
+      'Distrito': row.distrito,
       'Fecha Apartado': row.fecha_apartado,
       'Fecha Pago': row.fecha_pago,
       'Método Pago': row.metodo_pago,
-      'Monto': row.monto,
+      'Monto Total': row.monto_total,
+      'Monto por Boleto': row.monto_boleto,
       'Folio': row.folio,
-      'Expira': row.expira
+      'Fecha Expira': row.expira,
+      'Notas': row.notas,
+      'Estado': row.estado
     }));
 
     // Crear worksheet
@@ -710,15 +741,19 @@ export class AdminService {
     // Ajustar ancho de columnas
     const colWidths = [
       { wch: 15 }, // Número Boleto
-      { wch: 20 }, // Cliente
+      { wch: 25 }, // Cliente
       { wch: 15 }, // Teléfono
-      { wch: 25 }, // Email
-      { wch: 15 }, // Fecha Apartado
-      { wch: 15 }, // Fecha Pago
-      { wch: 15 }, // Método Pago
-      { wch: 12 }, // Monto
-      { wch: 20 }, // Folio
-      { wch: 15 }  // Expira
+      { wch: 30 }, // Email
+      { wch: 20 }, // Distrito
+      { wch: 18 }, // Fecha Apartado
+      { wch: 18 }, // Fecha Pago
+      { wch: 18 }, // Método Pago
+      { wch: 14 }, // Monto Total
+      { wch: 14 }, // Monto por Boleto
+      { wch: 22 }, // Folio
+      { wch: 18 }, // Fecha Expira
+      { wch: 30 }, // Notas
+      { wch: 12 }  // Estado
     ];
     ws['!cols'] = colWidths;
 
