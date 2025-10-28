@@ -33,9 +33,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const loadUsers = async () => {
             try {
                 const backendUsers = await getUsers();
+                console.log('🔍 DEBUG - Usuarios recibidos del backend:', backendUsers);
+                
                 // Combinar superadmin con usuarios del backend
                 setAllUsers([SUPER_ADMIN, ...backendUsers]);
                 console.log('✅ Usuarios cargados del backend:', backendUsers.length);
+                console.log('📋 Todos los usuarios disponibles:', [SUPER_ADMIN, ...backendUsers]);
             } catch (error) {
                 console.error('Error loading users from backend:', error);
                 // Si falla, usar solo el superadmin

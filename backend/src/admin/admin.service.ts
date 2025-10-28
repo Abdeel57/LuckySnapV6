@@ -876,7 +876,20 @@ export class AdminService {
 
   // Users
   async getUsers() {
-    return this.prisma.adminUser.findMany();
+    // Devolver todos los campos incluyendo password (necesario para login)
+    const users = await this.prisma.adminUser.findMany({
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        password: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    return users;
   }
 
   async createUser(data: Prisma.AdminUserCreateInput) {
