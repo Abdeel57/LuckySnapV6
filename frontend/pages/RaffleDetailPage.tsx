@@ -83,20 +83,35 @@ const RaffleDetailPage = () => {
                     <div className="lg:col-span-3">
                         <RaffleGallery 
                             images={(() => {
-                                // Priorizar imageUrl (campo real de Prisma), sino galería, sino heroImage, sino default
+                                // Combinar todas las imágenes: imageUrl, heroImage y gallery
+                                const allImages: string[] = [];
+                                
+                                // Agregar imageUrl si existe
                                 if (raffle.imageUrl) {
-                                    console.log('🖼️ Detail page using imageUrl');
-                                    return [raffle.imageUrl];
-                                } else if (raffle.gallery && raffle.gallery.length > 0) {
-                                    console.log('🖼️ Detail page using gallery images:', raffle.gallery.length);
-                                    return raffle.gallery;
-                                } else if (raffle.heroImage) {
-                                    console.log('🖼️ Detail page using heroImage');
-                                    return [raffle.heroImage];
-                                } else {
-                                    console.log('🖼️ Detail page using default image');
+                                    allImages.push(raffle.imageUrl);
+                                }
+                                
+                                // Agregar heroImage si existe y no está duplicado
+                                if (raffle.heroImage && !allImages.includes(raffle.heroImage)) {
+                                    allImages.push(raffle.heroImage);
+                                }
+                                
+                                // Agregar galería si existe (evitando duplicados)
+                                if (raffle.gallery && raffle.gallery.length > 0) {
+                                    raffle.gallery.forEach(img => {
+                                        if (!allImages.includes(img)) {
+                                            allImages.push(img);
+                                        }
+                                    });
+                                }
+                                
+                                // Si no hay ninguna imagen, usar default
+                                if (allImages.length === 0) {
                                     return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
                                 }
+                                
+                                console.log('🖼️ Detail page using combined images:', allImages.length);
+                                return allImages;
                             })()}
                             title={raffle.title}
                             className="w-full max-w-2xl mx-auto mb-6"

@@ -12,10 +12,36 @@ interface HeroRaffleProps {
 const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-    // Preparar imágenes: incluir imagen principal + galería
-    const allImages = raffle.gallery && raffle.gallery.length > 0 
-        ? [raffle.imageUrl || raffle.heroImage, ...raffle.gallery]
-        : [raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop'];
+    // Preparar imágenes: incluir imagen principal + galería (evitando duplicados)
+    const allImages = (() => {
+        const images: string[] = [];
+        
+        // Agregar imageUrl si existe
+        if (raffle.imageUrl) {
+            images.push(raffle.imageUrl);
+        }
+        
+        // Agregar heroImage si existe y no está duplicado
+        if (raffle.heroImage && !images.includes(raffle.heroImage)) {
+            images.push(raffle.heroImage);
+        }
+        
+        // Agregar galería si existe (evitando duplicados)
+        if (raffle.gallery && raffle.gallery.length > 0) {
+            raffle.gallery.forEach(img => {
+                if (!images.includes(img)) {
+                    images.push(img);
+                }
+            });
+        }
+        
+        // Si no hay ninguna imagen, usar default
+        if (images.length === 0) {
+            return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop'];
+        }
+        
+        return images;
+    })();
 
     // Cambio automático de imágenes cada 5 segundos
     useEffect(() => {
