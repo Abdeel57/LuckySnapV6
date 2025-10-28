@@ -124,8 +124,10 @@ export interface Settings {
 export interface AdminUser {
     id: string;
     name: string;
-    email: string;
+    username: string;  // Cambio: usar username en lugar de email
+    email?: string;    // Opcional
     password?: string;
+    role: 'superadmin' | 'admin' | 'ventas';  // Nuevos roles
     createdAt?: Date;
     updatedAt?: Date;
 }

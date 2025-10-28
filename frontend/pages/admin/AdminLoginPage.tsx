@@ -6,7 +6,7 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import Spinner from '../../components/Spinner';
 
 const AdminLoginPage = () => {
-    const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -17,12 +17,12 @@ const AdminLoginPage = () => {
         e.preventDefault();
         setError('');
 
-        if (!email || !password) {
+        if (!username || !password) {
             setError('Por favor, completa todos los campos');
             return;
         }
 
-        const success = await login(email, password);
+        const success = await login(username, password);
         if (success) {
             navigate('/admin');
         } else {
@@ -49,18 +49,18 @@ const AdminLoginPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-                                Correo Electrónico
+                            <label htmlFor="username" className="block text-sm font-medium text-white mb-2">
+                                Usuario
                             </label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
                                 <input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    id="username"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-accent focus:border-transparent"
-                                    placeholder="admin@luckysnap.com"
+                                    placeholder="Orlando12"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -118,13 +118,7 @@ const AdminLoginPage = () => {
                         </button>
                     </form>
 
-                    <div className="mt-8 p-4 bg-slate-800/50 rounded-lg">
-                        <h3 className="text-sm font-medium text-white mb-2">Credenciales de prueba:</h3>
-                        <div className="text-xs text-slate-400 space-y-1">
-                            <p><strong>Email:</strong> admin@luckysnap.com</p>
-                            <p><strong>Contraseña:</strong> admin123</p>
-                        </div>
-                    </div>
+                    {/* Mensaje removido por seguridad - credenciales solo para el dueño */}
                 </div>
             </motion.div>
         </div>

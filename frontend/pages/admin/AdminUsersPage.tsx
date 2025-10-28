@@ -9,7 +9,7 @@ import Spinner from '../../components/Spinner';
 // Modal for Add/Edit User
 const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | null, onClose: () => void, onSave: (data: AdminUser) => void }) => {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<AdminUser>({
-        defaultValues: user || {}
+        defaultValues: user || { role: 'ventas' }
     });
 
     const onSubmit = (data: AdminUser) => {
@@ -52,18 +52,26 @@ const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | n
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
-                        <input {...register('name', { required: 'El nombre es requerido' })} className={inputClasses} />
+                        <input {...register('name', { required: 'El nombre es requerido' })} className={inputClasses} placeholder="Ej: Juan Pérez" />
                          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message as React.ReactNode}</p>}
                     </div>
                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                        <input {...register('email', { required: 'El email es requerido', pattern: { value: /^\S+@\S+$/i, message: 'Email inválido' } })} className={inputClasses} />
-                        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as React.ReactNode}</p>}
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Usuario</label>
+                        <input {...register('username', { required: 'El usuario es requerido', minLength: { value: 3, message: 'Mínimo 3 caracteres' } })} className={inputClasses} placeholder="Ej: Orlando12" />
+                        {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message as React.ReactNode}</p>}
                     </div>
                      <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Contraseña</label>
-                        <input {...register('password', { required: 'La contraseña es requerida', minLength: { value: 6, message: 'Mínimo 6 caracteres' } })} type="password" className={inputClasses} />
+                        <input {...register('password', { required: 'La contraseña es requerida', minLength: { value: 6, message: 'Mínimo 6 caracteres' } })} type="password" className={inputClasses} placeholder="Ej: Pomelo_12@" />
                         {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message as React.ReactNode}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Rol</label>
+                        <select {...register('role', { required: 'El rol es requerido' })} className={inputClasses}>
+                            <option value="admin">Administrador</option>
+                            <option value="ventas">Ventas</option>
+                        </select>
+                        {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role.message as React.ReactNode}</p>}
                     </div>
                     
                     <div className="flex items-center justify-end space-x-3 pt-4">
@@ -95,7 +103,7 @@ const AdminUsersPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Partial<AdminUser> | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState<'all' | 'user' | 'admin'>('all');
+    const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'ventas'>('all');
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -147,8 +155,11 @@ const AdminUsersPage = () => {
     };
 
     const filteredUsers = users.filter(user => {
+        // Filtrar el superadmin - no debe aparecer en la lista
+        if (user.role === 'superadmin') return false;
+        
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            user.email.toLowerCase().includes(searchTerm.toLowerCase());
+                            user.username.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === 'all' || user.role === roleFilter;
         return matchesSearch && matchesRole;
     });
@@ -214,8 +225,8 @@ const AdminUsersPage = () => {
                             className="px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-sm"
                         >
                             <option value="all">Todos los roles</option>
-                            <option value="user">Usuarios</option>
                             <option value="admin">Administradores</option>
+                            <option value="ventas">Ventas</option>
                         </select>
                     </div>
                 </div>
@@ -236,9 +247,9 @@ const AdminUsersPage = () => {
                             <div className="mb-4">
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">{user.name}</h3>
                                 <div className="space-y-1 text-sm text-gray-600">
-                                    <p>📧 {user.email}</p>
-                                    <p className={`font-bold ${user.role === 'admin' ? 'text-red-600' : 'text-blue-600'}`}>
-                                        {user.role === 'admin' ? '🛡️ Administrador' : '👤 Usuario'}
+                                    <p>👤 Usuario: {user.username}</p>
+                                    <p className={`font-bold ${user.role === 'admin' ? 'text-red-600' : user.role === 'ventas' ? 'text-blue-600' : 'text-purple-600'}`}>
+                                        {user.role === 'superadmin' ? '👑 Super Admin' : user.role === 'admin' ? '🛡️ Administrador' : '💰 Ventas'}
                                     </p>
                                 </div>
                             </div>

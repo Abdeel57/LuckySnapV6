@@ -18,6 +18,25 @@ export const navLinks = [
 const AdminLayout = () => {
     const { logout, user } = useAuth();
 
+    // Filtrar opciones del menú según el rol
+    const getFilteredNavLinks = () => {
+        if (!user) return navLinks;
+        
+        // Vendedores solo ven Apartados y Clientes
+        if (user.role === 'ventas') {
+            return navLinks.filter(link => 
+                link.to === '/admin/apartados' || 
+                link.to === '/admin/clientes' ||
+                link.to === '/admin' // Inicio siempre visible
+            );
+        }
+        
+        // Superadmin y admin ven todo
+        return navLinks;
+    };
+
+    const filteredNavLinks = getFilteredNavLinks();
+
     return (
         <div className="min-h-screen bg-gray-100 text-gray-800 flex">
             {/* Sidebar for Desktop */}
@@ -29,11 +48,16 @@ const AdminLayout = () => {
                     <div className="mb-6 p-3 bg-gray-50 rounded-lg">
                         <p className="text-sm text-gray-600">Conectado como:</p>
                         <p className="font-medium text-gray-800">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                        <p className="text-xs text-gray-500">{user.username}</p>
+                        <p className="text-xs font-semibold text-blue-600 mt-1">
+                            {user.role === 'superadmin' ? '👑 Super Admin' : 
+                             user.role === 'admin' ? '🛡️ Administrador' : 
+                             '💰 Ventas'}
+                        </p>
                     </div>
                 )}
                 <nav className="flex flex-col gap-2 flex-grow">
-                    {navLinks.map(({ to, text, icon: Icon }) => (
+                    {filteredNavLinks.map(({ to, text, icon: Icon }) => (
                          <NavLink
                             key={to}
                             to={to}
@@ -80,7 +104,7 @@ const AdminLayout = () => {
             </div>
             
             {/* Bottom Nav for Mobile */}
-            <MobileAdminNavAdaptive navLinks={navLinks} />
+            <MobileAdminNavAdaptive navLinks={filteredNavLinks} />
         </div>
     );
 };
