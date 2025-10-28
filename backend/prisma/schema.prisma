@@ -101,9 +101,11 @@ model Winner {
 
 model AdminUser {
   id        String   @id @default(cuid())
-  email     String   @unique
   name      String
+  username  String   @unique
+  email     String?
   password  String
+  role      String   @default("ventas")  // superadmin, admin, ventas
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

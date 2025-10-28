@@ -882,8 +882,8 @@ export class AdminService {
   async createUser(data: Prisma.AdminUserCreateInput) {
     try {
       // Validate required fields
-      if (!data.email || !data.name || !data.password) {
-        throw new Error('Email, name, and password are required');
+      if (!data.username || !data.name || !data.password) {
+        throw new Error('Username, name, and password are required');
       }
       
       return this.prisma.adminUser.create({ data });
