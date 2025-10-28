@@ -5,7 +5,6 @@ import { getRaffleBySlug, createOrder, getSettings } from '../services/api';
 import { Raffle, Order, PaymentAccount } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
-import RaffleGallery from '../components/RaffleGallery';
 import { Link } from 'react-router-dom';
 import metaPixelService from '../services/metaPixel';
 
@@ -321,42 +320,19 @@ const PurchasePage = () => {
                         <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
                             <h2 className="text-2xl font-bold text-white mb-4">{raffle.title}</h2>
                             
-                            {/* Galería mejorada */}
+                            {/* Imagen principal (sin galería rotativa) */}
                             <div className="mb-6 relative z-0">
-                                <RaffleGallery 
-                                    images={(() => {
-                                        // Combinar todas las imágenes: imageUrl, heroImage y gallery
-                                        const allImages: string[] = [];
-                                        
-                                        // Agregar imageUrl si existe
-                                        if (raffle.imageUrl) {
-                                            allImages.push(raffle.imageUrl);
-                                        }
-                                        
-                                        // Agregar heroImage si existe y no está duplicado
-                                        if (raffle.heroImage && !allImages.includes(raffle.heroImage)) {
-                                            allImages.push(raffle.heroImage);
-                                        }
-                                        
-                                        // Agregar galería si existe (evitando duplicados)
-                                        if (raffle.gallery && raffle.gallery.length > 0) {
-                                            raffle.gallery.forEach(img => {
-                                                if (!allImages.includes(img)) {
-                                                    allImages.push(img);
-                                                }
-                                            });
-                                        }
-                                        
-                                        // Si no hay ninguna imagen, usar default
-                                        if (allImages.length === 0) {
-                                            return ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'];
-                                        }
-                                        
-                                        return allImages;
-                                    })()}
-                                    title={raffle.title}
-                                    className="w-full h-64"
-                                />
+                                <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-xl border-2 border-slate-700/50">
+                                    <img 
+                                        src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
+                                        alt={raffle.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
+                                        }}
+                                    />
+                                </div>
                             </div>
 
                             {/* Información del sorteo */}
