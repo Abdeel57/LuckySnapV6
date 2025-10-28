@@ -907,7 +907,15 @@ export class AdminService {
   }
 
   async updateUser(id: string, data: Prisma.AdminUserUpdateInput) {
-    return this.prisma.adminUser.update({ where: { id }, data });
+    console.log('🔧 Actualizando usuario:', id, 'con datos:', JSON.stringify(data));
+    try {
+      const updated = await this.prisma.adminUser.update({ where: { id }, data });
+      console.log('✅ Usuario actualizado:', updated.id);
+      return updated;
+    } catch (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+      throw error;
+    }
   }
 
   async deleteUser(id: string) {

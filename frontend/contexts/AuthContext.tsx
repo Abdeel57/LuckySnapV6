@@ -73,6 +73,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log('📋 Usuarios disponibles:', allUsers.length);
             
             // Buscar usuario en la lista
+            console.log('🔍 Buscando usuario:', username);
+            console.log('🔑 Usuarios en lista:', allUsers.map(u => ({ username: u.username, role: u.role })));
+            
             const foundUser = allUsers.find(u => 
                 u.username.toLowerCase() === username.toLowerCase() && 
                 u.password === password
@@ -82,13 +85,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const userData = { ...foundUser };
                 delete userData.password; // No guardar la contraseña
                 
+                console.log('✅ Usuario encontrado:', userData);
+                
                 setUser(userData);
                 localStorage.setItem('admin_user', JSON.stringify(userData));
-                console.log('✅ Login exitoso para:', username);
+                console.log('✅ Login exitoso para:', username, 'con rol:', userData.role);
                 setIsLoading(false);
                 return true;
             } else {
                 console.log('❌ Credenciales incorrectas para:', username);
+                console.log('🔍 Comparando contra usuarios:', allUsers.map(u => ({ 
+                    username: u.username, 
+                    matches: u.username.toLowerCase() === username.toLowerCase(),
+                    passwordMatch: u.password === password
+                })));
                 setIsLoading(false);
                 return false;
             }
