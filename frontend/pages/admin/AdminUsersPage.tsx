@@ -12,8 +12,8 @@ const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | n
         defaultValues: user || { role: 'ventas' }
     });
 
-    const onSubmit = (data: AdminUser) => {
-        onSave({ ...user, ...data });
+    const onSubmit = (data: any) => {
+        onSave(data);
     };
 
     const inputClasses = "w-full mt-1 p-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200";
@@ -61,8 +61,18 @@ const UserFormModal = ({ user, onClose, onSave }: { user: Partial<AdminUser> | n
                         {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message as React.ReactNode}</p>}
                     </div>
                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Contraseña</label>
-                        <input {...register('password', { required: 'La contraseña es requerida', minLength: { value: 6, message: 'Mínimo 6 caracteres' } })} type="password" className={inputClasses} placeholder="Ej: Pomelo_12@" />
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Contraseña {user?.id && '(dejar vacío para no cambiar)'}
+                        </label>
+                        <input 
+                            {...register('password', { 
+                                required: user?.id ? false : 'La contraseña es requerida', 
+                                minLength: { value: 6, message: 'Mínimo 6 caracteres' } 
+                            })} 
+                            type="password" 
+                            className={inputClasses} 
+                            placeholder="Ej: Pomelo_12@" 
+                        />
                         {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message as React.ReactNode}</p>}
                     </div>
                     <div>
@@ -129,12 +139,27 @@ const AdminUsersPage = () => {
     const handleSaveUser = async (data: AdminUser) => {
         try {
             if (editingUser?.id) {
-                await updateUser(editingUser.id!, { ...editingUser, ...data });
+                // Editar usuario existente
+                const updateData: any = { 
+                    name: data.name,
+                    username: data.username,
+                    role: data.role
+                };
+                // Solo incluir contraseña si se proporcionó una nueva
+                if (data.password && data.password.trim() !== '') {
+                    updateData.password = data.password;
+                }
+                await updateUser(editingUser.id, updateData);
             } else {
-                // @ts-ignore
-                await createUser(data);
+                // Crear nuevo usuario - solo enviar los campos necesarios
+                await createUser({ 
+                    name: data.name,
+                    username: data.username,
+                    password: data.password,
+                    role: data.role
+                });
             }
-            fetchUsers();
+            await fetchUsers();
             handleCloseModal();
         } catch (error) {
             console.error("Failed to save user", error);
