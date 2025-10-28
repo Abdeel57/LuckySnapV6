@@ -204,6 +204,13 @@ const AdminCustomersPage: React.FC = () => {
                             >
                                 {/* Información esencial */}
                                 <div className="mb-4">
+                                    {order.raffleTitle && (
+                                        <div className="mb-3 pb-3 border-b border-gray-200">
+                                            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                🎰 {order.raffleTitle}
+                                            </span>
+                                        </div>
+                                    )}
                                     {order.customer && <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name || 'Sin nombre'}</h3>}
                                     <div className="space-y-1 text-sm text-gray-600">
                                         {order.customer && <p>📞 {order.customer.phone || 'Sin teléfono'}</p>}
