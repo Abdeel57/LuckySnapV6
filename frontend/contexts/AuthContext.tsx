@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AdminUser } from '../types';
+import { getUsers } from '../services/api';
 
 interface AuthContextType {
     user: AdminUser | null;
@@ -11,7 +12,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// SuperAdmin hardcodeado - SOLO PARA EL DUEÑO otra
+// SuperAdmin hardcodeado - SOLO PARA EL DUEÑO
 const SUPER_ADMIN: AdminUser = {
     id: 'superadmin-1',
     name: 'Super Administrador',
@@ -24,8 +25,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<AdminUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     
-    // Lista de usuarios (incluyendo el superadmin) - en producción vendrá del backend
+    // Lista de usuarios (incluyendo el superadmin)
     const [allUsers, setAllUsers] = useState<AdminUser[]>([SUPER_ADMIN]);
+
+    // Cargar usuarios del backend al iniciar
+    useEffect(() => {
+        const loadUsers = async () => {
+            try {
+                const backendUsers = await getUsers();
+                // Combinar superadmin con usuarios del backend
+                setAllUsers([SUPER_ADMIN, ...backendUsers]);
+                console.log('✅ Usuarios cargados del backend:', backendUsers.length);
+            } catch (error) {
+                console.error('Error loading users from backend:', error);
+                // Si falla, usar solo el superadmin
+            }
+        };
+        
+        loadUsers();
+    }, []);
 
     // Verificar si hay sesión guardada al cargar
     useEffect(() => {
@@ -46,7 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         try {
             // Simular delay de autenticación
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            console.log('🔐 Intentando login para:', username);
+            console.log('📋 Usuarios disponibles:', allUsers.length);
             
             // Buscar usuario en la lista
             const foundUser = allUsers.find(u => 
@@ -60,9 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 
                 setUser(userData);
                 localStorage.setItem('admin_user', JSON.stringify(userData));
+                console.log('✅ Login exitoso para:', username);
                 setIsLoading(false);
                 return true;
             } else {
+                console.log('❌ Credenciales incorrectas para:', username);
                 setIsLoading(false);
                 return false;
             }
