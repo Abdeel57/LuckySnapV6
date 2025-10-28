@@ -138,6 +138,8 @@ const AdminUsersPage = () => {
 
     const handleSaveUser = async (data: AdminUser) => {
         try {
+            console.log('💾 Guardando usuario:', { data, editingUser });
+            
             if (editingUser?.id) {
                 // Editar usuario existente
                 const updateData: any = { 
@@ -148,33 +150,39 @@ const AdminUsersPage = () => {
                 // Solo incluir contraseña si se proporcionó una nueva
                 if (data.password && data.password.trim() !== '') {
                     updateData.password = data.password;
+                    console.log('🔑 Actualizando contraseña');
                 }
+                console.log('📝 Datos a actualizar:', updateData);
                 await updateUser(editingUser.id, updateData);
             } else {
-                // Crear nuevo usuario - solo enviar los campos necesarios
-                await createUser({ 
+                // Crear nuevo usuario
+                const newUser = { 
                     name: data.name,
                     username: data.username,
                     password: data.password,
                     role: data.role
-                });
+                };
+                console.log('➕ Creando nuevo usuario:', newUser);
+                await createUser(newUser);
             }
             await fetchUsers();
             handleCloseModal();
         } catch (error) {
             console.error("Failed to save user", error);
-            alert("Error al guardar el usuario.");
+            alert("Error al guardar el usuario: " + error);
         }
     };
 
     const handleDeleteUser = async (userId: string) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
             try {
+                console.log('🗑️ Eliminando usuario con ID:', userId);
                 await deleteUser(userId);
-                fetchUsers();
+                console.log('✅ Usuario eliminado correctamente');
+                await fetchUsers();
             } catch (error) {
                  console.error("Failed to delete user", error);
-                 alert("Error al eliminar el usuario.");
+                 alert("Error al eliminar el usuario: " + error);
             }
         }
     };

@@ -20,18 +20,26 @@ const AdminLayout = () => {
 
     // Filtrar opciones del menú según el rol
     const getFilteredNavLinks = () => {
-        if (!user) return navLinks;
+        if (!user) {
+            console.log('⚠️ No hay usuario, mostrando todos los links');
+            return navLinks;
+        }
+        
+        console.log('👤 Usuario:', user.name, '| Rol:', user.role);
         
         // Vendedores solo ven Apartados y Clientes
         if (user.role === 'ventas') {
-            return navLinks.filter(link => 
+            const filtered = navLinks.filter(link => 
                 link.to === '/admin/apartados' || 
                 link.to === '/admin/clientes' ||
                 link.to === '/admin' // Inicio siempre visible
             );
+            console.log('💰 Usuario ventas - Links filtrados:', filtered.map(l => l.text));
+            return filtered;
         }
         
         // Superadmin y admin ven todo
+        console.log('🛡️ Usuario admin - Mostrando todos los links');
         return navLinks;
     };
 
