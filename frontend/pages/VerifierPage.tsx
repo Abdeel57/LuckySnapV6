@@ -3,8 +3,9 @@ import { searchTickets } from '../services/api';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
 import OrdenCard from '../components/OrdenCard';
-import QRScanner from '../components/QRScanner';
-import { QrCode, Search } from 'lucide-react';
+// import QRScanner from '../components/QRScanner'; // Mantenido para uso futuro
+// import { QrCode, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
 
@@ -16,7 +17,7 @@ const VerifierPage = () => {
     const [resultados, setResultados] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedOrdenes, setExpandedOrdenes] = useState<Set<string>>(new Set());
-    const [showQRScanner, setShowQRScanner] = useState(false);
+    // const [showQRScanner, setShowQRScanner] = useState(false); // Mantenido para uso futuro con QR
     const toast = useToast();
 
     const getPlaceholder = () => {
@@ -131,14 +132,15 @@ const VerifierPage = () => {
                             <Search className="w-4 h-4" />
                             Buscar
                         </button>
-                        <button
+                        {/* Botón QR - Deshabilitado por ahora, código mantenido para uso futuro */}
+                        {/* <button
                             type="button"
                             onClick={() => setShowQRScanner(true)}
                             className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                         >
                             <QrCode className="w-4 h-4" />
                             QR
-                        </button>
+                        </button> */}
                     </form>
                 </div>
 
@@ -210,8 +212,8 @@ const VerifierPage = () => {
                 </div>
             </div>
 
-            {/* QR Scanner Modal */}
-            {showQRScanner && (
+            {/* QR Scanner Modal - Código mantenido para uso futuro */}
+            {/* {showQRScanner && (
                 <QRScanner
                     onScan={async (qrData: string) => {
                         setIsLoading(true);
@@ -230,7 +232,7 @@ const VerifierPage = () => {
                     }}
                     onClose={() => setShowQRScanner(false)}
                 />
-            )}
+            )} */}
         </PageAnimator>
     );
 };
