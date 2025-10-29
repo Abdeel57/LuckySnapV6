@@ -465,95 +465,135 @@ export const getRaffles = async (): Promise<Raffle[]> => {
 
 export const getUsers = async (): Promise<AdminUser[]> => {
     try {
-        console.log('Trying backend for get users...');
+        console.log('🔍 Obteniendo usuarios del backend...');
         const response = await fetch(`${API_URL}/admin/users`);
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend users loaded successfully');
-            return data;
-        } else {
-            console.log('❌ Backend returned error status:', response.status);
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ 
+                message: `Error ${response.status}: ${response.statusText}` 
+            }));
+            throw new Error(error.message || `Error al obtener usuarios: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('✅ Usuarios obtenidos exitosamente:', data.length || 0);
+        
+        // El backend devuelve un array directo de usuarios (sin password)
+        // Validar que es un array
+        if (!Array.isArray(data)) {
+            throw new Error('Respuesta del servidor en formato incorrecto');
+        }
+        
+        return data;
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
+        console.error('❌ Error al obtener usuarios:', error);
+        throw error instanceof Error ? error : new Error('Error desconocido al obtener usuarios');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for get users');
-    const { localApi } = await import('./localApi');
-    return localApi.getUsers();
 };
 
 export const createUser = async (user: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdminUser> => {
     try {
-        console.log('Trying backend for create user...');
+        console.log('➕ Creando usuario en el backend...', { username: user.username, role: user.role });
+        
         const response = await fetch(`${API_URL}/admin/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(user),
         });
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend user created successfully');
-            return data;
-        } else {
-            console.log('❌ Backend returned error status:', response.status);
+        
+        if (!response.ok) {
+            // Intentar obtener mensaje de error del backend
+            const error = await response.json().catch(() => ({ 
+                message: `Error ${response.status}: ${response.statusText}` 
+            }));
+            
+            // El backend devuelve { message: string } en caso de error
+            const errorMessage = error.message || error.error || `Error al crear usuario: ${response.status}`;
+            throw new Error(errorMessage);
         }
+        
+        const result = await response.json();
+        console.log('✅ Usuario creado exitosamente');
+        
+        // El backend devuelve { success: true, message: string, data: AdminUser }
+        if (result.data) {
+            return result.data;
+        }
+        
+        // Si no viene en formato estructurado, asumir que es el usuario directamente
+        return result;
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
+        console.error('❌ Error al crear usuario:', error);
+        throw error instanceof Error ? error : new Error('Error desconocido al crear usuario');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for create user');
-    const { localApi } = await import('./localApi');
-    return localApi.createUser(user);
 };
 
 export const updateUser = async (id: string, user: Partial<AdminUser>): Promise<AdminUser> => {
     try {
-        console.log('Trying backend for update user...');
+        console.log('🔧 Actualizando usuario en el backend...', { id, updates: Object.keys(user) });
+        
         const response = await fetch(`${API_URL}/admin/users/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(user),
         });
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend user updated successfully');
-            return data;
-        } else {
-            console.log('❌ Backend returned error status:', response.status);
+        
+        if (!response.ok) {
+            // Intentar obtener mensaje de error del backend
+            const error = await response.json().catch(() => ({ 
+                message: `Error ${response.status}: ${response.statusText}` 
+            }));
+            
+            // El backend devuelve { message: string } en caso de error
+            const errorMessage = error.message || error.error || `Error al actualizar usuario: ${response.status}`;
+            throw new Error(errorMessage);
         }
+        
+        const result = await response.json();
+        console.log('✅ Usuario actualizado exitosamente');
+        
+        // El backend devuelve { success: true, message: string, data: AdminUser }
+        if (result.data) {
+            return result.data;
+        }
+        
+        // Si no viene en formato estructurado, asumir que es el usuario directamente
+        return result;
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
+        console.error('❌ Error al actualizar usuario:', error);
+        throw error instanceof Error ? error : new Error('Error desconocido al actualizar usuario');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for update user');
-    const { localApi } = await import('./localApi');
-    return localApi.updateUser(id, user);
 };
 
 export const deleteUser = async (id: string): Promise<void> => {
     try {
-        console.log('Trying backend for delete user...');
+        console.log('🗑️ Eliminando usuario en el backend...', { id });
+        
         const response = await fetch(`${API_URL}/admin/users/${id}`, {
             method: 'DELETE',
         });
-        if (response.ok) {
-            console.log('✅ Backend user deleted successfully');
-            return;
-        } else {
-            console.log('❌ Backend returned error status:', response.status);
+        
+        if (!response.ok) {
+            // Intentar obtener mensaje de error del backend
+            const error = await response.json().catch(() => ({ 
+                message: `Error ${response.status}: ${response.statusText}` 
+            }));
+            
+            // El backend devuelve { message: string } en caso de error
+            const errorMessage = error.message || error.error || `Error al eliminar usuario: ${response.status}`;
+            throw new Error(errorMessage);
         }
+        
+        // El backend devuelve { success: true, message: string }
+        const result = await response.json().catch(() => ({}));
+        console.log('✅ Usuario eliminado exitosamente');
+        
+        // No necesitamos retornar nada en delete
+        return;
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
+        console.error('❌ Error al eliminar usuario:', error);
+        throw error instanceof Error ? error : new Error('Error desconocido al eliminar usuario');
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for delete user');
-    const { localApi } = await import('./localApi');
-    return localApi.deleteUser(id);
 };
 
 

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, HttpException, Http
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Prisma, type Raffle, type Winner } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -876,14 +877,14 @@ export class AdminService {
 
   // Users
   async getUsers() {
-    // Devolver todos los campos incluyendo password (necesario para login)
+    // ✅ NUNCA devolver passwords en las respuestas por seguridad
     const users = await this.prisma.adminUser.findMany({
       select: {
         id: true,
         name: true,
         username: true,
         email: true,
-        password: true,
+        // password: false - NO incluir nunca
         role: true,
         createdAt: true,
         updatedAt: true
@@ -894,32 +895,182 @@ export class AdminService {
 
   async createUser(data: Prisma.AdminUserCreateInput) {
     try {
-      // Validate required fields
+      // ✅ Validar campos requeridos
       if (!data.username || !data.name || !data.password) {
-        throw new Error('Username, name, and password are required');
+        throw new BadRequestException('Username, name, and password are required');
       }
       
-      return this.prisma.adminUser.create({ data });
+      // ✅ Validar que el password tenga mínimo 6 caracteres
+      if (typeof data.password === 'string' && data.password.length < 6) {
+        throw new BadRequestException('Password must be at least 6 characters long');
+      }
+      
+      // ✅ Validar que el rol sea válido
+      const validRoles = ['admin', 'ventas', 'superadmin'];
+      if (data.role && !validRoles.includes(data.role)) {
+        throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
+      }
+      
+      // ✅ Validar que el username sea único
+      const existingUser = await this.prisma.adminUser.findUnique({
+        where: { username: data.username as string }
+      });
+      if (existingUser) {
+        throw new BadRequestException('Username already exists');
+      }
+      
+      // ✅ Hash de contraseña antes de guardar
+      const hashedPassword = await bcrypt.hash(data.password as string, 10);
+      
+      // ✅ Crear usuario con password hasheada
+      const newUser = await this.prisma.adminUser.create({
+        data: {
+          ...data,
+          password: hashedPassword,
+          role: (data.role as string) || 'ventas' // Default role
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          // password: false - NO incluir en respuesta
+          role: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+      
+      console.log('✅ Usuario creado exitosamente:', newUser.id);
+      return newUser;
     } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
+      console.error('❌ Error creating user:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma (ej: constraint violation), convertirlo
+      if (error instanceof Error && error.message.includes('Unique constraint')) {
+        throw new BadRequestException('Username already exists');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al crear usuario');
     }
   }
 
   async updateUser(id: string, data: Prisma.AdminUserUpdateInput) {
-    console.log('🔧 Actualizando usuario:', id, 'con datos:', JSON.stringify(data));
+    console.log('🔧 Actualizando usuario:', id, 'con datos:', JSON.stringify(data, null, 2));
     try {
-      const updated = await this.prisma.adminUser.update({ where: { id }, data });
-      console.log('✅ Usuario actualizado:', updated.id);
+      // ✅ Verificar que el usuario existe
+      const existingUser = await this.prisma.adminUser.findUnique({
+        where: { id }
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+      
+      // ✅ Validar username único si se está actualizando
+      if (data.username) {
+        const usernameTaken = await this.prisma.adminUser.findFirst({
+          where: {
+            username: data.username as string,
+            NOT: { id }
+          }
+        });
+        if (usernameTaken) {
+          throw new BadRequestException('Username already exists');
+        }
+      }
+      
+      // ✅ Validar rol si se está actualizando
+      const validRoles = ['admin', 'ventas', 'superadmin'];
+      if (data.role && !validRoles.includes(data.role as string)) {
+        throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
+      }
+      
+      // ✅ Validar longitud de password si se proporciona
+      if (data.password && typeof data.password === 'string') {
+        if (data.password.length < 6) {
+          throw new BadRequestException('Password must be at least 6 characters long');
+        }
+      }
+      
+      // ✅ Hash de contraseña solo si se proporciona una nueva
+      const updateData: any = { ...data };
+      if (data.password && typeof data.password === 'string' && data.password.trim() !== '') {
+        updateData.password = await bcrypt.hash(data.password, 10);
+        console.log('🔑 Password será actualizada (hasheada)');
+      } else {
+        // Si no se proporciona password, no actualizarla
+        delete updateData.password;
+      }
+      
+      // ✅ Actualizar usuario
+      const updated = await this.prisma.adminUser.update({
+        where: { id },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          // password: false - NO incluir en respuesta
+          role: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+      
+      console.log('✅ Usuario actualizado exitosamente:', updated.id);
       return updated;
     } catch (error) {
       console.error('❌ Error al actualizar usuario:', error);
-      throw error;
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma, convertirlo
+      if (error instanceof Error && error.message.includes('Unique constraint')) {
+        throw new BadRequestException('Username already exists');
+      }
+      if (error instanceof Error && error.message.includes('Record to update not found')) {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al actualizar usuario');
     }
   }
 
   async deleteUser(id: string) {
-    return this.prisma.adminUser.delete({ where: { id } });
+    try {
+      // ✅ Verificar que el usuario existe
+      const user = await this.prisma.adminUser.findUnique({
+        where: { id }
+      });
+      
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      
+      // ✅ No permitir eliminar superadmin (protección crítica)
+      if (user.role === 'superadmin') {
+        throw new BadRequestException('Cannot delete superadmin user');
+      }
+      
+      // ✅ Eliminar usuario
+      await this.prisma.adminUser.delete({ where: { id } });
+      console.log('✅ Usuario eliminado exitosamente:', id);
+      return { message: 'Usuario eliminado exitosamente' };
+    } catch (error) {
+      console.error('❌ Error al eliminar usuario:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma, convertirlo
+      if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al eliminar usuario');
+    }
   }
 
   // Settings

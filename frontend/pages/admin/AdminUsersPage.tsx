@@ -117,9 +117,17 @@ const AdminUsersPage = () => {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const data = await getUsers();
-        setUsers(data);
-        setLoading(false);
+        try {
+            const data = await getUsers();
+            setUsers(data);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Error al cargar usuarios';
+            alert(errorMessage);
+            setUsers([]); // Limpiar lista en caso de error
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -159,7 +167,7 @@ const AdminUsersPage = () => {
                 const newUser = { 
                     name: data.name,
                     username: data.username,
-                    password: data.password,
+                    password: data.password || '',
                     role: data.role
                 };
                 console.log('➕ Creando nuevo usuario:', newUser);
@@ -168,8 +176,9 @@ const AdminUsersPage = () => {
             await fetchUsers();
             handleCloseModal();
         } catch (error) {
-            console.error("Failed to save user", error);
-            alert("Error al guardar el usuario: " + error);
+            console.error("❌ Failed to save user", error);
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido al guardar el usuario';
+            alert(`Error al guardar el usuario: ${errorMessage}`);
         }
     };
 
@@ -181,8 +190,9 @@ const AdminUsersPage = () => {
                 console.log('✅ Usuario eliminado correctamente');
                 await fetchUsers();
             } catch (error) {
-                 console.error("Failed to delete user", error);
-                 alert("Error al eliminar el usuario: " + error);
+                console.error("❌ Failed to delete user", error);
+                const errorMessage = error instanceof Error ? error.message : 'Error desconocido al eliminar el usuario';
+                alert(`Error al eliminar el usuario: ${errorMessage}`);
             }
         }
     };

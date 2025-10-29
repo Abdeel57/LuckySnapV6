@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, HttpException, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, HttpException, HttpStatus, Res, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { AdminService } from './admin.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
@@ -260,23 +260,105 @@ export class AdminController {
 
   // Users
   @Get('users')
-  getUsers() {
-    return this.adminService.getUsers();
+  async getUsers() {
+    try {
+      const users = await this.adminService.getUsers();
+      return users;
+    } catch (error) {
+      console.error('❌ Error getting users:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al obtener usuarios',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   
   @Post('users')
-  createUser(@Body() data: Prisma.AdminUserCreateInput) {
-    return this.adminService.createUser(data);
+  async createUser(@Body() data: Prisma.AdminUserCreateInput) {
+    try {
+      const user = await this.adminService.createUser(data);
+      return {
+        success: true,
+        message: 'Usuario creado exitosamente',
+        data: user
+      };
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      // Si ya es una excepción de NestJS (BadRequestException), re-lanzarla
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es HttpException, re-lanzarla con el mismo status
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      // Para otros errores, crear BadRequestException
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al crear usuario',
+        HttpStatus.BAD_REQUEST
+      );
+    }
   }
   
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() data: Prisma.AdminUserUpdateInput) {
-    return this.adminService.updateUser(id, data);
+  async updateUser(@Param('id') id: string, @Body() data: Prisma.AdminUserUpdateInput) {
+    try {
+      const user = await this.adminService.updateUser(id, data);
+      return {
+        success: true,
+        message: 'Usuario actualizado exitosamente',
+        data: user
+      };
+    } catch (error) {
+      console.error('❌ Error updating user:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es HttpException, re-lanzarla con el mismo status
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      // Determinar el status code apropiado
+      const statusCode = error instanceof Error && error.message.includes('not found') 
+        ? HttpStatus.NOT_FOUND 
+        : HttpStatus.BAD_REQUEST;
+      
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al actualizar usuario',
+        statusCode
+      );
+    }
   }
   
   @Delete('users/:id')
-  deleteUser(@Param('id') id: string) {
-    return this.adminService.deleteUser(id);
+  async deleteUser(@Param('id') id: string) {
+    try {
+      const result = await this.adminService.deleteUser(id);
+      return {
+        success: true,
+        message: result.message || 'Usuario eliminado exitosamente'
+      };
+    } catch (error) {
+      console.error('❌ Error deleting user:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es HttpException, re-lanzarla con el mismo status
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      // Determinar el status code apropiado
+      const statusCode = error instanceof Error && error.message.includes('not found') 
+        ? HttpStatus.NOT_FOUND 
+        : HttpStatus.BAD_REQUEST;
+      
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al eliminar usuario',
+        statusCode
+      );
+    }
   }
   
   // Settings
