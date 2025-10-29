@@ -197,4 +197,26 @@ export class PublicController {
       );
     }
   }
+
+  @Post('buscar-boletos')
+  async searchTickets(@Body() body: {
+    numero_boleto?: number;
+    nombre_cliente?: string;
+    telefono?: string;
+    folio?: string;
+  }) {
+    try {
+      const result = await this.publicService.searchTickets(body);
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      console.error('❌ Error in searchTickets controller:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al buscar boletos',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
 }

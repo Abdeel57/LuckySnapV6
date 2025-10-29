@@ -342,6 +342,39 @@ export const verifyTicket = async (data: { codigo_qr?: string; numero_boleto?: n
     }
 };
 
+export const searchTickets = async (criteria: {
+    numero_boleto?: number;
+    nombre_cliente?: string;
+    telefono?: string;
+    folio?: string;
+}): Promise<any> => {
+    try {
+        console.log('🔍 Buscando boletos con criterios:', criteria);
+        
+        const response = await fetch(`${API_URL}/public/buscar-boletos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(criteria),
+        });
+        
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ 
+                message: `Error ${response.status}: ${response.statusText}` 
+            }));
+            throw new Error(error.message || 'Error al buscar boletos');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Búsqueda exitosa:', result);
+        
+        // El backend devuelve { success: true, data: {...} }
+        return result.data || result;
+    } catch (error) {
+        console.error('❌ Error searching tickets:', error);
+        throw error instanceof Error ? error : new Error('Error desconocido al buscar boletos');
+    }
+};
+
 export const downloadTickets = async (raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel' = 'csv'): Promise<void> => {
     try {
         console.log('📥 Downloading tickets:', { raffleId, tipo, formato });

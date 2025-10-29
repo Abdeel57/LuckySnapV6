@@ -391,4 +391,148 @@ export class PublicService {
       throw new Error('Error al generar código QR');
     }
   }
+
+  async searchTickets(criteria: {
+    numero_boleto?: number;
+    nombre_cliente?: string;
+    telefono?: string;
+    folio?: string;
+  }) {
+    try {
+      console.log('🔍 Searching tickets with criteria:', criteria);
+      
+      // Validar que al menos un criterio esté presente
+      if (!criteria.numero_boleto && !criteria.nombre_cliente && !criteria.telefono && !criteria.folio) {
+        throw new Error('Se requiere al menos un criterio de búsqueda');
+      }
+      
+      const where: any = {
+        // Excluir órdenes canceladas y expiradas de la búsqueda pública
+        status: {
+          in: ['PENDING', 'PAID']
+        }
+      };
+      
+      // Construir condiciones dinámicas
+      if (criteria.numero_boleto) {
+        where.tickets = {
+          has: criteria.numero_boleto
+        };
+      }
+      
+      // Construir condiciones de usuario
+      if (criteria.nombre_cliente || criteria.telefono) {
+        where.user = {};
+        
+        if (criteria.nombre_cliente) {
+          where.user.name = {
+            contains: criteria.nombre_cliente,
+            mode: 'insensitive'
+          };
+        }
+        
+        if (criteria.telefono) {
+          // Limpiar teléfono: solo números
+          const phoneCleaned = criteria.telefono.replace(/\D/g, '');
+          where.user.phone = {
+            contains: phoneCleaned
+          };
+        }
+      }
+      
+      if (criteria.folio) {
+        where.folio = {
+          contains: criteria.folio,
+          mode: 'insensitive'
+        };
+      }
+      
+      // Buscar órdenes
+      const orders = await this.prisma.order.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              district: true
+            }
+          },
+          raffle: {
+            select: {
+              id: true,
+              title: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 50 // Límite recomendado
+      });
+      
+      if (orders.length === 0) {
+        return {
+          clientes: [],
+          totalClientes: 0,
+          totalOrdenes: 0
+        };
+      }
+      
+      // Agrupar órdenes por cliente (userId)
+      const ordersByUser = new Map<string, typeof orders>();
+      
+      orders.forEach(order => {
+        const userId = order.userId;
+        if (!ordersByUser.has(userId)) {
+          ordersByUser.set(userId, []);
+        }
+        ordersByUser.get(userId)!.push(order);
+      });
+      
+      // Transformar a formato agrupado
+      const clientesAgrupados = Array.from(ordersByUser.entries()).map(([userId, userOrders]) => {
+        const primerOrder = userOrders[0];
+        const totalBoletos = userOrders.reduce((sum, o) => sum + o.tickets.length, 0);
+        const totalPagado = userOrders.reduce((sum, o) => sum + (o.status === 'PAID' ? o.total : 0), 0);
+        
+        return {
+          clienteId: userId,
+          nombre: primerOrder.user.name || 'Sin nombre',
+          telefono: primerOrder.user.phone || 'Sin teléfono',
+          distrito: primerOrder.user.district || 'Sin distrito',
+          totalOrdenes: userOrders.length,
+          totalBoletos: totalBoletos,
+          totalPagado: totalPagado,
+          ordenes: userOrders.map(order => ({
+            ordenId: order.id,
+            folio: order.folio,
+            rifa: {
+              id: order.raffle.id,
+              titulo: order.raffle.title
+            },
+            boletos: order.tickets,
+            cantidadBoletos: order.tickets.length,
+            estado: order.status,
+            monto: order.total,
+            fechaCreacion: order.createdAt,
+            fechaPago: order.status === 'PAID' ? order.updatedAt : null,
+            metodoPago: (order as any).paymentMethod || null
+          }))
+        };
+      });
+      
+      console.log(`✅ Found ${clientesAgrupados.length} clients with ${orders.length} orders`);
+      
+      return {
+        clientes: clientesAgrupados,
+        totalClientes: clientesAgrupados.length,
+        totalOrdenes: orders.length
+      };
+    } catch (error) {
+      console.error('❌ Error searching tickets:', error);
+      throw error;
+    }
+  }
 }

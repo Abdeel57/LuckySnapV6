@@ -214,6 +214,11 @@ const AdminCustomersPage: React.FC = () => {
                                     {order.customer && <h3 className="text-lg font-bold text-gray-900 mb-2">{order.customer.name || 'Sin nombre'}</h3>}
                                     <div className="space-y-1 text-sm text-gray-600">
                                         {order.customer && <p>📞 {order.customer.phone || 'Sin teléfono'}</p>}
+                                        {order.folio && (
+                                            <p className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-700 inline-block">
+                                                🏷️ Folio: <span className="font-bold">{order.folio}</span>
+                                            </p>
+                                        )}
                                         <p>🎫 Boletos: {order.tickets?.join(', ') || 'N/A'}</p>
                                         <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                     </div>
