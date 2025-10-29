@@ -447,9 +447,15 @@ export class PublicService {
         };
       }
       
-      // Buscar órdenes
+      // Buscar órdenes solo de sorteos activos
       const orders = await this.prisma.order.findMany({
-        where,
+        where: {
+          ...where,
+          // Solo mostrar órdenes de rifas activas
+          raffle: {
+            status: 'active'
+          }
+        },
         include: {
           user: {
             select: {
@@ -462,7 +468,8 @@ export class PublicService {
           raffle: {
             select: {
               id: true,
-              title: true
+              title: true,
+              status: true
             }
           }
         },
