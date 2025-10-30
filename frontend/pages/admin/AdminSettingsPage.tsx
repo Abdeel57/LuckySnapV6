@@ -201,7 +201,7 @@ const SimpleColorPresets: React.FC<{
 };
 
 const AdminSettingsPage = () => {
-    const { register, control, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm<Settings>();
+    const { register, control, handleSubmit, reset, setValue, formState: { isSubmitting, isDirty } } = useForm<Settings>();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { updateAppearance } = useTheme();
@@ -229,20 +229,51 @@ const AdminSettingsPage = () => {
                 });
             }
 
-            // Inicializar preferencias visuales
-            if (data.displayPreferences) {
-                if (data.displayPreferences.listingMode) setListingMode(data.displayPreferences.listingMode);
-                if (data.displayPreferences.paidTicketsVisibility) setPaidTicketsVisibility(data.displayPreferences.paidTicketsVisibility);
+            // Inicializar preferencias visuales - parsear si viene como string JSON
+            let displayPrefs = data.displayPreferences;
+            if (typeof displayPrefs === 'string') {
+                try {
+                    displayPrefs = JSON.parse(displayPrefs);
+                } catch (e) {
+                    console.error('Error parsing displayPreferences:', e);
+                    displayPrefs = null;
+                }
             }
 
-            // Reset del formulario
-            reset(data);
+            if (displayPrefs) {
+                const listing = displayPrefs.listingMode || 'paginado';
+                const visibility = displayPrefs.paidTicketsVisibility || 'a_la_vista';
+                setListingMode(listing);
+                setPaidTicketsVisibility(visibility);
+                // Actualizar el formulario con los valores correctos
+                setValue('displayPreferences', {
+                    listingMode: listing,
+                    paidTicketsVisibility: visibility
+                });
+            } else {
+                // Valores por defecto si no existen
+                setListingMode('paginado');
+                setPaidTicketsVisibility('a_la_vista');
+                setValue('displayPreferences', {
+                    listingMode: 'paginado',
+                    paidTicketsVisibility: 'a_la_vista'
+                });
+            }
+
+            // Reset del formulario con datos parseados
+            reset({
+                ...data,
+                displayPreferences: displayPrefs || {
+                    listingMode: 'paginado',
+                    paidTicketsVisibility: 'a_la_vista'
+                }
+            });
             setLoading(false);
         }).catch(error => {
             console.error('Error loading settings:', error);
             setLoading(false);
         });
-    }, [reset]);
+    }, [reset, setValue]);
 
     const handleColorChange = (colors: {
         primary: string;
@@ -287,13 +318,16 @@ const AdminSettingsPage = () => {
         try {
             console.log('🔧 Saving settings:', data);
             
+            // Usar valores del formulario o estado local como fallback
+            const formDisplayPrefs = data.displayPreferences || {
+                listingMode,
+                paidTicketsVisibility,
+            };
+            
             // Validate data before sending
             const validatedData = {
                 ...data,
-                displayPreferences: {
-                    listingMode,
-                    paidTicketsVisibility,
-                },
+                displayPreferences: formDisplayPrefs,
                 appearance: {
                     ...data.appearance,
                     colors: {
@@ -318,11 +352,31 @@ const AdminSettingsPage = () => {
             
             const result = await adminUpdateSettings(validatedData);
             console.log('✅ Settings saved successfully:', result);
-            if (result.displayPreferences) {
-                setListingMode(result.displayPreferences.listingMode || 'paginado');
-                setPaidTicketsVisibility(result.displayPreferences.paidTicketsVisibility || 'a_la_vista');
+            
+            // Parsear displayPreferences si viene como string
+            let resultDisplayPrefs = result.displayPreferences;
+            if (typeof resultDisplayPrefs === 'string') {
+                try {
+                    resultDisplayPrefs = JSON.parse(resultDisplayPrefs);
+                } catch (e) {
+                    console.error('Error parsing displayPreferences from response:', e);
+                    resultDisplayPrefs = formDisplayPrefs;
+                }
             }
-            reset(result);
+            
+            // Actualizar estados locales desde la respuesta
+            if (resultDisplayPrefs) {
+                const listing = resultDisplayPrefs.listingMode || 'paginado';
+                const visibility = resultDisplayPrefs.paidTicketsVisibility || 'a_la_vista';
+                setListingMode(listing);
+                setPaidTicketsVisibility(visibility);
+            }
+            
+            // Reset del formulario con datos parseados
+            reset({
+                ...result,
+                displayPreferences: resultDisplayPrefs || formDisplayPrefs
+            });
             
             if (result.appearance) {
                 console.log('🎨 Updating appearance in real-time...');
@@ -565,14 +619,20 @@ const AdminSettingsPage = () => {
                                 <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
                                     <button
                                         type="button"
-                                        onClick={() => setListingMode('paginado')}
+                                        onClick={() => {
+                                            setListingMode('paginado');
+                                            setValue('displayPreferences.listingMode', 'paginado', { shouldDirty: true });
+                                        }}
                                         className={`px-4 py-2 text-sm font-medium transition-colors ${listingMode === 'paginado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                     >
                                         Por página
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setListingMode('scroll')}
+                                        onClick={() => {
+                                            setListingMode('scroll');
+                                            setValue('displayPreferences.listingMode', 'scroll', { shouldDirty: true });
+                                        }}
                                         className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${listingMode === 'scroll' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                     >
                                         Hacia abajo
@@ -587,14 +647,20 @@ const AdminSettingsPage = () => {
                                 <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
                                     <button
                                         type="button"
-                                        onClick={() => setPaidTicketsVisibility('a_la_vista')}
+                                        onClick={() => {
+                                            setPaidTicketsVisibility('a_la_vista');
+                                            setValue('displayPreferences.paidTicketsVisibility', 'a_la_vista', { shouldDirty: true });
+                                        }}
                                         className={`px-4 py-2 text-sm font-medium transition-colors ${paidTicketsVisibility === 'a_la_vista' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                     >
                                         A la vista
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setPaidTicketsVisibility('no_disponibles')}
+                                        onClick={() => {
+                                            setPaidTicketsVisibility('no_disponibles');
+                                            setValue('displayPreferences.paidTicketsVisibility', 'no_disponibles', { shouldDirty: true });
+                                        }}
                                         className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${paidTicketsVisibility === 'no_disponibles' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
                                     >
                                         No disponibles

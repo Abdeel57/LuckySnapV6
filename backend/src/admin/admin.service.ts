@@ -1131,7 +1131,9 @@ export class AdminService {
       });
       
       console.log('✅ Settings updated successfully:', result);
-      return result;
+      
+      // Formatear la respuesta igual que en publicService
+      return this.formatSettingsResponse(result);
     } catch (error) {
       console.error('❌ Error updating settings:', error);
       throw new Error('Failed to update settings');
@@ -1157,6 +1159,63 @@ export class AdminService {
     } catch (error) {
       console.error('❌ Error in safeStringify:', error);
       return JSON.stringify([]);
+    }
+  }
+
+  private formatSettingsResponse(settings: any) {
+    return {
+      id: settings.id,
+      siteName: settings.siteName,
+      appearance: {
+        siteName: settings.siteName,
+        logo: settings.logo,
+        favicon: settings.favicon,
+        logoAnimation: settings.logoAnimation || 'rotate',
+        colors: {
+          backgroundPrimary: settings.primaryColor || '#111827',
+          backgroundSecondary: settings.secondaryColor || '#1f2937',
+          accent: settings.accentColor || '#ec4899',
+          action: settings.actionColor || '#0ea5e9',
+        }
+      },
+      contactInfo: {
+        whatsapp: settings.whatsapp || '',
+        email: settings.email || '',
+      },
+      socialLinks: {
+        facebookUrl: settings.facebookUrl || '',
+        instagramUrl: settings.instagramUrl || '',
+        twitterUrl: settings.twitterUrl || '',
+      },
+      paymentAccounts: this.parseJsonField(settings.paymentAccounts),
+      faqs: this.parseJsonField(settings.faqs),
+      displayPreferences: this.parseJsonField(settings.displayPreferences),
+      createdAt: settings.createdAt,
+      updatedAt: settings.updatedAt,
+    };
+  }
+
+  private parseJsonField(field: any) {
+    try {
+      if (!field) return null;
+      
+      // Handle double serialization
+      if (typeof field === 'string') {
+        // Try to parse as JSON
+        const parsed = JSON.parse(field);
+        
+        // If it's still a string, parse again
+        if (typeof parsed === 'string') {
+          return JSON.parse(parsed);
+        }
+        
+        return parsed;
+      }
+      
+      return field;
+    } catch (error) {
+      console.error('❌ Error parsing JSON field:', error);
+      return null;
     }
   }
 }
