@@ -24,35 +24,40 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
 }) => {
     const maxValue = Math.max(...data.map(d => d.value));
 
-    const renderBarChart = () => (
-        <div className="flex items-end justify-between h-full space-x-2">
-            {data.map((item, index) => (
-                <motion.div
-                    key={item.label}
-                    className="flex flex-col items-center flex-1"
-                    initial={{ height: 0 }}
-                    animate={{ height: '100%' }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                >
-                    <div className="flex flex-col items-center h-full justify-end">
-                        <div
-                            className={`w-full rounded-t ${
-                                item.color || 'bg-blue-500'
-                            }`}
-                            style={{
-                                height: `${(item.value / maxValue) * 100}%`,
-                                minHeight: '4px'
-                            }}
-                        />
-                        <div className="text-xs text-gray-600 mt-2 text-center">
-                            <div className="font-medium">{item.value}</div>
-                            <div className="text-xs">{item.label}</div>
+    const renderBarChart = () => {
+        // Optimizar para móvil: rotar labels si hay muchos datos
+        const shouldRotate = data.length > 10;
+        
+        return (
+            <div className="flex items-end justify-between h-full space-x-1 sm:space-x-2 overflow-x-auto pb-8 sm:pb-4">
+                {data.map((item, index) => (
+                    <motion.div
+                        key={item.label}
+                        className="flex flex-col items-center flex-1 min-w-[40px] sm:min-w-[50px]"
+                        initial={{ height: 0 }}
+                        animate={{ height: '100%' }}
+                        transition={{ delay: index * 0.05, duration: 0.5 }}
+                    >
+                        <div className="flex flex-col items-center h-full justify-end w-full">
+                            <div
+                                className={`w-full rounded-t ${
+                                    item.color || 'bg-blue-500'
+                                }`}
+                                style={{
+                                    height: `${(item.value / maxValue) * 100}%`,
+                                    minHeight: '4px'
+                                }}
+                            />
+                            <div className={`text-xs text-gray-600 mt-1 sm:mt-2 text-center ${shouldRotate ? 'transform -rotate-45 origin-bottom-left whitespace-nowrap' : ''}`}>
+                                <div className="font-medium text-xs">{item.value >= 1000 ? `${(item.value / 1000).toFixed(1)}k` : item.value.toLocaleString()}</div>
+                                <div className={`text-xs ${shouldRotate ? 'hidden sm:block' : ''}`}>{item.label}</div>
+                            </div>
                         </div>
-                    </div>
-                </motion.div>
-            ))}
-        </div>
-    );
+                    </motion.div>
+                ))}
+            </div>
+        );
+    };
 
     const renderLineChart = () => (
         <div className="relative h-full">
@@ -197,22 +202,22 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-            <div style={{ height: `${height}px` }}>
+        <div className={`bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 ${className}`}>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">{title}</h3>
+            <div style={{ height: `${height}px` }} className="relative">
                 {renderChart()}
             </div>
             
-            {/* Legend for pie charts */}
+            {/* Legend for pie charts - Optimizado para móvil */}
             {(type === 'pie' || type === 'donut') && (
-                <div className="mt-4 flex flex-wrap gap-4 justify-center">
+                <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4 justify-center">
                     {data.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                        <div key={index} className="flex items-center gap-1.5 sm:gap-2">
                             <div
-                                className="w-3 h-3 rounded-full"
+                                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: item.color || `hsl(${index * 60}, 70%, 50%)` }}
                             />
-                            <span className="text-sm text-gray-600">{item.label}</span>
+                            <span className="text-xs sm:text-sm text-gray-600">{item.label}</span>
                         </div>
                     ))}
                 </div>

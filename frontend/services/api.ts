@@ -646,6 +646,115 @@ export const getDashboardStats = async () => {
     return handleResponse(await fetch(`${API_URL}/admin/stats`));
 };
 
+// --- Analytics API Calls ---
+
+export interface SalesTrend {
+    date: string;
+    sales: number;
+    orders: number;
+    revenue: number;
+}
+
+export interface CustomerInsight {
+    totalCustomers: number;
+    newCustomers: number;
+    returningCustomers: number;
+    averageOrderValue: number;
+    customerLifetimeValue: number;
+    topCustomers: Array<{
+        id: string;
+        name: string;
+        email: string;
+        totalSpent: number;
+        orderCount: number;
+        lastOrder: Date;
+    }>;
+}
+
+export interface ConversionFunnel {
+    visitors: number;
+    interested: number;
+    addedToCart: number;
+    initiatedCheckout: number;
+    completedPurchase: number;
+    conversionRate: number;
+}
+
+export interface ROIMetrics {
+    totalRevenue: number;
+    totalAdSpend: number;
+    totalOrders: number;
+    costPerAcquisition: number;
+    returnOnAdSpend: number;
+    revenuePerCustomer: number;
+}
+
+export const getSalesTrends = async (period: 'day' | 'week' | 'month' = 'day', days: number = 30): Promise<SalesTrend[]> => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/sales-trends?period=${period}&days=${days}`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching sales trends:', error);
+        throw error;
+    }
+};
+
+export const getCustomerInsights = async (): Promise<CustomerInsight> => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/customer-insights`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching customer insights:', error);
+        throw error;
+    }
+};
+
+export const getConversionFunnel = async (): Promise<ConversionFunnel> => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/conversion-funnel`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching conversion funnel:', error);
+        throw error;
+    }
+};
+
+export const getROIMetrics = async (): Promise<ROIMetrics> => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/roi-metrics`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching ROI metrics:', error);
+        throw error;
+    }
+};
+
+export const getPopularRaffles = async (): Promise<Array<{
+    id: string;
+    title: string;
+    ticketsSold: number;
+    revenue: number;
+    conversionRate: number;
+}>> => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/popular-raffles`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching popular raffles:', error);
+        throw error;
+    }
+};
+
+export const getDashboardSummary = async () => {
+    try {
+        const response = await fetch(`${API_URL}/admin/analytics/dashboard-summary`);
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Error fetching dashboard summary:', error);
+        throw error;
+    }
+};
+
 export const adminGetAllOrders = async (): Promise<Order[]> => {
     const data = await handleResponse(await fetch(`${API_URL}/admin/orders`));
     return data.map(parseOrderDates);
