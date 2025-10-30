@@ -3,6 +3,27 @@
 
 export type OutputFormat = 'auto' | 'webp' | 'avif' | 'jpeg' | 'png';
 
+function supportsWidthParam(originalUrl: string): boolean {
+    try {
+        const { hostname } = new URL(originalUrl, window.location.origin);
+        // Proveedores comunes que aceptan parámetros de transformación en query
+        const allowedHosts = [
+            'images.unsplash.com',
+            'res.cloudinary.com',
+            'ik.imagekit.io',
+            'imagedelivery.net', // Cloudflare Images
+            'cdn.sanity.io',
+            'storage.googleapis.com',
+            'firebasestorage.googleapis.com',
+            'media.graphassets.com',
+            'imgix.net',
+        ];
+        return allowedHosts.some(h => hostname.endsWith(h));
+    } catch {
+        return false;
+    }
+}
+
 function joinWithQuery(originalUrl: string, params: Record<string, string | number | undefined>): string {
     try {
         const url = new URL(originalUrl, window.location.origin);
@@ -25,6 +46,10 @@ function joinWithQuery(originalUrl: string, params: Record<string, string | numb
 }
 
 export function buildVariantUrl(sourceUrl: string, width: number, format: OutputFormat = 'auto'): string {
+    if (!supportsWidthParam(sourceUrl)) {
+        // Host no soporta transforms por query; devolver URL original
+        return sourceUrl;
+    }
     const formatParam = format === 'auto' ? undefined : format;
     return joinWithQuery(sourceUrl, { w: width, format: formatParam });
 }
