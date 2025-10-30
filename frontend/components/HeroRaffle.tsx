@@ -82,7 +82,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                 </AnimatePresence>
                 
                 {/* Overlay oscuro para legibilidad */}
-                <div className="absolute inset-0 bg-black/50"></div>
+                <div className="absolute inset-0 bg-black/35"></div>
                 
                 {/* Patrón de textura deshabilitado (se removió la marca de agua) */}
             </div>
