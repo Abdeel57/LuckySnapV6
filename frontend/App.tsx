@@ -19,6 +19,7 @@ const PaymentAccountsPage = lazy(() => import('./pages/PaymentAccountsPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
+const ReceiptPage = lazy(() => import('./pages/ReceiptPage'));
 
 // Admin Pages
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
@@ -43,7 +44,10 @@ const App: React.FC = () => {
                 <ToastContainer />
                 <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
                   <Routes>
-              {/* Public Routes */}
+              {/* Public Routes - Receipt page sin layout para mejor impresión */}
+              <Route path="comprobante/:folio" element={<ReceiptPage />} />
+              
+              {/* Public Routes con Layout */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
                 <Route path="sorteo/:slug" element={<RaffleDetailPage />} />

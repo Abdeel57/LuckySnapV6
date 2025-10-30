@@ -1,9 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Download, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { X, Send, Copy, Check } from 'lucide-react';
 import { Order, Settings } from '../../types';
-import ReceiptGenerator from './ReceiptGenerator';
 
 interface PaymentConfirmationModalProps {
     isOpen: boolean;
@@ -18,8 +16,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
     order,
     settings 
 }) => {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const receiptRef = useRef<HTMLDivElement>(null);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     if (!isOpen || !order) return null;
 
@@ -29,90 +26,49 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
         return phone.replace(/[\s\-\(\)]/g, '');
     };
 
-    const generateReceiptImage = async (): Promise<string> => {
-        if (!receiptRef.current) throw new Error('Receipt ref not found');
-
-        setIsGenerating(true);
-        try {
-            // Esperar un momento para que el componente se renderice completamente
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Capturar el componente como imagen
-            const canvas = await html2canvas(receiptRef.current, {
-                backgroundColor: '#ffffff',
-                scale: 2, // Mejor calidad
-                logging: false,
-                useCORS: true
-            });
-
-            // Convertir canvas a blob
-            return new Promise((resolve, reject) => {
-                canvas.toBlob((blob) => {
-                    if (!blob) {
-                        reject(new Error('Error al generar imagen'));
-                        return;
-                    }
-
-                    // Crear URL del blob
-                    const url = URL.createObjectURL(blob);
-                    
-                    // Descargar automáticamente
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `comprobante-${order.folio || 'recibo'}.png`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Resolver con la URL del blob
-                    resolve(url);
-                }, 'image/png');
-            });
-        } finally {
-            setIsGenerating(false);
-        }
+    const getReceiptUrl = () => {
+        // Usar window.location.origin para obtener la URL base
+        const baseUrl = window.location.origin;
+        // Como usa HashRouter, usar #/comprobante/:folio
+        return `${baseUrl}#/comprobante/${order.folio}`;
     };
 
-    const handleSendReceipt = async () => {
-        try {
-            // Generar y descargar imagen
-            await generateReceiptImage();
+    const copyLinkToClipboard = () => {
+        const url = getReceiptUrl();
+        navigator.clipboard.writeText(url).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        }).catch(() => {
+            alert('Error al copiar el link. Por favor cópialo manualmente: ' + url);
+        });
+    };
 
-            // Preparar mensaje para WhatsApp
-            const phoneNumber = formatPhoneNumber(order.customer?.phone);
-            if (!phoneNumber) {
-                alert('No se encontró número de teléfono del cliente');
-                return;
-            }
-
-            const message = `¡Tu comprobante de pago está listo! Folio: ${order.folio || 'N/A'}. Por favor adjunta la imagen descargada.`;
-            const encodedMessage = encodeURIComponent(message);
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-
-            // Abrir WhatsApp
-            window.open(whatsappUrl, '_blank');
-
-            // Cerrar modal después de un momento
-            setTimeout(() => {
-                onClose();
-            }, 1000);
-        } catch (error) {
-            console.error('Error generando comprobante:', error);
-            alert('Error al generar el comprobante. Por favor intenta nuevamente.');
+    const handleSendReceipt = () => {
+        // Preparar mensaje para WhatsApp con el link del comprobante
+        const phoneNumber = formatPhoneNumber(order.customer?.phone);
+        if (!phoneNumber) {
+            alert('No se encontró número de teléfono del cliente');
+            return;
         }
+
+        const receiptUrl = getReceiptUrl();
+        const message = `¡Tu comprobante de pago está listo! Folio: ${order.folio || 'N/A'}\n\nVer tu comprobante aquí: ${receiptUrl}`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+        // Abrir WhatsApp
+        window.open(whatsappUrl, '_blank');
+
+        // Cerrar modal después de un momento
+        setTimeout(() => {
+            onClose();
+        }, 1000);
     };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Componente de comprobante oculto para captura */}
-                    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
-                        <div ref={receiptRef}>
-                            <ReceiptGenerator order={order} settings={settings} />
-                        </div>
-                    </div>
-
                     {/* Modal */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -165,10 +121,41 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                                     </p>
                                 </div>
 
-                                <div className="text-sm text-gray-600">
-                                    <p className="mb-2">¿Deseas enviar el comprobante de pago al cliente por WhatsApp?</p>
+                                <div className="text-sm text-gray-600 space-y-3">
+                                    <p className="mb-2">¿Deseas enviar el link del comprobante de pago al cliente por WhatsApp?</p>
+                                    
+                                    {/* Link del comprobante */}
+                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                                            Link del Comprobante:
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={getReceiptUrl()}
+                                                className="flex-1 px-3 py-2 bg-white border border-blue-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                            />
+                                            <button
+                                                onClick={copyLinkToClipboard}
+                                                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                                                title="Copiar link"
+                                            >
+                                                {linkCopied ? (
+                                                    <Check className="w-4 h-4" />
+                                                ) : (
+                                                    <Copy className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                        </div>
+                                        {linkCopied && (
+                                            <p className="text-xs text-green-600 mt-2">¡Link copiado al portapapeles!</p>
+                                        )}
+                                    </div>
+                                    
                                     <p className="text-xs text-gray-500">
-                                        El comprobante se descargará automáticamente y se abrirá WhatsApp con un mensaje pre-formateado.
+                                        El cliente podrá ver su comprobante completo con QR code en el link que se enviará.
                                     </p>
                                 </div>
                             </div>
@@ -179,27 +166,16 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                                     type="button"
                                     onClick={onClose}
                                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all"
-                                    disabled={isGenerating}
                                 >
                                     Salir
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleSendReceipt}
-                                    disabled={isGenerating}
-                                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all flex items-center space-x-2"
                                 >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>Generando...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="w-4 h-4" />
-                                            <span>Enviar Comprobante de Pago</span>
-                                        </>
-                                    )}
+                                    <Send className="w-4 h-4" />
+                                    <span>Enviar Comprobante de Pago</span>
                                 </button>
                             </div>
                         </motion.div>
