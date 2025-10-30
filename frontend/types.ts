@@ -106,6 +106,11 @@ export interface AppearanceSettings {
     };
 }
 
+export interface DisplayPreferences {
+    listingMode: 'paginado' | 'scroll';
+    paidTicketsVisibility: 'a_la_vista' | 'no_disponibles';
+}
+
 export interface Settings {
     appearance: AppearanceSettings;
     contactInfo: {
@@ -119,6 +124,7 @@ export interface Settings {
     };
     paymentAccounts: PaymentAccount[];
     faqs: FaqItemData[];
+    displayPreferences?: DisplayPreferences;
 }
 
 export interface AdminUser {

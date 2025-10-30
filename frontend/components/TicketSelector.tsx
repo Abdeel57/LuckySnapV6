@@ -6,20 +6,25 @@ interface TicketSelectorProps {
     totalTickets: number;
     occupiedTickets: number[];
     selectedTickets: number[];
+    listingMode?: 'paginado' | 'scroll';
+    hideOccupied?: boolean;
     onTicketClick: (ticket: number) => void;
 }
 
-const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTicketClick }: TicketSelectorProps) => {
+const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTicketClick, listingMode = 'paginado', hideOccupied = false }: TicketSelectorProps) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 50;
     const totalPages = Math.ceil(totalTickets / ticketsPerPage);
 
     const renderTickets = () => {
-        const start = (currentPage - 1) * ticketsPerPage;
-        const end = start + ticketsPerPage;
         const tickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
+        const visibleTickets = listingMode === 'paginado'
+            ? tickets.slice((currentPage - 1) * ticketsPerPage, (currentPage * ticketsPerPage))
+            : tickets;
 
-        return tickets.slice(start, end).map(ticket => {
+        return visibleTickets
+            .filter(ticket => hideOccupied ? !occupiedTickets.includes(ticket) : true)
+            .map(ticket => {
             const isOccupied = occupiedTickets.includes(ticket);
             const isSelected = selectedTickets.includes(ticket);
             
@@ -72,15 +77,18 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     return (
         <div className="bg-background-secondary p-4 rounded-lg shadow-lg border border-slate-700/50">
             <Legend />
-            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                {renderTickets()}
+            <div className={listingMode === 'scroll' ? 'max-h-[60vh] overflow-y-auto pr-1' : ''}>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                    {renderTickets()}
+                </div>
             </div>
-            {/* Pagination */}
-            <div className="flex justify-center items-center gap-4 mt-4 text-white">
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-action rounded-md disabled:opacity-50">Anterior</button>
-                <span>Página {currentPage} de {totalPages}</span>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-action rounded-md disabled:opacity-50">Siguiente</button>
-            </div>
+            {listingMode === 'paginado' && (
+                <div className="flex justify-center items-center gap-4 mt-4 text-white">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1 bg-action rounded-md disabled:opacity-50">Anterior</button>
+                    <span>Página {currentPage} de {totalPages}</span>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1 bg-action rounded-md disabled:opacity-50">Siguiente</button>
+                </div>
+            )}
         </div>
     );
 };

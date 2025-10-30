@@ -1083,7 +1083,8 @@ export class AdminService {
         contactInfo, 
         socialLinks, 
         paymentAccounts, 
-        faqs 
+        faqs,
+        displayPreferences,
       } = data;
       
       // Extract appearance data
@@ -1115,6 +1116,7 @@ export class AdminService {
         // Other settings - Ensure proper serialization
         paymentAccounts: this.safeStringify(paymentAccounts),
         faqs: this.safeStringify(faqs),
+        displayPreferences: this.safeStringify(displayPreferences),
       };
       
       console.log('🔧 Settings data to save:', settingsData);

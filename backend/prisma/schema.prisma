@@ -137,6 +137,7 @@ model Settings {
   // Other settings
   paymentAccounts Json?
   faqs            Json?
+  displayPreferences Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

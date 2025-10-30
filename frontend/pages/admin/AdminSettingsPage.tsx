@@ -205,6 +205,8 @@ const AdminSettingsPage = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { updateAppearance } = useTheme();
+    const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
+    const [paidTicketsVisibility, setPaidTicketsVisibility] = useState<'a_la_vista' | 'no_disponibles'>('a_la_vista');
     const [previewColors, setPreviewColors] = useState({
         primary: '#0ea5e9',
         accent: '#ec4899',
@@ -217,7 +219,7 @@ const AdminSettingsPage = () => {
 
     useEffect(() => {
         getSettings().then(data => {
-            reset(data);
+            // Inicializar preview de colores
             if (data.appearance?.colors) {
                 setPreviewColors({
                     primary: data.appearance.colors.action || '#0ea5e9',
@@ -226,6 +228,15 @@ const AdminSettingsPage = () => {
                     secondaryBackground: data.appearance.colors.backgroundSecondary || '#1f2937'
                 });
             }
+
+            // Inicializar preferencias visuales
+            if (data.displayPreferences) {
+                if (data.displayPreferences.listingMode) setListingMode(data.displayPreferences.listingMode);
+                if (data.displayPreferences.paidTicketsVisibility) setPaidTicketsVisibility(data.displayPreferences.paidTicketsVisibility);
+            }
+
+            // Reset del formulario
+            reset(data);
             setLoading(false);
         }).catch(error => {
             console.error('Error loading settings:', error);
@@ -279,6 +290,10 @@ const AdminSettingsPage = () => {
             // Validate data before sending
             const validatedData = {
                 ...data,
+                displayPreferences: {
+                    listingMode,
+                    paidTicketsVisibility,
+                },
                 appearance: {
                     ...data.appearance,
                     colors: {
@@ -303,6 +318,10 @@ const AdminSettingsPage = () => {
             
             const result = await adminUpdateSettings(validatedData);
             console.log('✅ Settings saved successfully:', result);
+            if (result.displayPreferences) {
+                setListingMode(result.displayPreferences.listingMode || 'paginado');
+                setPaidTicketsVisibility(result.displayPreferences.paidTicketsVisibility || 'a_la_vista');
+            }
             reset(result);
             
             if (result.appearance) {
@@ -529,6 +548,59 @@ const AdminSettingsPage = () => {
                             <div>
                                 <label className={labelClasses}>Twitter</label>
                                 <input {...register('socialLinks.twitterUrl')} className={inputClasses} placeholder="https://twitter.com/tu-perfil" />
+                            </div>
+                        </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* Listados y Boletos - SOLO VISUAL (sin lógica aún) */}
+                    <OptimizedSectionWrapper
+                        title="Listados y Boletos"
+                        icon={Eye}
+                        description="Configura cómo se muestran los números y los boletos pagados"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Modo de listado de números */}
+                            <div>
+                                <label className={labelClasses}>Listado de números</label>
+                                <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
+                                    <button
+                                        type="button"
+                                        onClick={() => setListingMode('paginado')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors ${listingMode === 'paginado' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Por página
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setListingMode('scroll')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${listingMode === 'scroll' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Hacia abajo
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Selecciona si el listado usa paginación o desplazamiento continuo.</p>
+                            </div>
+
+                            {/* Visibilidad de boletos pagados */}
+                            <div>
+                                <label className={labelClasses}>Boletos pagados</label>
+                                <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaidTicketsVisibility('a_la_vista')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors ${paidTicketsVisibility === 'a_la_vista' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        A la vista
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaidTicketsVisibility('no_disponibles')}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${paidTicketsVisibility === 'no_disponibles' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        No disponibles
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Elige si se muestran o se deshabilitan los boletos ya pagados.</p>
                             </div>
                         </div>
                     </OptimizedSectionWrapper>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getRaffleBySlug, getOccupiedTickets } from '../services/api';
+import { getRaffleBySlug, getOccupiedTickets, getSettings } from '../services/api';
 import { Raffle } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -17,8 +17,17 @@ const RaffleDetailPage = () => {
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
+    const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
+    const [hideOccupied, setHideOccupied] = useState<boolean>(false);
 
     useEffect(() => {
+        // Cargar preferencias de visualización desde settings públicos
+        getSettings().then(settings => {
+            const prefs = (settings as any)?.displayPreferences;
+            if (prefs?.listingMode) setListingMode(prefs.listingMode);
+            if (prefs?.paidTicketsVisibility) setHideOccupied(prefs.paidTicketsVisibility === 'no_disponibles');
+        }).catch(() => {});
+
         if (slug) {
             setLoading(true);
             getRaffleBySlug(slug).then(raffleData => {
@@ -173,6 +182,8 @@ const RaffleDetailPage = () => {
                                 totalTickets={raffle.tickets}
                                 occupiedTickets={occupiedTickets}
                                 selectedTickets={selectedTickets}
+                                listingMode={listingMode}
+                                hideOccupied={hideOccupied}
                                 onTicketClick={handleTicketClick}
                             />
                             
