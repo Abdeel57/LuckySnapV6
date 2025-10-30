@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Raffle } from '../types';
 import CountdownTimer from './CountdownTimer';
 import { ShoppingBag } from 'lucide-react';
+import ResponsiveImage from './ResponsiveImage';
 
 interface HeroRaffleProps {
     raffle: Raffle;
@@ -58,19 +59,26 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
             {/* Imagen principal como fondo de pantalla completa */}
             <div className="absolute inset-0 w-full h-full">
                 <AnimatePresence mode="wait">
-                    <motion.img
+                    <motion.div
                         key={currentImageIndex}
-                        src={allImages[currentImageIndex]}
-                        alt={raffle.title}
-                        loading="eager"
-                        decoding="async"
-                        fetchPriority="high"
+                        className="w-full h-full"
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.5 }}
-                        className="w-full h-full object-cover"
-                    />
+                    >
+                        <ResponsiveImage
+                            src={allImages[currentImageIndex]}
+                            alt={raffle.title}
+                            widths={[768, 1200, 1600, 1920, 2160]}
+                            sizesHint="100vw"
+                            preferFormat="auto"
+                            loading="eager"
+                            decoding="async"
+                            fetchPriority="high"
+                            className="w-full h-full object-cover"
+                        />
+                    </motion.div>
                 </AnimatePresence>
                 
                 {/* Overlay oscuro para legibilidad */}
@@ -140,10 +148,14 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                                             : 'border-white/40 opacity-60 hover:opacity-100'
                                     }`}
                                 >
-                                    <img 
-                                        src={img} 
+                                    <ResponsiveImage
+                                        src={img}
                                         alt={`Vista ${index + 1}`}
+                                        widths={[240, 320, 480, 640]}
+                                        sizesHint="96px"
+                                        preferFormat="auto"
                                         loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-cover"
                                     />
                                 </button>
