@@ -62,6 +62,9 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                         key={currentImageIndex}
                         src={allImages[currentImageIndex]}
                         alt={raffle.title}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
@@ -73,8 +76,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                 {/* Overlay oscuro para legibilidad */}
                 <div className="absolute inset-0 bg-black/50"></div>
                 
-                {/* Patrón de textura */}
-                <div className="absolute inset-0 opacity-10" style={{backgroundImage: 'url("data:image/svg+xml;charset=utf-8,%3Csvg width=\'60\' height=\'60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V4h4V2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V4h4V2H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'}}></div>
+                {/* Patrón de textura deshabilitado (se removió la marca de agua) */}
             </div>
 
             {/* Contenido centrado sobre la imagen */}
@@ -141,6 +143,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                                     <img 
                                         src={img} 
                                         alt={`Vista ${index + 1}`}
+                                        loading="lazy"
                                         className="w-full h-full object-cover"
                                     />
                                 </button>
