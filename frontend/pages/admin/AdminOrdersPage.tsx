@@ -11,11 +11,12 @@ import {
   Download,
   Clock
 } from 'lucide-react';
-import { Order, Raffle } from '../../types';
-import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder } from '../../services/api';
+import { Order, Raffle, Settings } from '../../types';
+import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder, getSettings } from '../../services/api';
 import { getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 import PaymentMethodModal from '../../components/admin/PaymentMethodModal';
+import PaymentConfirmationModal from '../../components/admin/PaymentConfirmationModal';
 
 const AdminOrdersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -30,6 +31,9 @@ const AdminOrdersPage: React.FC = () => {
     const [isLoadingAction, setIsLoadingAction] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<string | null>(null);
+    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+    const [paidOrder, setPaidOrder] = useState<Order | null>(null);
+    const [settings, setSettings] = useState<Settings | null>(null);
 
     // Cargar datos iniciales
     useEffect(() => {
@@ -39,12 +43,14 @@ const AdminOrdersPage: React.FC = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [ordersData, rafflesData] = await Promise.all([
+            const [ordersData, rafflesData, settingsData] = await Promise.all([
                 getOrders(),
-                getRaffles()
+                getRaffles(),
+                getSettings()
             ]);
             setOrders(ordersData || []);
             setRaffles(rafflesData || []);
+            setSettings(settingsData || null);
             console.log('📋 Orders and raffles loaded:', { orders: ordersData?.length || 0, raffles: rafflesData?.length || 0 });
         } catch (error) {
             console.error('❌ Error loading data:', error);
@@ -92,12 +98,17 @@ const AdminOrdersPage: React.FC = () => {
         
         try {
             setRefreshing(true);
-            await markOrderPaid(selectedOrderForPayment, paymentMethod, notes);
+            const paidOrderResult = await markOrderPaid(selectedOrderForPayment, paymentMethod, notes);
             console.log('✅ Order marked as paid:', { orderId: selectedOrderForPayment, paymentMethod, notes });
-            alert('Orden marcada como pagada exitosamente');
-            await refreshData();
+            
+            // Guardar la orden pagada y mostrar modal de confirmación
+            setPaidOrder(paidOrderResult);
             setIsPaymentModalOpen(false);
+            setIsConfirmationModalOpen(true);
             setSelectedOrderForPayment(null);
+            
+            // Refrescar datos en segundo plano
+            refreshData();
         } catch (error: any) {
             console.error('❌ Error marking order as paid:', error);
             alert(`Error al marcar la orden como pagada: ${error.message || 'Error desconocido'}`);
@@ -529,6 +540,17 @@ const AdminOrdersPage: React.FC = () => {
                     setSelectedOrderForPayment(null);
                 }}
                 onSave={handleConfirmPayment}
+            />
+
+            {/* Modal de confirmación post-pago */}
+            <PaymentConfirmationModal
+                isOpen={isConfirmationModalOpen}
+                onClose={() => {
+                    setIsConfirmationModalOpen(false);
+                    setPaidOrder(null);
+                }}
+                order={paidOrder}
+                settings={settings || undefined}
             />
 
             {/* Modal de edición */}
