@@ -169,12 +169,6 @@ const VerifierPage = () => {
                                         <h3 className="text-xl font-bold text-white mb-2">{cliente.nombre}</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-slate-300">
                                             <p className="flex items-center gap-2">
-                                                📞 {cliente.telefono}
-                                            </p>
-                                            <p className="flex items-center gap-2">
-                                                📍 {cliente.distrito}
-                                            </p>
-                                            <p className="flex items-center gap-2">
                                                 📊 {cliente.totalOrdenes} orden(es) • {cliente.totalBoletos} boletos
                                             </p>
                                         </div>
