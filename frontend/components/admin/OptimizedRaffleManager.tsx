@@ -53,8 +53,9 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
             toast.error('Error', 'Este sorteo no tiene un slug válido para visualizar');
             return;
         }
-        // Usar HashRouter - abrir en nueva pestaña
-        const url = `#/sorteo/${raffle.slug}`;
+        // Construir la URL completa usando la URL base actual
+        const baseUrl = window.location.origin + window.location.pathname.replace(/\/admin.*$/, '');
+        const url = `${baseUrl}#/sorteo/${raffle.slug}`;
         window.open(url, '_blank');
     };
 
