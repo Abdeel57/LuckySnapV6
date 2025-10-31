@@ -32,9 +32,9 @@ const Footer = () => {
 
     return (
         <footer className="relative bg-gradient-to-b from-background-secondary via-slate-900/80 to-background-secondary mt-20 pt-12 pb-8 border-t border-slate-700/30 overflow-hidden">
-            {/* Efecto de fondo decorativo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-blue-500/5" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+            {/* Efecto de fondo decorativo - usa colores del tema */}
+            <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-action/10 rounded-full blur-3xl" />
             
             <div className="container mx-auto px-4 relative z-10">
                 {/* Header del Footer */}
@@ -47,7 +47,7 @@ const Footer = () => {
                 >
                     <div className="inline-flex items-center gap-3 mb-4">
                         <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" />
-                        <h3 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
+                        <h3 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white via-action/80 to-accent/80 bg-clip-text text-transparent">
                             {settings?.siteName || 'Lucky Snap'}
                         </h3>
                         <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" style={{ animationDelay: '0.5s' }} />
@@ -89,11 +89,11 @@ const Footer = () => {
                                 {contactInfo.email && (
                                     <motion.a
                                         href={`mailto:${contactInfo.email}`}
-                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-500/15 transition-all duration-300 group"
+                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-2.5 bg-gradient-to-r from-action/10 to-action/20 rounded-xl border border-action/20 hover:border-action/40 hover:bg-action/15 transition-all duration-300 group"
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <Mail className="w-5 h-5 text-blue-400 group-hover:text-blue-300 transition-colors" />
+                                        <Mail className="w-5 h-5 text-action group-hover:text-action/80 transition-colors" />
                                         <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">Email</span>
                                     </motion.a>
                                 )}

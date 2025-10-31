@@ -84,8 +84,8 @@ const Faq = () => {
                     transition={{ duration: 0.5, delay: 0.3 }}
                     className="mt-8 md:mt-10 text-center"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-blue-500/15 to-purple-600/15 rounded-xl border border-blue-500/20 backdrop-blur-sm">
-                        <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-400 flex-shrink-0" />
+                    <div className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-action/15 to-accent/15 rounded-xl border border-action/20 backdrop-blur-sm">
+                        <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-action flex-shrink-0" />
                         <p className="text-xs md:text-sm text-slate-300">
                             ¿No encuentras lo que buscas? <span className="text-accent font-semibold">Contáctanos</span>
                         </p>
