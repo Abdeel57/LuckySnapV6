@@ -54,6 +54,17 @@ const EditOrderForm: React.FC<EditOrderFormProps> = ({ order, onSave, onCancel }
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Información del Sorteo */}
+            {order.raffleTitle && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-lg">🎰</span>
+                        <h3 className="text-sm font-semibold text-gray-700">Sorteo</h3>
+                    </div>
+                    <p className="font-bold text-blue-800">{order.raffleTitle}</p>
+                </div>
+            )}
+
             {/* Información del cliente */}
             <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">

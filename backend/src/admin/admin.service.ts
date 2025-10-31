@@ -127,12 +127,28 @@ export class AdminService {
   }
   
   async updateOrderStatus(folio: string, status: string) {
-    const order = await this.prisma.order.findUnique({ where: { folio } });
+    const order = await this.prisma.order.findUnique({ 
+      where: { folio },
+      include: { raffle: true, user: true }
+    });
     if (!order) {
         throw new NotFoundException('Order not found');
     }
 
-    if (order.status === status) return order;
+    if (order.status === status) {
+      return {
+        ...order,
+        customer: {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || 'Sin teléfono',
+          email: order.user.email || '',
+          district: order.user.district || 'Sin distrito',
+        },
+        raffleTitle: order.raffle.title,
+        total: order.total,
+      };
+    }
 
     // Handle ticket count adjustment if order is cancelled
     if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
@@ -142,10 +158,24 @@ export class AdminService {
         });
     }
 
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
         where: { folio },
         data: { status: status as any },
+        include: { raffle: true, user: true },
     });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
   }
 
   async updateOrder(id: string, orderData: any) {

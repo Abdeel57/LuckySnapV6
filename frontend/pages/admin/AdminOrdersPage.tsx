@@ -321,6 +321,13 @@ const AdminOrdersPage: React.FC = () => {
                                 >
                                     {/* Información esencial */}
                                     <div className="mb-4">
+                                        {order.raffleTitle && (
+                                            <div className="mb-3 pb-3 border-b border-gray-200">
+                                                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                                                    🎰 {order.raffleTitle}
+                                                </span>
+                                            </div>
+                                        )}
                                         <h3 className="text-lg font-bold text-gray-900 mb-2">{order.folio}</h3>
                                         <div className="space-y-1 text-sm text-gray-600">
                                             {order.customer && (
@@ -417,6 +424,17 @@ const AdminOrdersPage: React.FC = () => {
                                 </div>
                                 
                                 <div className="space-y-6">
+                                    {/* Información del Sorteo */}
+                                    {selectedOrder.raffleTitle && (
+                                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                                            <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                                <span>🎰</span>
+                                                <span>Sorteo</span>
+                                            </h3>
+                                            <p className="font-bold text-blue-800 text-lg">{selectedOrder.raffleTitle}</p>
+                                        </div>
+                                    )}
+
                                     {/* Información básica */}
                                     <div className="bg-gray-50 rounded-xl p-4">
                                         <h3 className="font-semibold text-gray-900 mb-3">Información Básica</h3>
