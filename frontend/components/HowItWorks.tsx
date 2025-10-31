@@ -33,17 +33,17 @@ const HowItWorks = () => {
     ];
 
     return (
-        <div className="container mx-auto px-4 max-w-7xl">
-            <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
+        <div className="container mx-auto px-4 max-w-7xl relative z-10">
+            <div className="text-center mb-12 md:mb-16">
+                <h2 className="text-3xl md:text-5xl font-bold text-primary mb-4 md:mb-6">
                     ¿Cómo Funciona?
                 </h2>
-                <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto">
+                <p className="text-base md:text-lg lg:text-xl text-secondary max-w-2xl mx-auto">
                     Participar es súper fácil. Solo sigue estos 3 simples pasos
                 </p>
             </div>
             
-            <div className="relative">
+            <div className="relative pb-8 md:pb-0">
                 {/* Desktop Layout con flechas */}
                 <div className="hidden md:flex md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8">
                     {steps.map((step, index) => (
@@ -104,7 +104,7 @@ const HowItWorks = () => {
                 </div>
                 
                 {/* Mobile Layout */}
-                <div className="md:hidden space-y-6">
+                <div className="md:hidden space-y-6 relative z-10">
                     {steps.map((step, index) => (
                         <motion.div
                             key={index}
@@ -112,11 +112,11 @@ const HowItWorks = () => {
                             whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.3 }}
                             transition={reduceAnimations ? {} : { duration: 0.6, delay: index * 0.2 }}
-                            className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 text-center overflow-visible`}
+                            className={`relative ${step.bgColor.replace('dark:', '')} ${step.borderColor.replace('dark:', '')} border-2 rounded-3xl pt-12 pb-16 px-4 sm:px-6 text-center overflow-visible shadow-lg`}
                         >
                             {/* Número del paso */}
-                            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20">
-                                <div className={`w-14 h-14 bg-gradient-to-br ${step.color} rounded-full flex items-center justify-center shadow-xl border-4 border-white dark:border-gray-900`}>
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-30">
+                                <div className={`w-14 h-14 bg-gradient-to-br ${step.color} rounded-full flex items-center justify-center shadow-xl border-4 border-white`}>
                                     <span className="text-2xl font-black text-white">{index + 1}</span>
                                 </div>
                             </div>

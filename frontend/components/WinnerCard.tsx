@@ -13,10 +13,10 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
     
     return (
         <motion.div 
-            className="relative group"
+            className="relative group w-full"
             initial={reduceAnimations ? { opacity: 1 } : { opacity: 0, y: 30, scale: 0.9 }}
             whileInView={reduceAnimations ? {} : { opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: "-50px" }}
             transition={reduceAnimations ? {} : { duration: 0.5 }}
             whileHover={reduceAnimations ? {} : { scale: 1.05 }}
         >
@@ -24,7 +24,7 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
             <div className={`absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl ${reduceAnimations ? 'opacity-10' : 'blur opacity-20'} group-hover:opacity-30 transition-opacity duration-300 ${reduceAnimations ? '' : 'animate-pulse'}`} />
             
             {/* Contenedor principal */}
-            <div className="relative bg-gradient-to-br from-background-secondary via-slate-800/90 to-background-secondary rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/30 h-full flex flex-col">
+            <div className="relative bg-gradient-to-br from-background-secondary via-slate-800/90 to-background-secondary rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/30 h-full flex flex-col min-h-[400px] sm:min-h-[450px]">
                 {/* Header con gradiente dorado */}
                 <div className="relative bg-gradient-to-r from-yellow-400/20 via-orange-500/20 to-yellow-400/20 p-6 pb-4">
                     <div className="flex items-center justify-center gap-3 mb-4">

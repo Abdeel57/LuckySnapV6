@@ -137,7 +137,7 @@ const HomePage = () => {
             )}
 
             {/* How It Works Section */}
-            <section className="py-16 md:py-24 bg-secondary/5">
+            <section className="py-12 md:py-16 lg:py-24 bg-secondary/5 relative z-10 overflow-visible">
                 <HowItWorks />
             </section>
 
@@ -179,9 +179,9 @@ const HomePage = () => {
                             winners.length === 1 
                                 ? 'flex justify-center max-w-md mx-auto' 
                                 : winners.length === 2 
-                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10 max-w-5xl mx-auto' 
-                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10'
-                        }`}>
+                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 max-w-5xl mx-auto' 
+                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10'
+                        } relative z-10`}>
                             {winners.map((winner, index) => (
                                 <motion.div
                                     key={winner.id}
