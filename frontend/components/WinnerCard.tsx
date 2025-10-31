@@ -1,24 +1,27 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Winner } from '../types';
 import { format } from 'date-fns';
 // FIX: Corrected import path for 'es' locale.
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import { Trophy, Sparkles, Calendar } from 'lucide-react';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
 const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
+    const reduceAnimations = useOptimizedAnimations();
+    
     return (
         <motion.div 
             className="relative group"
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            initial={reduceAnimations ? { opacity: 1 } : { opacity: 0, y: 30, scale: 0.9 }}
+            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            whileHover={{ scale: 1.05 }}
+            transition={reduceAnimations ? {} : { duration: 0.5 }}
+            whileHover={reduceAnimations ? {} : { scale: 1.05 }}
         >
-            {/* Efecto de brillo de fondo */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300 animate-pulse" />
+            {/* Efecto de brillo de fondo - reducido en móviles */}
+            <div className={`absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl ${reduceAnimations ? 'opacity-10' : 'blur opacity-20'} group-hover:opacity-30 transition-opacity duration-300 ${reduceAnimations ? '' : 'animate-pulse'}`} />
             
             {/* Contenedor principal */}
             <div className="relative bg-gradient-to-br from-background-secondary via-slate-800/90 to-background-secondary rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/30 h-full flex flex-col">
@@ -26,12 +29,12 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
                 <div className="relative bg-gradient-to-r from-yellow-400/20 via-orange-500/20 to-yellow-400/20 p-6 pb-4">
                     <div className="flex items-center justify-center gap-3 mb-4">
                         <motion.div
-                            animate={{ rotate: [0, 10, -10, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                            animate={reduceAnimations ? {} : { rotate: [0, 10, -10, 0] }}
+                            transition={reduceAnimations ? {} : { duration: 2, repeat: Infinity, repeatDelay: 3 }}
                             className="relative"
                         >
                             <Trophy className="text-yellow-400 h-12 w-12 md:h-16 md:w-16 drop-shadow-lg" />
-                            <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-yellow-300 animate-pulse" />
+                            {!reduceAnimations && <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-yellow-300 animate-pulse" />}
                         </motion.div>
                     </div>
                     <div className="text-center">
@@ -45,21 +48,26 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
                 <div className="p-6 md:p-8 flex-1 flex flex-col items-center">
                     {/* Imagen del premio con efecto especial */}
                     <div className="relative mb-6">
-                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-md opacity-50 animate-pulse" />
+                        {!reduceAnimations && <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-md opacity-50 animate-pulse" />}
                         <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-400 shadow-xl ring-4 ring-yellow-400/20">
                             <img 
                                 src={winner.imageUrl} 
                                 alt={winner.prize} 
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
                                     target.src = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop';
                                 }}
                             />
                         </div>
-                        {/* Efecto de estrellas alrededor */}
-                        <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" style={{ animationDelay: '0s' }} />
-                        <Sparkles className="absolute -bottom-2 -left-2 w-5 h-5 text-orange-400 animate-pulse" style={{ animationDelay: '1s' }} />
+                        {/* Efecto de estrellas alrededor - solo en desktop */}
+                        {!reduceAnimations && (
+                            <>
+                                <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" style={{ animationDelay: '0s' }} />
+                                <Sparkles className="absolute -bottom-2 -left-2 w-5 h-5 text-orange-400 animate-pulse" style={{ animationDelay: '1s' }} />
+                            </>
+                        )}
                     </div>
                     
                     {/* Nombre del ganador */}
@@ -103,4 +111,4 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
     );
 };
 
-export default WinnerCard;
+export default memo(WinnerCard);

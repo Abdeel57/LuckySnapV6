@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Raffle } from '../types';
 import { motion } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 interface RaffleCardProps {
     raffle: Raffle;
@@ -10,6 +11,7 @@ interface RaffleCardProps {
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
 const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
+    const reduceAnimations = useOptimizedAnimations();
     const progress = (raffle.sold / raffle.tickets) * 100;
 
     // Detectar si la descripción es larga
@@ -17,10 +19,10 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
+            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5 }}
+            transition={reduceAnimations ? {} : { duration: 0.5 }}
             className="card h-full flex flex-col group overflow-hidden"
         >
             <Link to={`/sorteo/${raffle.slug}`} className="block">
@@ -29,7 +31,8 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                     <img 
                         src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
                         alt={raffle.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className={`w-full h-full object-cover transition-transform ${reduceAnimations ? '' : 'duration-500 group-hover:scale-110'}`}
+                        loading="lazy"
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
@@ -125,4 +128,4 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
     );
 };
 
-export default RaffleCard;
+export default memo(RaffleCard);

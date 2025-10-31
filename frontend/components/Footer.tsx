@@ -4,6 +4,7 @@ import { getSettings } from '../services/api';
 import { Settings } from '../types';
 import { Facebook, Instagram, Mail, MessageCircle, Sparkles, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 // Icono de TikTok personalizado
 const TikTokIcon = ({ size = 24 }: { size?: number }) => (
@@ -21,6 +22,7 @@ const TikTokIcon = ({ size = 24 }: { size?: number }) => (
 
 const Footer = () => {
     const [settings, setSettings] = useState<Settings | null>(null);
+    const reduceAnimations = useOptimizedAnimations();
 
     useEffect(() => {
         getSettings().then(setSettings);
@@ -32,9 +34,13 @@ const Footer = () => {
 
     return (
         <footer className="relative bg-gradient-to-b from-background-secondary via-slate-900/80 to-background-secondary mt-20 pt-12 pb-8 border-t border-slate-700/30 overflow-hidden">
-            {/* Efecto de fondo decorativo - usa colores del tema */}
-            <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-action/10 rounded-full blur-3xl" />
+            {/* Efecto de fondo decorativo - reducido en móviles */}
+            {!reduceAnimations && (
+                <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-action/10 rounded-full blur-3xl" />
+                </>
+            )}
             
             <div className="container mx-auto px-4 relative z-10">
                 {/* Header del Footer */}
@@ -46,11 +52,11 @@ const Footer = () => {
                     className="text-center mb-8"
                 >
                     <div className="inline-flex items-center gap-3 mb-4">
-                        <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" />
+                        {!reduceAnimations && <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" />}
                         <h3 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white via-action/80 to-accent/80 bg-clip-text text-transparent">
                             {settings?.siteName || 'Lucky Snap'}
                         </h3>
-                        <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" style={{ animationDelay: '0.5s' }} />
+                        {!reduceAnimations && <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" style={{ animationDelay: '0.5s' }} />}
                     </div>
                     <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
                         Participa en sorteos increíbles y gana premios fantásticos
@@ -62,10 +68,10 @@ const Footer = () => {
                     {/* Contacto */}
                     {(contactInfo?.whatsapp || contactInfo?.email) && (
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
+                            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.1 }}
+                            transition={reduceAnimations ? {} : { duration: 0.5, delay: 0.1 }}
                             className="text-center md:text-left flex flex-col"
                         >
                             <h4 className="text-white font-bold text-lg mb-5 flex items-center justify-center md:justify-start gap-2">
@@ -79,8 +85,8 @@ const Footer = () => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center md:justify-start gap-3 px-4 py-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all duration-300 group"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={reduceAnimations ? {} : { scale: 1.02 }}
+                                        whileTap={reduceAnimations ? {} : { scale: 0.98 }}
                                     >
                                         <MessageCircle className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors flex-shrink-0" />
                                         <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">WhatsApp</span>
@@ -90,8 +96,8 @@ const Footer = () => {
                                     <motion.a
                                         href={`mailto:${contactInfo.email}`}
                                         className="flex items-center justify-center md:justify-start gap-3 px-4 py-3 bg-gradient-to-r from-action/10 to-action/20 rounded-xl border border-action/20 hover:border-action/40 hover:bg-action/15 transition-all duration-300 group"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={reduceAnimations ? {} : { scale: 1.02 }}
+                                        whileTap={reduceAnimations ? {} : { scale: 0.98 }}
                                     >
                                         <Mail className="w-5 h-5 text-action group-hover:text-action/80 transition-colors flex-shrink-0" />
                                         <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">Email</span>
@@ -121,8 +127,8 @@ const Footer = () => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 border border-blue-500/30 flex items-center justify-center hover:border-blue-400/50 hover:bg-blue-600/30 transition-all duration-300 group"
-                                        whileHover={{ scale: 1.1, rotate: 5 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={reduceAnimations ? {} : { scale: 1.1, rotate: 5 }}
+                                        whileTap={reduceAnimations ? {} : { scale: 0.95 }}
                                         aria-label="Facebook"
                                     >
                                         <Facebook className="w-7 h-7 text-blue-400 group-hover:text-blue-300 transition-colors" />
@@ -147,8 +153,8 @@ const Footer = () => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-700/20 to-slate-800/20 border border-slate-600/30 flex items-center justify-center hover:border-slate-500/50 hover:bg-slate-700/30 transition-all duration-300 group"
-                                        whileHover={{ scale: 1.1, rotate: 5 }}
-                                        whileTap={{ scale: 0.95 }}
+                                        whileHover={reduceAnimations ? {} : { scale: 1.1, rotate: 5 }}
+                                        whileTap={reduceAnimations ? {} : { scale: 0.95 }}
                                         aria-label="TikTok"
                                     >
                                         <TikTokIcon size={28} className="text-slate-300 group-hover:text-white transition-colors" />

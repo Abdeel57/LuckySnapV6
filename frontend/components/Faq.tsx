@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { getSettings } from '../services/api';
 import { FaqItemData } from '../types';
 import FaqItem from './FaqItem';
 import { HelpCircle, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 const Faq = () => {
     const [faqs, setFaqs] = useState<FaqItemData[]>([]);
     const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+    const reduceAnimations = useOptimizedAnimations();
 
     useEffect(() => {
         getSettings().then(settings => setFaqs(settings.faqs));
@@ -29,17 +31,17 @@ const Faq = () => {
         <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
             {/* Header mejorado */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
+                whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
+                transition={reduceAnimations ? {} : { duration: 0.6 }}
                 className="text-center mb-12 md:mb-16"
             >
                 <div className="inline-flex items-center justify-center gap-3 mb-6">
                     <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
                         <HelpCircle className="w-8 h-8 md:w-10 md:h-10 text-white" />
                     </div>
-                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />
+                    {!reduceAnimations && <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />}
                 </div>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                     Preguntas Frecuentes
@@ -57,13 +59,13 @@ const Faq = () => {
                     const isCurrentlyOpen = openFaqId === faqId;
                     
                     return (
-                        <motion.div
-                            key={faqId}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                        >
+                    <motion.div
+                        key={faqId}
+                        initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
+                        whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={reduceAnimations ? {} : { duration: 0.5, delay: index * 0.1 }}
+                    >
                             <FaqItem 
                                 question={faq.question} 
                                 answer={faq.answer} 
@@ -78,10 +80,10 @@ const Faq = () => {
             {/* Footer informativo optimizado */}
             {faqs.length > 0 && (
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
+                    whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
+                    transition={reduceAnimations ? {} : { duration: 0.5, delay: 0.3 }}
                     className="mt-8 md:mt-10 text-center"
                 >
                     <div className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-action/15 to-accent/15 rounded-xl border border-action/20 backdrop-blur-sm">
@@ -96,4 +98,4 @@ const Faq = () => {
     );
 };
 
-export default Faq;
+export default memo(Faq);

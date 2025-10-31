@@ -3,10 +3,12 @@ import { Link, NavLink } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { Menu, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 const Header = () => {
     const { appearance } = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const reduceAnimations = useOptimizedAnimations();
 
     const navLinks = [
         { to: "/", text: "Inicio" },
@@ -27,11 +29,15 @@ const Header = () => {
     };
 
     return (
-        <header className="relative bg-gradient-to-b from-background-secondary/95 via-background-secondary/90 to-background-secondary/95 backdrop-blur-xl sticky top-0 z-50 border-b border-slate-700/30 shadow-lg shadow-black/10 overflow-hidden">
-            {/* Efecto de fondo decorativo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
-            <div className="absolute top-0 left-1/4 w-64 h-64 bg-action/5 rounded-full blur-3xl -translate-y-1/2" />
-            <div className="absolute top-0 right-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl -translate-y-1/2" />
+        <header className={`relative bg-gradient-to-b from-background-secondary/95 via-background-secondary/90 to-background-secondary/95 ${reduceAnimations ? 'backdrop-blur-sm' : 'backdrop-blur-xl'} sticky top-0 z-50 border-b border-slate-700/30 shadow-lg shadow-black/10 overflow-hidden`}>
+            {/* Efecto de fondo decorativo - reducido en móviles */}
+            {!reduceAnimations && (
+                <>
+                    <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
+                    <div className="absolute top-0 left-1/4 w-64 h-64 bg-action/5 rounded-full blur-3xl -translate-y-1/2" />
+                    <div className="absolute top-0 right-1/4 w-64 h-64 bg-accent/5 rounded-full blur-3xl -translate-y-1/2" />
+                </>
+            )}
             
             <div className="container mx-auto px-4 relative z-10">
                 <div className="flex justify-between items-center h-16 md:h-20">
@@ -55,7 +61,7 @@ const Header = () => {
                             <span className="text-xl md:text-3xl font-black bg-gradient-to-r from-white via-action/90 to-accent/90 bg-clip-text text-transparent drop-shadow-sm">
                                 {appearance?.siteName || 'Lucky Snap'}
                             </span>
-                            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent animate-pulse opacity-0 md:opacity-100" />
+                            {!reduceAnimations && <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent animate-pulse opacity-0 md:opacity-100" />}
                         </div>
                     </Link>
                     
@@ -64,9 +70,9 @@ const Header = () => {
                         {navLinks.map((link, index) => (
                             <motion.div
                                 key={link.to}
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
+                                initial={reduceAnimations ? {} : { opacity: 0, y: -10 }}
+                                animate={reduceAnimations ? {} : { opacity: 1, y: 0 }}
+                                transition={reduceAnimations ? {} : { delay: index * 0.1 }}
                             >
                                 <NavLink
                                     to={link.to}
@@ -147,7 +153,7 @@ const Header = () => {
                         className="md:hidden relative bg-gradient-to-b from-background-secondary via-slate-900/95 to-background-secondary border-t border-slate-700/30 backdrop-blur-xl"
                     >
                         {/* Efecto de fondo para menú móvil */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />
+                        {!reduceAnimations && <div className="absolute inset-0 bg-gradient-to-r from-action/5 via-accent/5 to-action/5" />}
                         
                         <div className="relative z-10 flex flex-col py-2">
                              {navLinks.map((link, index) => (

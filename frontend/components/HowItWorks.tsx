@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { List, MousePointerClick, Trophy, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 const HowItWorks = () => {
+    const reduceAnimations = useOptimizedAnimations();
     const steps = [
         {
             icon: List,
@@ -47,11 +49,11 @@ const HowItWorks = () => {
                     {steps.map((step, index) => (
                         <React.Fragment key={index}>
                             <motion.div
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
+                                initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
+                                whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.3 }}
-                                transition={{ duration: 0.6, delay: index * 0.2 }}
-                                className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 lg:px-8 text-center group hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-visible flex-1 max-w-sm`}
+                                transition={reduceAnimations ? {} : { duration: 0.6, delay: index * 0.2 }}
+                                className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 lg:px-8 text-center group hover:shadow-2xl transition-all duration-300 ${reduceAnimations ? '' : 'hover:scale-105'} overflow-visible flex-1 max-w-sm`}
                             >
                                 {/* Número del paso */}
                                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-20">
@@ -62,7 +64,7 @@ const HowItWorks = () => {
                                 
                                 {/* Contenido */}
                                 <div className="mt-6">
-                                    <div className={`w-24 h-24 mx-auto mb-6 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110`}>
+                                    <div className={`w-24 h-24 mx-auto mb-6 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all duration-300 ${reduceAnimations ? '' : 'group-hover:scale-110'}`}>
                                         <step.icon size={40} className="text-white" />
                                     </div>
                                     
@@ -87,10 +89,10 @@ const HowItWorks = () => {
                             {index < steps.length - 1 && (
                                 <div className="flex items-center justify-center self-center -mx-2 lg:-mx-4 flex-shrink-0">
                                     <motion.div
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        whileInView={{ opacity: 1, scale: 1 }}
+                                        initial={reduceAnimations ? {} : { opacity: 0, scale: 0 }}
+                                        whileInView={reduceAnimations ? {} : { opacity: 1, scale: 1 }}
                                         viewport={{ once: true }}
-                                        transition={{ duration: 0.5, delay: (index + 1) * 0.2 }}
+                                        transition={reduceAnimations ? {} : { duration: 0.5, delay: (index + 1) * 0.2 }}
                                         className="bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 p-2.5 lg:p-3 rounded-full shadow-lg z-10"
                                     >
                                         <ArrowRight className="w-5 h-5 lg:w-7 lg:h-7 text-white" />
@@ -106,10 +108,10 @@ const HowItWorks = () => {
                     {steps.map((step, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
+                            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.3 }}
-                            transition={{ duration: 0.6, delay: index * 0.2 }}
+                            transition={reduceAnimations ? {} : { duration: 0.6, delay: index * 0.2 }}
                             className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 text-center overflow-visible`}
                         >
                             {/* Número del paso */}
@@ -160,4 +162,4 @@ const HowItWorks = () => {
     );
 };
 
-export default HowItWorks;
+export default memo(HowItWorks);

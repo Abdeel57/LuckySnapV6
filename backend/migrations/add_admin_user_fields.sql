@@ -66,3 +66,6 @@ BEGIN
     RAISE NOTICE '✅ Migración completada exitosamente';
 END $$;
 
+
+
+

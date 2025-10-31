@@ -103,19 +103,21 @@ const HomePage = () => {
             {/* Past Winners */}
             {!loading && winners.length > 0 && (
                 <section className="relative py-16 md:py-24 overflow-hidden">
-                    {/* Fondo con efecto */}
+                    {/* Fondo con efecto - reducido en móviles */}
                     <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary" />
-                    <div className="absolute inset-0 opacity-30">
-                        <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
-                        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
-                    </div>
+                    {typeof window !== 'undefined' && window.innerWidth >= 768 && (
+                        <div className="absolute inset-0 opacity-30">
+                            <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
+                            <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
+                        </div>
+                    )}
                     
                     <div className="container mx-auto px-4 max-w-7xl relative z-10">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
+                            transition={{ duration: 0.3 }}
                             className="text-center mb-16"
                         >
                             <div className="inline-flex items-center justify-center gap-3 mb-6">
@@ -145,7 +147,7 @@ const HomePage = () => {
                                     initial={{ opacity: 0, y: 30 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: index * 0.15 }}
+                                    transition={{ duration: 0.3, delay: Math.min(index * 0.1, 0.5) }}
                                 >
                                     <WinnerCard winner={winner} />
                                 </motion.div>
