@@ -42,7 +42,8 @@ const HowItWorks = () => {
             </div>
             
             <div className="relative">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                {/* Desktop Layout con flechas */}
+                <div className="hidden md:flex md:items-start md:justify-center md:gap-4 lg:gap-6 xl:gap-8">
                     {steps.map((step, index) => (
                         <React.Fragment key={index}>
                             <motion.div
@@ -50,52 +51,49 @@ const HowItWorks = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, amount: 0.3 }}
                                 transition={{ duration: 0.6, delay: index * 0.2 }}
-                                className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl p-8 text-center group hover:shadow-2xl transition-all duration-300 hover:scale-105`}
+                                className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 lg:px-8 text-center group hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-visible flex-1 max-w-sm`}
                             >
-                                {/* Número del paso - Grande y destacado */}
-                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-10">
+                                {/* Número del paso */}
+                                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-20">
                                     <div className={`w-16 h-16 bg-gradient-to-br ${step.color} rounded-full flex items-center justify-center shadow-xl border-4 border-white dark:border-gray-900`}>
                                         <span className="text-3xl font-black text-white">{index + 1}</span>
                                     </div>
                                 </div>
                                 
                                 {/* Contenido */}
-                                <div className="mt-8">
-                                    {/* Icono */}
+                                <div className="mt-6">
                                     <div className={`w-24 h-24 mx-auto mb-6 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:shadow-2xl transition-all duration-300 group-hover:scale-110`}>
                                         <step.icon size={40} className="text-white" />
                                     </div>
                                     
-                                    {/* Título */}
-                                    <h3 className="text-2xl md:text-3xl font-black text-primary mb-4 group-hover:text-link transition-colors">
+                                    <h3 className="text-2xl lg:text-3xl font-black text-primary mb-4 group-hover:text-link transition-colors">
                                         {step.title}
                                     </h3>
                                     
-                                    {/* Descripción */}
-                                    <p className="text-base md:text-lg text-secondary leading-relaxed">
+                                    <p className="text-base lg:text-lg text-secondary leading-relaxed">
                                         {step.description}
                                     </p>
                                 </div>
                                 
-                                {/* Indicador visual del paso */}
+                                {/* Badge */}
                                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-                                    <span className={`text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r ${step.color} text-white`}>
+                                    <span className={`text-xs font-bold px-3 py-1 rounded-full bg-gradient-to-r ${step.color} text-white shadow-md`}>
                                         PASO {index + 1}
                                     </span>
                                 </div>
                             </motion.div>
                             
-                            {/* Flecha conectora (solo entre pasos en desktop) */}
+                            {/* Flecha conectora */}
                             {index < steps.length - 1 && (
-                                <div className="hidden md:flex items-center justify-center -mx-4 z-0">
+                                <div className="flex items-center justify-center self-center -mx-2 lg:-mx-4 flex-shrink-0">
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0 }}
                                         whileInView={{ opacity: 1, scale: 1 }}
                                         viewport={{ once: true }}
                                         transition={{ duration: 0.5, delay: (index + 1) * 0.2 }}
-                                        className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-full shadow-lg"
+                                        className="bg-gradient-to-r from-blue-500 via-purple-500 to-purple-600 p-2.5 lg:p-3 rounded-full shadow-lg z-10"
                                     >
-                                        <ArrowRight className="w-8 h-8 text-white" />
+                                        <ArrowRight className="w-5 h-5 lg:w-7 lg:h-7 text-white" />
                                     </motion.div>
                                 </div>
                             )}
@@ -103,16 +101,59 @@ const HowItWorks = () => {
                     ))}
                 </div>
                 
-                {/* Línea conectora en móvil (debajo de las tarjetas) */}
-                <div className="md:hidden mt-8 flex items-center justify-center space-x-4">
-                    {steps.map((_, index) => (
-                        <React.Fragment key={index}>
-                            <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${steps[index].color} shadow-md`} />
-                            {index < steps.length - 1 && (
-                                <div className={`flex-1 h-1 bg-gradient-to-r ${steps[index].color} to-transparent`} />
-                            )}
-                        </React.Fragment>
+                {/* Mobile Layout */}
+                <div className="md:hidden space-y-6">
+                    {steps.map((step, index) => (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.3 }}
+                            transition={{ duration: 0.6, delay: index * 0.2 }}
+                            className={`relative ${step.bgColor} ${step.borderColor} border-2 rounded-3xl pt-12 pb-16 px-6 text-center overflow-visible`}
+                        >
+                            {/* Número del paso */}
+                            <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 z-20">
+                                <div className={`w-14 h-14 bg-gradient-to-br ${step.color} rounded-full flex items-center justify-center shadow-xl border-4 border-white dark:border-gray-900`}>
+                                    <span className="text-2xl font-black text-white">{index + 1}</span>
+                                </div>
+                            </div>
+                            
+                            {/* Contenido */}
+                            <div className="mt-4">
+                                <div className={`w-20 h-20 mx-auto mb-5 bg-gradient-to-br ${step.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                                    <step.icon size={36} className="text-white" />
+                                </div>
+                                
+                                <h3 className="text-xl font-black text-primary mb-3">
+                                    {step.title}
+                                </h3>
+                                
+                                <p className="text-sm text-secondary leading-relaxed px-2">
+                                    {step.description}
+                                </p>
+                            </div>
+                            
+                            {/* Badge */}
+                            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r ${step.color} text-white shadow-md`}>
+                                    PASO {index + 1}
+                                </span>
+                            </div>
+                        </motion.div>
                     ))}
+                    
+                    {/* Indicador de progreso móvil */}
+                    <div className="flex items-center justify-center space-x-2 mt-4 px-4">
+                        {steps.map((_, index) => (
+                            <React.Fragment key={index}>
+                                <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${steps[index].color} shadow-md flex-shrink-0`} />
+                                {index < steps.length - 1 && (
+                                    <div className={`flex-1 h-1 bg-gradient-to-r ${steps[index].color} to-transparent rounded-full`} />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
