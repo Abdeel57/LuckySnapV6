@@ -143,9 +143,9 @@ const HomePage = () => {
 
             {/* Past Winners */}
             {!loading && winners.length > 0 && (
-                <section className="relative py-16 md:py-24 overflow-hidden">
+                <section className="relative py-16 md:py-24 overflow-hidden z-0">
                     {/* Fondo con efecto - reducido en móviles */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary pointer-events-none z-0" />
                     {!reduceAnimations && (
                         <div className="absolute inset-0 opacity-30">
                             <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
@@ -153,7 +153,7 @@ const HomePage = () => {
                         </div>
                     )}
                     
-                    <div className="container mx-auto px-4 max-w-7xl relative z-10">
+                    <div className="container mx-auto px-4 max-w-7xl relative z-20">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
