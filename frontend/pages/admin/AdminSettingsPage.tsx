@@ -344,7 +344,7 @@ const AdminSettingsPage = () => {
                 socialLinks: {
                     facebookUrl: data.socialLinks?.facebookUrl || '',
                     instagramUrl: data.socialLinks?.instagramUrl || '',
-                    twitterUrl: data.socialLinks?.twitterUrl || '',
+                    tiktokUrl: data.socialLinks?.tiktokUrl || '',
                 },
                 paymentAccounts: data.paymentAccounts || [],
                 faqs: data.faqs || [],
@@ -600,8 +600,8 @@ const AdminSettingsPage = () => {
                                 <input {...register('socialLinks.instagramUrl')} className={inputClasses} placeholder="https://instagram.com/tu-perfil" />
                             </div>
                             <div>
-                                <label className={labelClasses}>Twitter</label>
-                                <input {...register('socialLinks.twitterUrl')} className={inputClasses} placeholder="https://twitter.com/tu-perfil" />
+                                <label className={labelClasses}>TikTok</label>
+                                <input {...register('socialLinks.tiktokUrl')} className={inputClasses} placeholder="https://tiktok.com/@tu-perfil" />
                             </div>
                         </div>
                     </OptimizedSectionWrapper>

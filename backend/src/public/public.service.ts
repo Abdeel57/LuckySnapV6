@@ -91,7 +91,7 @@ export class PublicService {
         socialLinks: {
           facebookUrl: '',
           instagramUrl: '',
-          twitterUrl: '',
+          tiktokUrl: '',
         },
         paymentAccounts: [],
         faqs: [],
@@ -124,7 +124,7 @@ export class PublicService {
       socialLinks: {
         facebookUrl: settings.facebookUrl || '',
         instagramUrl: settings.instagramUrl || '',
-        twitterUrl: settings.twitterUrl || '',
+        tiktokUrl: settings.tiktokUrl || '',
       },
       paymentAccounts: this.parseJsonField(settings.paymentAccounts),
       faqs: this.parseJsonField(settings.faqs),

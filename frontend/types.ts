@@ -120,7 +120,7 @@ export interface Settings {
     socialLinks: {
         facebookUrl: string;
         instagramUrl: string;
-        twitterUrl: string;
+        tiktokUrl: string;
     };
     paymentAccounts: PaymentAccount[];
     faqs: FaqItemData[];

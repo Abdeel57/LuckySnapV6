@@ -1141,7 +1141,7 @@ export class AdminService {
         // Social links
         facebookUrl: socialData.facebookUrl || null,
         instagramUrl: socialData.instagramUrl || null,
-        twitterUrl: socialData.twitterUrl || null,
+        tiktokUrl: socialData.tiktokUrl || null,
         
         // Other settings - Ensure proper serialization
         paymentAccounts: this.safeStringify(paymentAccounts),
@@ -1215,7 +1215,7 @@ export class AdminService {
       socialLinks: {
         facebookUrl: settings.facebookUrl || '',
         instagramUrl: settings.instagramUrl || '',
-        twitterUrl: settings.twitterUrl || '',
+        tiktokUrl: settings.tiktokUrl || '',
       },
       paymentAccounts: this.parseJsonField(settings.paymentAccounts),
       faqs: this.parseJsonField(settings.faqs),

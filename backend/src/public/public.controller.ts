@@ -69,7 +69,7 @@ export class PublicController {
         socialLinks: {
           facebookUrl: '',
           instagramUrl: '',
-          twitterUrl: '',
+          tiktokUrl: '',
         },
         paymentAccounts: [],
         faqs: [],

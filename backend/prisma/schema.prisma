@@ -132,7 +132,7 @@ model Settings {
   // Social links
   facebookUrl     String?
   instagramUrl    String?
-  twitterUrl      String?
+  tiktokUrl       String?
   
   // Other settings
   paymentAccounts Json?
