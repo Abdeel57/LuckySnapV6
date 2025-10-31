@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { 
     Plus, 
     Search, 
@@ -39,7 +38,6 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
     onCreate,
     loading = false
 }) => {
-    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'active' | 'finished'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'title' | 'tickets' | 'sold'>('date');

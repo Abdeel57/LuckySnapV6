@@ -121,10 +121,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                         >
                             {/* Efecto de brillo */}
                             <div 
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                                style={{
-                                    animation: 'axios 2s ease-in-out infinite'
-                                }}
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"
                             ></div>
                         </div>
                     </div>
@@ -147,7 +144,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                     <span className="relative z-10">Ver Sorteo</span>
                 </Link>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

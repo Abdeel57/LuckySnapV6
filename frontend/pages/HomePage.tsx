@@ -146,7 +146,7 @@ const HomePage = () => {
                 <section className="relative py-16 md:py-24 overflow-hidden">
                     {/* Fondo con efecto - reducido en móviles */}
                     <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary" />
-                    {typeof window !== 'undefined' && window.innerWidth >= 768 && (
+                    {!reduceAnimations && (
                         <div className="absolute inset-0 opacity-30">
                             <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
                             <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
