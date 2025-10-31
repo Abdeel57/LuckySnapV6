@@ -35,10 +35,10 @@ const Header = () => {
                             <img 
                                 src={appearance.logo} 
                                 alt="Logo" 
-                                className="h-8 w-8 md:h-10 md:w-10 object-contain"
+                                className="h-12 w-12 md:h-14 md:w-14 object-contain"
                             />
                         )}
-                        <span className="text-lg md:text-2xl font-bold text-white truncate max-w-[150px] md:max-w-none">
+                        <span className="text-xl md:text-3xl font-bold text-white truncate max-w-[150px] md:max-w-none">
                             {appearance?.siteName || 'Lucky Snap'}
                         </span>
                     </Link>
