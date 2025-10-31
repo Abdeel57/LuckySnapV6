@@ -143,17 +143,17 @@ const HomePage = () => {
 
             {/* Past Winners */}
             {!loading && winners.length > 0 && (
-                <section className="relative py-16 md:py-24 overflow-hidden z-0">
+                <section className="relative py-16 md:py-24 overflow-visible z-10">
                     {/* Fondo con efecto - reducido en móviles */}
                     <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary pointer-events-none z-0" />
                     {!reduceAnimations && (
-                        <div className="absolute inset-0 opacity-30">
+                        <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
                             <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
                             <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
                         </div>
                     )}
                     
-                    <div className="container mx-auto px-4 max-w-7xl relative z-20">
+                    <div className="container mx-auto px-4 max-w-7xl relative z-30">
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -181,7 +181,7 @@ const HomePage = () => {
                                 : winners.length === 2 
                                     ? 'grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 max-w-5xl mx-auto' 
                                     : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10'
-                        } relative z-10`}>
+                        } relative z-30`}>
                             {winners.map((winner, index) => (
                                 <motion.div
                                     key={winner.id}
