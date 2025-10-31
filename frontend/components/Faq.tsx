@@ -14,7 +14,13 @@ const Faq = () => {
     }, []);
 
     const toggleFaq = (id: string) => {
-        setOpenFaqId(prevId => (prevId === id ? null : id));
+        setOpenFaqId(prevId => {
+            // Si la pregunta actual está abierta, cerrarla; si no, abrir esta y cerrar cualquier otra
+            if (prevId === id) {
+                return null;
+            }
+            return id;
+        });
     };
 
     if (faqs.length === 0) return null;
@@ -45,22 +51,28 @@ const Faq = () => {
 
             {/* Grid mejorado con diseño más atractivo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                {faqs.map((faq, index) => (
-                    <motion.div
-                        key={faq.id}
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                        <FaqItem 
-                            question={faq.question} 
-                            answer={faq.answer} 
-                            isOpen={openFaqId === faq.id}
-                            onClick={() => toggleFaq(faq.id)}
-                        />
-                    </motion.div>
-                ))}
+                {faqs.map((faq, index) => {
+                    // Asegurar que cada FAQ tenga un ID único
+                    const faqId = faq.id || `faq-${index}`;
+                    const isCurrentlyOpen = openFaqId === faqId;
+                    
+                    return (
+                        <motion.div
+                            key={faqId}
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                        >
+                            <FaqItem 
+                                question={faq.question} 
+                                answer={faq.answer} 
+                                isOpen={isCurrentlyOpen}
+                                onClick={() => toggleFaq(faqId)}
+                            />
+                        </motion.div>
+                    );
+                })}
             </div>
 
             {/* Footer informativo */}
