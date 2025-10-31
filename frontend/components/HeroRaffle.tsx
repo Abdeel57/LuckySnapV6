@@ -96,13 +96,13 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                     className="flex flex-col items-center text-center space-y-8"
                 >
                     {/* Título */}
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-4xl">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight max-w-4xl">
                         {raffle.title}
                     </h1>
 
                     {/* Descripción (solo si existe) */}
                     {raffle.description && (
-                        <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl">
+                        <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-black tracking-wide max-w-2xl">
                             {raffle.description}
                         </p>
                     )}
