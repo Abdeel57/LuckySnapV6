@@ -58,7 +58,7 @@ const Footer = () => {
                 </motion.div>
 
                 {/* Sección principal del Footer */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-10 max-w-6xl mx-auto">
                     {/* Contacto */}
                     {(contactInfo?.whatsapp || contactInfo?.email) && (
                         <motion.div
@@ -66,34 +66,34 @@ const Footer = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: 0.1 }}
-                            className="text-center md:text-left"
+                            className="text-center md:text-left flex flex-col"
                         >
-                            <h4 className="text-white font-bold text-lg mb-4 flex items-center justify-center md:justify-start gap-2">
+                            <h4 className="text-white font-bold text-lg mb-5 flex items-center justify-center md:justify-start gap-2">
                                 <MessageCircle className="w-5 h-5 text-accent" />
                                 Contáctanos
                             </h4>
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-3 flex-grow">
                                 {contactInfo.whatsapp && (
                                     <motion.a
                                         href={`https://wa.me/${contactInfo.whatsapp}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-2.5 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all duration-300 group"
+                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all duration-300 group"
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <MessageCircle className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors" />
+                                        <MessageCircle className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors flex-shrink-0" />
                                         <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">WhatsApp</span>
                                     </motion.a>
                                 )}
                                 {contactInfo.email && (
                                     <motion.a
                                         href={`mailto:${contactInfo.email}`}
-                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-2.5 bg-gradient-to-r from-action/10 to-action/20 rounded-xl border border-action/20 hover:border-action/40 hover:bg-action/15 transition-all duration-300 group"
+                                        className="flex items-center justify-center md:justify-start gap-3 px-4 py-3 bg-gradient-to-r from-action/10 to-action/20 rounded-xl border border-action/20 hover:border-action/40 hover:bg-action/15 transition-all duration-300 group"
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <Mail className="w-5 h-5 text-action group-hover:text-action/80 transition-colors" />
+                                        <Mail className="w-5 h-5 text-action group-hover:text-action/80 transition-colors flex-shrink-0" />
                                         <span className="text-slate-300 group-hover:text-white transition-colors text-sm md:text-base">Email</span>
                                     </motion.a>
                                 )}
@@ -108,24 +108,24 @@ const Footer = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: 0.2 }}
-                            className="text-center"
+                            className="text-center flex flex-col items-center md:items-center"
                         >
-                            <h4 className="text-white font-bold text-lg mb-4 flex items-center justify-center gap-2">
+                            <h4 className="text-white font-bold text-lg mb-5 flex items-center justify-center gap-2">
                                 <Sparkles className="w-5 h-5 text-accent" />
                                 Síguenos
                             </h4>
-                            <div className="flex justify-center gap-4">
+                            <div className="flex justify-center gap-3 flex-wrap items-center">
                                 {socialLinks.facebookUrl && (
                                     <motion.a
                                         href={socialLinks.facebookUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 border border-blue-500/30 flex items-center justify-center hover:border-blue-400/50 hover:bg-blue-600/30 transition-all duration-300 group"
+                                        className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 border border-blue-500/30 flex items-center justify-center hover:border-blue-400/50 hover:bg-blue-600/30 transition-all duration-300 group"
                                         whileHover={{ scale: 1.1, rotate: 5 }}
                                         whileTap={{ scale: 0.95 }}
                                         aria-label="Facebook"
                                     >
-                                        <Facebook className="w-6 h-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
+                                        <Facebook className="w-7 h-7 text-blue-400 group-hover:text-blue-300 transition-colors" />
                                     </motion.a>
                                 )}
                                 {socialLinks.instagramUrl && (
@@ -133,12 +133,12 @@ const Footer = () => {
                                         href={socialLinks.instagramUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-600/20 to-purple-600/20 border border-pink-500/30 flex items-center justify-center hover:border-pink-400/50 hover:bg-pink-600/30 transition-all duration-300 group"
+                                        className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-600/20 to-purple-600/20 border border-pink-500/30 flex items-center justify-center hover:border-pink-400/50 hover:bg-pink-600/30 transition-all duration-300 group"
                                         whileHover={{ scale: 1.1, rotate: -5 }}
                                         whileTap={{ scale: 0.95 }}
                                         aria-label="Instagram"
                                     >
-                                        <Instagram className="w-6 h-6 text-pink-400 group-hover:text-pink-300 transition-colors" />
+                                        <Instagram className="w-7 h-7 text-pink-400 group-hover:text-pink-300 transition-colors" />
                                     </motion.a>
                                 )}
                                 {socialLinks.tiktokUrl && (
@@ -146,12 +146,12 @@ const Footer = () => {
                                         href={socialLinks.tiktokUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700/20 to-slate-800/20 border border-slate-600/30 flex items-center justify-center hover:border-slate-500/50 hover:bg-slate-700/30 transition-all duration-300 group"
+                                        className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-700/20 to-slate-800/20 border border-slate-600/30 flex items-center justify-center hover:border-slate-500/50 hover:bg-slate-700/30 transition-all duration-300 group"
                                         whileHover={{ scale: 1.1, rotate: 5 }}
                                         whileTap={{ scale: 0.95 }}
                                         aria-label="TikTok"
                                     >
-                                        <TikTokIcon size={24} className="text-slate-300 group-hover:text-white transition-colors" />
+                                        <TikTokIcon size={28} className="text-slate-300 group-hover:text-white transition-colors" />
                                     </motion.a>
                                 )}
                             </div>
@@ -164,25 +164,25 @@ const Footer = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: 0.3 }}
-                        className="text-center md:text-right"
+                        className="text-center md:text-right flex flex-col"
                     >
-                        <h4 className="text-white font-bold text-lg mb-4">Enlaces Rápidos</h4>
-                        <div className="flex flex-col gap-2">
+                        <h4 className="text-white font-bold text-lg mb-5">Enlaces Rápidos</h4>
+                        <div className="flex flex-col gap-2.5 flex-grow justify-start">
                             <Link 
                                 to="/terminos" 
-                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-2 py-1 rounded-lg hover:bg-slate-800/30"
+                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Términos y Condiciones
                             </Link>
                             <Link 
                                 to="/verificador" 
-                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-2 py-1 rounded-lg hover:bg-slate-800/30"
+                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Verificar Folio
                             </Link>
                             <Link 
                                 to="/cuentas-de-pago" 
-                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-2 py-1 rounded-lg hover:bg-slate-800/30"
+                                className="text-slate-400 hover:text-accent transition-colors text-sm md:text-base px-3 py-2.5 rounded-lg hover:bg-slate-800/30 inline-block"
                             >
                                 Cuentas de Pago
                             </Link>
