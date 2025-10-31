@@ -543,4 +543,70 @@ export class PublicService {
       throw error;
     }
   }
+
+  async getOrderByFolio(folio: string) {
+    try {
+      console.log('🔍 Getting order by folio:', folio);
+      
+      const order = await this.prisma.order.findUnique({
+        where: { folio },
+        include: {
+          raffle: {
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              status: true,
+              slug: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              district: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with folio ${folio} not found`);
+      }
+
+      // Transformar los datos para que coincidan con el frontend
+      const transformedOrder = {
+        id: order.id,
+        folio: order.folio,
+        raffleId: order.raffleId,
+        userId: order.userId,
+        tickets: order.tickets,
+        total: order.total,
+        totalAmount: order.total, // Alias para compatibilidad
+        status: order.status,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        expiresAt: order.expiresAt,
+        raffle: order.raffle,
+        customer: {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || '',
+          email: order.user.email || '',
+          district: order.user.district || '',
+        },
+      };
+
+      console.log('✅ Order found by folio:', folio);
+      return transformedOrder;
+    } catch (error) {
+      console.error('❌ Error getting order by folio:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotFoundException(`Order with folio ${folio} not found`);
+    }
+  }
 }

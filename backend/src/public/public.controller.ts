@@ -219,4 +219,21 @@ export class PublicController {
       );
     }
   }
+
+  @Get('orders/folio/:folio')
+  async getOrderByFolio(@Param('folio') folio: string) {
+    try {
+      const order = await this.publicService.getOrderByFolio(folio);
+      return order;
+    } catch (error) {
+      console.error('❌ Error getting order by folio:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al obtener la orden',
+        HttpStatus.NOT_FOUND
+      );
+    }
+  }
 }
