@@ -87,6 +87,9 @@ export class PublicService {
         contactInfo: {
           whatsapp: '',
           email: '',
+          emailFromName: '',
+          emailReplyTo: '',
+          emailSubject: '',
         },
         socialLinks: {
           facebookUrl: '',
@@ -120,6 +123,9 @@ export class PublicService {
       contactInfo: {
         whatsapp: settings.whatsapp || '',
         email: settings.email || '',
+        emailFromName: settings.emailFromName || '',
+        emailReplyTo: settings.emailReplyTo || '',
+        emailSubject: settings.emailSubject || '',
       },
       socialLinks: {
         facebookUrl: settings.facebookUrl || '',

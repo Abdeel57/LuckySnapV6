@@ -116,6 +116,9 @@ export interface Settings {
     contactInfo: {
         whatsapp: string;
         email: string;
+        emailFromName?: string;  // Nombre del remitente en emails
+        emailReplyTo?: string;   // Email de respuesta
+        emailSubject?: string;   // Asunto por defecto para emails
     };
     socialLinks: {
         facebookUrl: string;

@@ -129,6 +129,11 @@ model Settings {
   whatsapp        String?
   email           String?
   
+  // Email customization
+  emailFromName   String?   // Nombre del remitente en emails
+  emailReplyTo    String?   // Email de respuesta
+  emailSubject    String?   // Asunto por defecto para emails
+  
   // Social links
   facebookUrl     String?
   instagramUrl    String?

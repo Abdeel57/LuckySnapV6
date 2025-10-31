@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { getSettings, adminUpdateSettings } from '../../services/api';
 import { Settings, AppearanceSettings } from '../../types';
-import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye } from 'lucide-react';
+import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../../components/Spinner';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -340,6 +340,9 @@ const AdminSettingsPage = () => {
                 contactInfo: {
                     whatsapp: data.contactInfo?.whatsapp || '',
                     email: data.contactInfo?.email || '',
+                    emailFromName: data.contactInfo?.emailFromName || '',
+                    emailReplyTo: data.contactInfo?.emailReplyTo || '',
+                    emailSubject: data.contactInfo?.emailSubject || '',
                 },
                 socialLinks: {
                     facebookUrl: data.socialLinks?.facebookUrl || '',
@@ -578,8 +581,47 @@ const AdminSettingsPage = () => {
                                 <input {...register('contactInfo.whatsapp')} className={inputClasses} placeholder="+50499999999" />
                             </div>
                             <div>
-                                <label className={labelClasses}>Email</label>
-                                <input {...register('contactInfo.email')} className={inputClasses} placeholder="contacto@ejemplo.com" />
+                                <label className={labelClasses}>Email de Contacto</label>
+                                <input {...register('contactInfo.email')} type="email" className={inputClasses} placeholder="contacto@ejemplo.com" />
+                                <p className="text-xs text-gray-500 mt-1">Email principal para contacto público</p>
+                            </div>
+                        </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* Email Configuration Section */}
+                    <OptimizedSectionWrapper
+                        title="Configuración de Correo Electrónico"
+                        icon={Mail}
+                        description="Personaliza cómo se envían los correos electrónicos desde tu plataforma"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={labelClasses}>Nombre del Remitente</label>
+                                <input 
+                                    {...register('contactInfo.emailFromName')} 
+                                    className={inputClasses} 
+                                    placeholder={settings?.appearance?.siteName || "Lucky Snap"} 
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Nombre que aparece como remitente en los emails</p>
+                            </div>
+                            <div>
+                                <label className={labelClasses}>Email de Respuesta (Reply-To)</label>
+                                <input 
+                                    {...register('contactInfo.emailReplyTo')} 
+                                    type="email"
+                                    className={inputClasses} 
+                                    placeholder="respuesta@ejemplo.com" 
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Email donde recibirás las respuestas (opcional)</p>
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className={labelClasses}>Asunto por Defecto</label>
+                                <input 
+                                    {...register('contactInfo.emailSubject')} 
+                                    className={inputClasses} 
+                                    placeholder={`Información de ${settings?.appearance?.siteName || 'Lucky Snap'}`} 
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Asunto que se usará por defecto en emails automáticos</p>
                             </div>
                         </div>
                     </OptimizedSectionWrapper>

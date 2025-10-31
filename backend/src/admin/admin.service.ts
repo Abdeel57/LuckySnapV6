@@ -1137,6 +1137,9 @@ export class AdminService {
         // Contact info
         whatsapp: contactData.whatsapp || null,
         email: contactData.email || null,
+        emailFromName: contactData.emailFromName || null,
+        emailReplyTo: contactData.emailReplyTo || null,
+        emailSubject: contactData.emailSubject || null,
         
         // Social links
         facebookUrl: socialData.facebookUrl || null,
@@ -1211,6 +1214,9 @@ export class AdminService {
       contactInfo: {
         whatsapp: settings.whatsapp || '',
         email: settings.email || '',
+        emailFromName: settings.emailFromName || '',
+        emailReplyTo: settings.emailReplyTo || '',
+        emailSubject: settings.emailSubject || '',
       },
       socialLinks: {
         facebookUrl: settings.facebookUrl || '',
