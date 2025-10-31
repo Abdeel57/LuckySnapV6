@@ -18,16 +18,22 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
     const isLongDescription = raffle.description && raffle.description.length > 120;
 
     return (
-        <motion.div
-            initial={reduceAnimations ? {} : { opacity: 0, y: 20 }}
-            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={reduceAnimations ? {} : { duration: 0.5 }}
-            className="card h-full flex flex-col group overflow-hidden"
+        <div
+            className="relative h-full flex flex-col group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
         >
-            <Link to={`/sorteo/${raffle.slug}`} className="block">
-                {/* Imagen cuadrada sin bordes redondeados */}
+            <Link to={`/sorteo/${raffle.slug}`} className="block relative">
+                {/* Efecto de resplandor al hover */}
+                {!reduceAnimations && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-action/10 via-accent/10 to-action/10 rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10" />
+                )}
+                
+                {/* Imagen cuadrada con efectos mejorados */}
                 <div className="relative overflow-hidden rounded-t-2xl aspect-square mb-0">
+                    {/* Overlay decorativo */}
+                    {!reduceAnimations && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+                    )}
+                    
                     <img 
                         src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'} 
                         alt={raffle.title} 
@@ -38,23 +44,36 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                             target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
                         }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="absolute top-4 right-4 flex flex-col gap-2">
-                        <span className="bg-primary text-inverse px-3 py-1 rounded-full text-sm font-semibold shadow-md">
+                    
+                    {/* Badges mejorados */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                        <motion.span 
+                            initial={reduceAnimations ? {} : { scale: 0 }}
+                            whileInView={reduceAnimations ? {} : { scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={reduceAnimations ? {} : { delay: 0.2, type: "spring" }}
+                            className="bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-full text-sm font-bold shadow-xl border border-gray-200"
+                        >
                             {progress.toFixed(0)}% vendido
-                        </span>
+                        </motion.span>
                         {raffle.boletosConOportunidades && raffle.numeroOportunidades > 1 && (
-                            <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                            <motion.span 
+                                initial={reduceAnimations ? {} : { scale: 0 }}
+                                whileInView={reduceAnimations ? {} : { scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={reduceAnimations ? {} : { delay: 0.3, type: "spring" }}
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-black shadow-xl border-2 border-white/50"
+                            >
                                 🎯 {raffle.numeroOportunidades}x Oportunidades
-                            </span>
+                            </motion.span>
                         )}
                     </div>
                 </div>
             </Link>
             
-            <div className="flex flex-col flex-grow p-6">
-                {/* Título */}
-                <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+            <div className="flex flex-col flex-grow p-6 bg-gradient-to-b from-white to-gray-50/50">
+                {/* Título mejorado */}
+                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-action group-hover:to-accent transition-all duration-300">
                     {raffle.title}
                 </h3>
                 
@@ -119,9 +138,13 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 
                 <Link
                     to={`/sorteo/${raffle.slug}`}
-                    className="btn-primary w-full text-center mt-auto transition-all duration-300 hover:shadow-brand-sm"
+                    className="relative w-full text-center mt-auto px-6 py-3 bg-gradient-to-r from-action to-accent text-white font-bold rounded-xl hover:from-action/90 hover:to-accent/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group/btn overflow-hidden"
                 >
-                    Ver Sorteo
+                    {/* Efecto de brillo en hover */}
+                    {!reduceAnimations && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500 -translate-x-full group-hover/btn:translate-x-full" />
+                    )}
+                    <span className="relative z-10">Ver Sorteo</span>
                 </Link>
             </div>
         </motion.div>

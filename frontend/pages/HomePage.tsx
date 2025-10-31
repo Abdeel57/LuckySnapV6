@@ -11,14 +11,16 @@ import Faq from '../components/Faq';
 import CountdownTimer from '../components/CountdownTimer';
 import HeroRaffle from '../components/HeroRaffle';
 import { useAnalytics } from '../contexts/AnalyticsContext';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Trophy, Sparkles, Gift, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 const HomePage = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [winners, setWinners] = useState<Winner[]>([]);
     const [loading, setLoading] = useState(true);
     const { trackPageView } = useAnalytics();
+    const reduceAnimations = useOptimizedAnimations();
 
     useEffect(() => {
         setLoading(true);
@@ -55,20 +57,59 @@ const HomePage = () => {
 
             {/* Other Active Raffles */}
             {!loading && otherRaffles.length > 0 && (
-                <section className="py-16 md:py-24 bg-tertiary">
-                    <div className="container mx-auto px-4 max-w-7xl">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
+                <section className="relative py-16 md:py-24 overflow-hidden">
+                    {/* Fondo con efectos decorativos */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-action/5 to-background-primary" />
+                    {!reduceAnimations && (
+                        <div className="absolute inset-0 opacity-20">
+                            <div className="absolute top-20 left-10 w-96 h-96 bg-action/20 rounded-full blur-3xl" />
+                            <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+                        </div>
+                    )}
+                    
+                    <div className="container mx-auto px-4 max-w-7xl relative z-10">
+                        {/* Header mejorado */}
+                        <motion.div
+                            initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
+                            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={reduceAnimations ? {} : { duration: 0.6 }}
+                            className="text-center mb-16"
+                        >
+                            <div className="inline-flex items-center justify-center gap-3 mb-6">
+                                <div className="p-3 bg-gradient-to-br from-action to-accent rounded-2xl shadow-lg">
+                                    <Gift className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                                </div>
+                                {!reduceAnimations && <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />}
+                                <div className="p-3 bg-gradient-to-br from-accent to-action rounded-2xl shadow-lg">
+                                    <Zap className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                                </div>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                                 Más Sorteos Disponibles
                             </h2>
-                            <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto">
+                            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
                                 Explora todos nuestros sorteos activos y encuentra el premio perfecto para ti
                             </p>
-                        </div>
+                        </motion.div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {otherRaffles.map(raffle => (
-                                <RaffleCard key={raffle.id} raffle={raffle} />
+                        {/* Grid con animaciones escalonadas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                            {otherRaffles.map((raffle, index) => (
+                                <motion.div
+                                    key={raffle.id}
+                                    initial={reduceAnimations ? {} : { opacity: 0, y: 40, scale: 0.9 }}
+                                    whileInView={reduceAnimations ? {} : { opacity: 1, y: 0, scale: 1 }}
+                                    viewport={{ once: true, amount: 0.2 }}
+                                    transition={reduceAnimations ? {} : { 
+                                        duration: 0.5, 
+                                        delay: Math.min(index * 0.1, 0.6),
+                                        type: "spring",
+                                        stiffness: 100
+                                    }}
+                                >
+                                    <RaffleCard raffle={raffle} />
+                                </motion.div>
                             ))}
                         </div>
                     </div>
