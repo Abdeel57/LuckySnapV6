@@ -92,12 +92,6 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ order, settings }) 
                     <span style={{ fontWeight: 'bold' }}>Teléfono: </span>
                     <span>{order.customer?.phone || 'N/A'}</span>
                 </div>
-                {order.customer?.email && (
-                    <div style={{ marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Email: </span>
-                        <span>{order.customer.email}</span>
-                    </div>
-                )}
                 {order.customer?.district && (
                     <div style={{ marginBottom: '8px' }}>
                         <span style={{ fontWeight: 'bold' }}>Distrito: </span>
@@ -113,7 +107,7 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ order, settings }) 
                 </h3>
                 <div style={{ marginBottom: '8px' }}>
                     <span style={{ fontWeight: 'bold' }}>Sorteo: </span>
-                    <span>{order.raffleTitle || 'N/A'}</span>
+                    <span>{order.raffleTitle || (order as any).raffle?.title || 'No disponible'}</span>
                 </div>
             </div>
 

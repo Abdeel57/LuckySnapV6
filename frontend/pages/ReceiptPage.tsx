@@ -175,12 +175,6 @@ const ReceiptPage: React.FC = () => {
                                     <span className="font-semibold text-gray-700">Teléfono: </span>
                                     <span className="text-gray-900">{order.customer?.phone || 'N/A'}</span>
                                 </div>
-                                {order.customer?.email && (
-                                    <div>
-                                        <span className="font-semibold text-gray-700">Email: </span>
-                                        <span className="text-gray-900">{order.customer.email}</span>
-                                    </div>
-                                )}
                                 {order.customer?.district && (
                                     <div>
                                         <span className="font-semibold text-gray-700">Distrito: </span>
@@ -197,7 +191,7 @@ const ReceiptPage: React.FC = () => {
                             </h3>
                             <div>
                                 <span className="font-semibold text-gray-700">Sorteo: </span>
-                                <span className="text-gray-900">{order.raffleTitle || 'N/A'}</span>
+                                <span className="text-gray-900">{order.raffleTitle || (order as any).raffle?.title || 'No disponible'}</span>
                             </div>
                         </div>
 
