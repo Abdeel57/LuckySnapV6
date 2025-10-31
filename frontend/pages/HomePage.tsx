@@ -185,8 +185,8 @@ const HomePage = () => {
                             {winners.map((winner, index) => (
                                 <motion.div
                                     key={winner.id}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
+                                    initial={{ opacity: 1, y: 0 }}
+                                    whileInView={{}}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.3, delay: Math.min(index * 0.1, 0.5) }}
                                 >

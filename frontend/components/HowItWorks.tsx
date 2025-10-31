@@ -108,8 +108,8 @@ const HowItWorks = () => {
                     {steps.map((step, index) => (
                         <motion.div
                             key={index}
-                            initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
-                            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
+                            initial={{ opacity: 1, y: 0 }}
+                            whileInView={{}}
                             viewport={{ once: true, amount: 0.3 }}
                             transition={reduceAnimations ? {} : { duration: 0.6, delay: index * 0.2 }}
                             className={`relative ${step.bgColor.replace('dark:', '')} ${step.borderColor.replace('dark:', '')} border-2 rounded-3xl pt-12 pb-16 px-4 sm:px-6 text-center overflow-visible shadow-lg`}
