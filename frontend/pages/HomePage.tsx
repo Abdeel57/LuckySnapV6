@@ -11,6 +11,8 @@ import Faq from '../components/Faq';
 import CountdownTimer from '../components/CountdownTimer';
 import HeroRaffle from '../components/HeroRaffle';
 import { useAnalytics } from '../contexts/AnalyticsContext';
+import { Trophy, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const HomePage = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
@@ -100,26 +102,53 @@ const HomePage = () => {
 
             {/* Past Winners */}
             {!loading && winners.length > 0 && (
-                <section className="py-16 md:py-24">
-                    <div className="container mx-auto px-4 max-w-7xl">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-5xl font-bold text-primary mb-6">
+                <section className="relative py-16 md:py-24 overflow-hidden">
+                    {/* Fondo con efecto */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary" />
+                    <div className="absolute inset-0 opacity-30">
+                        <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
+                        <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
+                    </div>
+                    
+                    <div className="container mx-auto px-4 max-w-7xl relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="text-center mb-16"
+                        >
+                            <div className="inline-flex items-center justify-center gap-3 mb-6">
+                                <div className="p-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg">
+                                    <Trophy className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                                </div>
+                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 animate-pulse" />
+                            </div>
+                            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                                 Nuestros Últimos Ganadores
                             </h2>
-                            <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto">
+                            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
                                 Conoce a las personas afortunadas que ya han ganado increíbles premios
                             </p>
-                        </div>
+                        </motion.div>
                         
                         <div className={`${
                             winners.length === 1 
-                                ? 'flex justify-center' 
+                                ? 'flex justify-center max-w-md mx-auto' 
                                 : winners.length === 2 
-                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-4xl mx-auto' 
-                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8'
+                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-10 max-w-5xl mx-auto' 
+                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10'
                         }`}>
-                            {winners.map(winner => (
-                                <WinnerCard key={winner.id} winner={winner} />
+                            {winners.map((winner, index) => (
+                                <motion.div
+                                    key={winner.id}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: index * 0.15 }}
+                                >
+                                    <WinnerCard winner={winner} />
+                                </motion.div>
                             ))}
                         </div>
                     </div>

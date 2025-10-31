@@ -4,25 +4,101 @@ import { format } from 'date-fns';
 // FIX: Corrected import path for 'es' locale.
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
-import { Trophy } from 'lucide-react';
+import { Trophy, Sparkles, Calendar } from 'lucide-react';
 
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
 const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
     return (
         <motion.div 
-            className="bg-background-secondary rounded-lg overflow-hidden shadow-lg shadow-black/30 border border-slate-700/50 p-4 md:p-6 text-center h-full flex flex-col"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            className="relative group"
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.5 }}
+            whileHover={{ scale: 1.05 }}
         >
-            <Trophy className="text-yellow-400 h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 md:mb-4" />
-            <img src={winner.imageUrl} alt={winner.prize} className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover mx-auto mb-3 md:mb-4 border-4 border-accent"/>
-            <p className="text-lg md:text-xl font-bold text-white mb-1">{winner.name}</p>
-            <p className="text-slate-300 text-sm md:text-base mb-1">Ganó</p>
-            <p className="text-base md:text-lg font-semibold text-accent mb-2 flex-grow">{winner.raffleTitle}</p>
-            <p className="text-xs text-slate-400 mt-auto">
-                Sorteo del {format(new Date(winner.drawDate), "dd 'de' MMMM, yyyy", { locale: es })}
-            </p>
+            {/* Efecto de brillo de fondo */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300 animate-pulse" />
+            
+            {/* Contenedor principal */}
+            <div className="relative bg-gradient-to-br from-background-secondary via-slate-800/90 to-background-secondary rounded-3xl overflow-hidden shadow-2xl border-2 border-yellow-500/30 h-full flex flex-col">
+                {/* Header con gradiente dorado */}
+                <div className="relative bg-gradient-to-r from-yellow-400/20 via-orange-500/20 to-yellow-400/20 p-6 pb-4">
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                        <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                            className="relative"
+                        >
+                            <Trophy className="text-yellow-400 h-12 w-12 md:h-16 md:w-16 drop-shadow-lg" />
+                            <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-yellow-300 animate-pulse" />
+                        </motion.div>
+                    </div>
+                    <div className="text-center">
+                        <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full text-sm md:text-base font-black text-gray-900 shadow-lg">
+                            🏆 GANADOR 🏆
+                        </span>
+                    </div>
+                </div>
+                
+                {/* Contenido principal */}
+                <div className="p-6 md:p-8 flex-1 flex flex-col items-center">
+                    {/* Imagen del premio con efecto especial */}
+                    <div className="relative mb-6">
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full blur-md opacity-50 animate-pulse" />
+                        <div className="relative w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-yellow-400 shadow-xl ring-4 ring-yellow-400/20">
+                            <img 
+                                src={winner.imageUrl} 
+                                alt={winner.prize} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop';
+                                }}
+                            />
+                        </div>
+                        {/* Efecto de estrellas alrededor */}
+                        <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" style={{ animationDelay: '0s' }} />
+                        <Sparkles className="absolute -bottom-2 -left-2 w-5 h-5 text-orange-400 animate-pulse" style={{ animationDelay: '1s' }} />
+                    </div>
+                    
+                    {/* Nombre del ganador */}
+                    <h3 className="text-2xl md:text-3xl font-black text-white mb-2 text-center">
+                        {winner.name}
+                    </h3>
+                    
+                    {/* Línea divisoria decorativa */}
+                    <div className="w-20 h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent my-4" />
+                    
+                    {/* Premio ganado */}
+                    <div className="text-center mb-4">
+                        <p className="text-slate-300 text-sm md:text-base mb-2 flex items-center justify-center gap-2">
+                            <span>Ganó</span>
+                        </p>
+                        <p className="text-xl md:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+                            {winner.raffleTitle || winner.prize}
+                        </p>
+                        {winner.prize && winner.prize !== winner.raffleTitle && (
+                            <p className="text-base md:text-lg text-accent mt-2">
+                                {winner.prize}
+                            </p>
+                        )}
+                    </div>
+                    
+                    {/* Fecha del sorteo */}
+                    <div className="mt-auto pt-4 border-t border-slate-700/50 w-full">
+                        <div className="flex items-center justify-center gap-2 text-slate-400">
+                            <Calendar className="w-4 h-4" />
+                            <p className="text-xs md:text-sm">
+                                Sorteo del {format(new Date(winner.drawDate), "dd 'de' MMMM, yyyy", { locale: es })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Efecto de brillo en hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/0 via-yellow-400/10 to-yellow-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            </div>
         </motion.div>
     );
 };
