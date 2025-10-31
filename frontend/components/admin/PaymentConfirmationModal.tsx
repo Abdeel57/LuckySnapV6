@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Copy, Check } from 'lucide-react';
+import { X, Send, Copy, Check, Link } from 'lucide-react';
 import { Order, Settings } from '../../types';
 
 interface PaymentConfirmationModalProps {
@@ -105,7 +105,7 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
                                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                                     <div className="flex items-center space-x-3 mb-3">
                                         <div className="p-2 bg-green-500 rounded-full">
-                                            <Download className="w-5 h-5 text-white" />
+                                            <Link className="w-5 h-5 text-white" />
                                         </div>
                                         <div>
                                             <h3 className="font-semibold text-gray-900">Orden: {order.folio}</h3>

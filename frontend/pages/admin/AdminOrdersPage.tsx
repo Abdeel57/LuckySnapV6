@@ -8,7 +8,7 @@ import {
   XCircle, 
   RefreshCw,
   FileText,
-  Download,
+  Download as DownloadIcon,
   Clock
 } from 'lucide-react';
 import { Order, Raffle, Settings } from '../../types';
@@ -280,7 +280,7 @@ const AdminOrdersPage: React.FC = () => {
                                 onClick={handleExportOrders}
                                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
                             >
-                                <Download className="w-4 h-4" />
+                                <DownloadIcon className="w-4 h-4" />
                                 <span>Exportar</span>
                             </button>
                         </div>
