@@ -75,18 +75,18 @@ const Faq = () => {
                 })}
             </div>
 
-            {/* Footer informativo */}
+            {/* Footer informativo optimizado */}
             {faqs.length > 0 && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    className="mt-12 text-center"
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mt-8 md:mt-10 text-center"
                 >
-                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-full border border-blue-500/30">
-                        <HelpCircle className="w-5 h-5 text-blue-400" />
-                        <p className="text-sm md:text-base text-slate-300">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-blue-500/15 to-purple-600/15 rounded-xl border border-blue-500/20 backdrop-blur-sm">
+                        <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-400 flex-shrink-0" />
+                        <p className="text-xs md:text-sm text-slate-300">
                             ¿No encuentras lo que buscas? <span className="text-accent font-semibold">Contáctanos</span>
                         </p>
                     </div>
