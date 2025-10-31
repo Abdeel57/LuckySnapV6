@@ -48,10 +48,28 @@ const AdminOrdersPage: React.FC = () => {
                 getRaffles(),
                 getSettings()
             ]);
-            setOrders(ordersData || []);
+            
+            // Deduplicar órdenes por ID o folio para evitar duplicados
+            const uniqueOrders = (ordersData || []).reduce((acc: Order[], order: Order) => {
+                const exists = acc.find(
+                    (o) => o.id === order.id || 
+                    (o.folio && order.folio && o.folio === order.folio)
+                );
+                if (!exists) {
+                    acc.push(order);
+                }
+                return acc;
+            }, []);
+            
+            setOrders(uniqueOrders);
             setRaffles(rafflesData || []);
             setSettings(settingsData || null);
-            console.log('📋 Orders and raffles loaded:', { orders: ordersData?.length || 0, raffles: rafflesData?.length || 0 });
+            console.log('📋 Orders and raffles loaded:', { 
+                total: ordersData?.length || 0, 
+                unique: uniqueOrders.length,
+                duplicates: (ordersData?.length || 0) - uniqueOrders.length,
+                raffles: rafflesData?.length || 0 
+            });
         } catch (error) {
             console.error('❌ Error loading data:', error);
             // Mostrar mensaje de error al usuario
@@ -69,22 +87,43 @@ const AdminOrdersPage: React.FC = () => {
         setRefreshing(false);
     };
 
-    // Filtrar órdenes - SOLO PENDING
-    const filteredOrders = orders.filter(order => {
+    // Filtrar órdenes - SOLO PENDING con deduplicación adicional
+    const filteredOrdersMap = new Map<string | undefined, Order>();
+    
+    orders.forEach(order => {
         // Solo mostrar órdenes PENDING
-        if (order.status !== 'PENDING') return false;
+        if (order.status !== 'PENDING') return;
         
         // Validar que customer existe
-        if (!order.customer) return false;
+        if (!order.customer) return;
         
+        // Validar búsqueda
         const matchesSearch = 
-            order.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            !searchTerm ||
+            order.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.phone?.includes(searchTerm) ||
             order.customer.district?.toLowerCase().includes(searchTerm.toLowerCase());
         
-        return matchesSearch;
+        if (!matchesSearch) return;
+        
+        // Usar folio como clave única (o ID como fallback)
+        const uniqueKey = order.folio || order.id;
+        
+        // Solo agregar si no existe ya (priorizar la más reciente por createdAt)
+        if (!filteredOrdersMap.has(uniqueKey)) {
+            filteredOrdersMap.set(uniqueKey, order);
+        } else {
+            const existing = filteredOrdersMap.get(uniqueKey);
+            // Mantener la orden más reciente si hay duplicados
+            if (existing && order.createdAt && existing.createdAt && 
+                new Date(order.createdAt) > new Date(existing.createdAt)) {
+                filteredOrdersMap.set(uniqueKey, order);
+            }
+        }
     });
+    
+    const filteredOrders = Array.from(filteredOrdersMap.values());
 
     // Abrir modal de método de pago
     const handleOpenPaymentModal = (orderId: string) => {
