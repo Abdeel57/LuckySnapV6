@@ -201,9 +201,10 @@ const SimpleColorPresets: React.FC<{
 };
 
 const AdminSettingsPage = () => {
-    const { register, control, handleSubmit, reset, setValue, formState: { isSubmitting, isDirty } } = useForm<Settings>();
+    const { register, control, handleSubmit, reset, setValue, watch, formState: { isSubmitting, isDirty } } = useForm<Settings>();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [settings, setSettings] = useState<Settings | null>(null);
     const { updateAppearance } = useTheme();
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [paidTicketsVisibility, setPaidTicketsVisibility] = useState<'a_la_vista' | 'no_disponibles'>('a_la_vista');
@@ -219,6 +220,9 @@ const AdminSettingsPage = () => {
 
     useEffect(() => {
         getSettings().then(data => {
+            // Guardar settings en estado para usarlo en los placeholders
+            setSettings(data);
+            
             // Inicializar preview de colores
             if (data.appearance?.colors) {
                 setPreviewColors({
