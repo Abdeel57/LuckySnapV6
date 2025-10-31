@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
     Plus, 
     Search, 
@@ -13,7 +14,8 @@ import {
     MoreVertical,
     Download,
     FileText,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Eye
 } from 'lucide-react';
 import RaffleAnalytics from './RaffleAnalytics';
 import { Raffle } from '../../types';
@@ -37,12 +39,24 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
     onCreate,
     loading = false
 }) => {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'active' | 'finished'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'title' | 'tickets' | 'sold'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [downloading, setDownloading] = useState<string | null>(null);
     const toast = useToast();
+
+    // Función para ver el sorteo en la página pública
+    const handleViewRaffle = (raffle: Raffle) => {
+        if (!raffle.slug) {
+            toast.error('Error', 'Este sorteo no tiene un slug válido para visualizar');
+            return;
+        }
+        // Usar HashRouter - abrir en nueva pestaña
+        const url = `#/sorteo/${raffle.slug}`;
+        window.open(url, '_blank');
+    };
 
     // Función para descargar boletos
     const handleDownloadTickets = async (raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel') => {
@@ -232,10 +246,10 @@ const OptimizedRaffleManager: React.FC<OptimizedRaffleManagerProps> = ({
                                 </button>
                                 
                                 <button
-                                    onClick={() => {/* Ver detalles */}}
+                                    onClick={() => handleViewRaffle(raffle)}
                                     className="flex items-center justify-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm"
                                 >
-                                    <Calendar className="w-4 h-4" />
+                                    <Eye className="w-4 h-4" />
                                     <span>Ver</span>
                                 </button>
                             </div>
