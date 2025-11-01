@@ -105,6 +105,7 @@ const ReceiptPage: React.FC = () => {
 
     // Generar URL para QR code que lleve directamente al verificador
     // Como usa HashRouter, la URL debe ser: /#/verificador?folio=XXXXX
+    // useSearchParams funciona correctamente con HashRouter y lee los query params del hash
     const baseUrl = typeof window !== 'undefined' 
         ? window.location.origin 
         : '';
