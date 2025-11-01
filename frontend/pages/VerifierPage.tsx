@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { searchTickets } from '../services/api';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -11,13 +12,52 @@ import ToastContainer from '../components/ToastContainer';
 type SearchType = 'numero_boleto' | 'folio';
 
 const VerifierPage = () => {
-    const [searchType, setSearchType] = useState<SearchType>('numero_boleto');
+    const [searchParams] = useSearchParams();
+    const [searchType, setSearchType] = useState<SearchType>('folio');
     const [searchValue, setSearchValue] = useState('');
     const [resultados, setResultados] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedOrdenes, setExpandedOrdenes] = useState<Set<string>>(new Set());
     const [showQRScanner, setShowQRScanner] = useState(false);
     const toast = useToast();
+
+    // Función para búsqueda automática desde URL
+    const handleAutoSearch = async (folio: string) => {
+        setIsLoading(true);
+        setResultados(null);
+        setExpandedOrdenes(new Set());
+        
+        try {
+            const result = await searchTickets({ folio });
+            setResultados(result);
+            
+            if (!result.clientes || result.clientes.length === 0) {
+                toast.info('Sin resultados', 'No se encontraron boletos para este folio');
+            } else {
+                toast.success('Éxito', 'Boleto encontrado desde código QR');
+            }
+        } catch (error: any) {
+            console.error('Error searching from QR:', error);
+            toast.error('Error al buscar', error.message || 'No se encontraron resultados');
+            setResultados(null);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Si hay un folio en la URL (viene de QR), buscarlo automáticamente
+    useEffect(() => {
+        const folioFromUrl = searchParams.get('folio');
+        if (folioFromUrl) {
+            setSearchType('folio');
+            setSearchValue(folioFromUrl);
+            // Buscar automáticamente después de un breve delay para que el componente esté listo
+            setTimeout(() => {
+                handleAutoSearch(folioFromUrl);
+            }, 500);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     const getPlaceholder = () => {
         switch (searchType) {
@@ -79,17 +119,45 @@ const VerifierPage = () => {
         setExpandedOrdenes(new Set());
         
         try {
-            // El QR del boleto digital contiene: { folio, ticket, raffleId }
-            const qrParsed = JSON.parse(qrData);
+            // El QR puede ser:
+            // 1. Una URL (formato nuevo): /#/verificador?folio=XXXXX
+            // 2. JSON (formato antiguo): { folio, ticket, raffleId }
             
-            if (!qrParsed.folio) {
-                toast.error('Error', 'El código QR no contiene un folio válido');
+            let folio: string | null = null;
+            
+            // Intentar como URL primero
+            if (qrData.includes('verificador') && qrData.includes('folio=')) {
+                try {
+                    const url = new URL(qrData);
+                    folio = url.searchParams.get('folio');
+                    // Si es hash router, buscar en el hash
+                    if (!folio && url.hash) {
+                        const hashParams = new URLSearchParams(url.hash.split('?')[1]);
+                        folio = hashParams.get('folio');
+                    }
+                } catch {
+                    // Si no es URL válida, intentar parsear como JSON
+                }
+            }
+            
+            // Si no se encontró folio en URL, intentar como JSON (compatibilidad con códigos antiguos)
+            if (!folio) {
+                try {
+                    const qrParsed = JSON.parse(qrData);
+                    folio = qrParsed.folio;
+                } catch {
+                    // No es JSON ni URL válida
+                }
+            }
+            
+            if (!folio) {
+                toast.error('Error', 'El código QR no contiene un folio válido. Asegúrate de escanear el QR del boleto digital.');
                 setIsLoading(false);
                 return;
             }
             
             // Buscar por folio
-            const result = await searchTickets({ folio: qrParsed.folio });
+            const result = await searchTickets({ folio });
             setResultados(result);
             
             if (!result.clientes || result.clientes.length === 0) {
@@ -99,11 +167,7 @@ const VerifierPage = () => {
             }
         } catch (error: any) {
             console.error('Error scanning QR:', error);
-            if (error.message && error.message.includes('JSON')) {
-                toast.error('Error', 'Código QR inválido. Asegúrate de escanear el QR del boleto digital.');
-            } else {
-                toast.error('Error al escanear QR', error.message || 'Error al procesar el código QR');
-            }
+            toast.error('Error al escanear QR', error.message || 'Error al procesar el código QR');
             setResultados(null);
         } finally {
             setIsLoading(false);

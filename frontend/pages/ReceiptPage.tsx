@@ -103,12 +103,12 @@ const ReceiptPage: React.FC = () => {
         );
     }
 
-    // Generar datos para QR code
-    const qrData = JSON.stringify({
-        folio: order.folio || '',
-        ticket: order.tickets[0] || 0,
-        raffleId: order.raffleId
-    });
+    // Generar URL para QR code que lleve directamente al verificador
+    // Como usa HashRouter, la URL debe ser: /#/verificador?folio=XXXXX
+    const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin 
+        : '';
+    const qrData = `${baseUrl}/#/verificador?folio=${encodeURIComponent(order.folio || '')}`;
 
     const siteName = settings?.appearance?.siteName || 'Lucky Snap';
     const logoUrl = (settings?.appearance as any)?.logo || settings?.appearance?.logoUrl;
