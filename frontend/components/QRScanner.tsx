@@ -28,19 +28,31 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
             // Limpiar el contenedor del escáner
             const readerElement = document.getElementById('qr-reader');
-            if (readerElement) {
-                readerElement.innerHTML = '';
+            if (!readerElement) {
+                console.error('Contenedor qr-reader no encontrado');
+                setPermissionStatus('error');
+                setErrorMessage('Error al inicializar el escáner: contenedor no encontrado.');
+                return;
+            }
+            
+            readerElement.innerHTML = '';
+
+            // Verificar que el elemento está visible antes de inicializar
+            if (readerElement.offsetParent === null) {
+                console.warn('Contenedor qr-reader no está visible, esperando...');
+                setTimeout(() => initializeScanner(), 200);
+                return;
             }
 
             const scanner = new Html5QrcodeScanner(
                 'qr-reader',
                 {
                     qrbox: { width: 250, height: 250 },
-                    fps: 5,
+                    fps: 10,
                     aspectRatio: 1.0,
                     supportedScanTypes: []
                 },
-                false
+                false // verbose = false
             );
 
             scanner.render(
@@ -54,6 +66,11 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                     // Solo mostrar errores si no es el error de permiso (que ya manejamos arriba)
                     if (error && !error.toString().includes('Permission denied')) {
                         console.log('QR scan error:', error);
+                        // Si hay un error al iniciar el escaneo, mostrar mensaje
+                        if (error.toString().includes('No devices found') || error.toString().includes('Could not start video stream')) {
+                            setPermissionStatus('error');
+                            setErrorMessage('No se pudo iniciar la cámara. Por favor, verifica que la cámara esté disponible y no esté siendo usada por otra aplicación.');
+                        }
                     }
                 }
             );
@@ -75,21 +92,20 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                 throw new Error('Tu navegador no soporta acceso a la cámara. Por favor, usa un navegador moderno.');
             }
 
-            // Solicitar permiso de cámara explícitamente
+            // Solicitar permiso de cámara explícitamente para verificar que está disponible
+            // Usamos una solicitud rápida solo para verificar permisos, luego lo detenemos
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: 'environment' // Preferir cámara trasera en móviles
                 } 
             });
 
-            // Si tenemos el permiso, detener el stream y proceder con el escáner
+            // Verificar que obtuvimos el permiso, pero detener este stream ya que
+            // el escáner HTML5-QRCode obtendrá su propio stream
             stream.getTracks().forEach(track => track.stop());
+            
+            // Cambiar estado a granted - el useEffect se encargará de inicializar el escáner
             setPermissionStatus('granted');
-
-            // Esperar un momento para que el estado se actualice
-            setTimeout(() => {
-                initializeScanner();
-            }, 100);
 
         } catch (error: any) {
             console.error('Error al solicitar permisos de cámara:', error);
@@ -126,6 +142,31 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
             }
         };
     }, [requestCameraPermission]);
+
+    // Inicializar el escáner cuando el estado cambie a 'granted' y el contenedor esté visible
+    useEffect(() => {
+        if (permissionStatus === 'granted' && !scannerRef.current) {
+            // Esperar a que el DOM se actualice completamente
+            const timer = setTimeout(() => {
+                const readerElement = document.getElementById('qr-reader');
+                if (readerElement && readerElement.offsetParent !== null) {
+                    initializeScanner();
+                } else {
+                    // Si el elemento aún no está visible, intentar de nuevo
+                    const retryTimer = setTimeout(() => {
+                        if (!scannerRef.current) {
+                            initializeScanner();
+                        }
+                    }, 300);
+                    
+                    // Cleanup del retryTimer
+                    setTimeout(() => clearTimeout(retryTimer), 400);
+                }
+            }, 500);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [permissionStatus, initializeScanner]);
 
     const handleRetry = async () => {
         setPermissionStatus('requesting');
