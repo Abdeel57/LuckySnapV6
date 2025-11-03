@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { QrCode, X, Camera, AlertCircle } from 'lucide-react';
+import { QrCode, X, Camera, AlertCircle, RotateCcw } from 'lucide-react';
 
 interface QRScannerProps {
     onScan: (result: string) => void;
@@ -12,6 +12,8 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     const [isScanning, setIsScanning] = useState(false);
     const [permissionStatus, setPermissionStatus] = useState<'requesting' | 'granted' | 'denied' | 'error'>('requesting');
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [useBackCamera, setUseBackCamera] = useState(true); // true = trasera, false = frontal
+    const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
     const readerElementRef = useRef<HTMLDivElement>(null);
 
     // Función para obtener lista de cámaras
@@ -25,7 +27,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
         }
     };
 
-    // Función para encontrar la cámara trasera (preferida)
+    // Función para encontrar la cámara trasera
     const findBackCamera = async (): Promise<string | null> => {
         const cameras = await getCameras();
         
@@ -48,8 +50,40 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
         return null;
     };
 
+    // Función para encontrar la cámara frontal
+    const findFrontCamera = async (): Promise<string | null> => {
+        const cameras = await getCameras();
+        
+        // Intentar encontrar cámara frontal por label
+        const frontCamera = cameras.find(camera => 
+            camera.label.toLowerCase().includes('front') ||
+            camera.label.toLowerCase().includes('facing') ||
+            camera.label.toLowerCase().includes('user')
+        );
+        
+        if (frontCamera) {
+            return frontCamera.deviceId;
+        }
+        
+        // Si hay múltiples cámaras y una es trasera, usar la otra
+        if (cameras.length > 1) {
+            const backCameraId = await findBackCamera();
+            const otherCamera = cameras.find(camera => camera.deviceId !== backCameraId);
+            if (otherCamera) {
+                return otherCamera.deviceId;
+            }
+        }
+        
+        // Si solo hay una cámara, usarla
+        if (cameras.length > 0) {
+            return cameras[0].deviceId;
+        }
+        
+        return null;
+    };
+
     // Función para inicializar el escáner (compartida entre useEffect y handleRetry)
-    const initializeScanner = useCallback(async () => {
+    const initializeScanner = useCallback(async (preferBackCamera: boolean = true) => {
         try {
             // Limpiar escáner anterior si existe
             if (scannerRef.current) {
@@ -76,18 +110,26 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
             // Verificar que el elemento está visible antes de inicializar
             if (readerElement.offsetParent === null) {
                 console.warn('Contenedor qr-reader no está visible, esperando...');
-                setTimeout(() => initializeScanner(), 200);
+                setTimeout(() => initializeScanner(preferBackCamera), 200);
                 return;
             }
+
+            // Obtener lista de cámaras disponibles
+            const cameras = await getCameras();
+            setAvailableCameras(cameras);
 
             // Crear instancia de Html5Qrcode
             const html5QrCode = new Html5Qrcode('qr-reader');
             scannerRef.current = html5QrCode;
 
-            // Intentar encontrar cámara trasera
+            // Encontrar la cámara según preferencia
             let cameraId: string | null = null;
             try {
-                cameraId = await findBackCamera();
+                if (preferBackCamera) {
+                    cameraId = await findBackCamera();
+                } else {
+                    cameraId = await findFrontCamera();
+                }
             } catch (error) {
                 console.log('No se pudo obtener lista de cámaras, usando default:', error);
             }
@@ -99,10 +141,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                 aspectRatio: 1.0
             };
 
-            // Video constraints - preferir cámara trasera
+            // Video constraints - usar cámara específica o facingMode
             const videoConstraints = cameraId 
                 ? { deviceId: { exact: cameraId } }
-                : { facingMode: 'environment' };
+                : preferBackCamera 
+                    ? { facingMode: 'environment' }
+                    : { facingMode: 'user' };
 
             // Iniciar el escáner con la cámara
             await html5QrCode.start(
@@ -220,12 +264,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
             const timer = setTimeout(() => {
                 const readerElement = document.getElementById('qr-reader');
                 if (readerElement && readerElement.offsetParent !== null) {
-                    initializeScanner();
+                    initializeScanner(useBackCamera);
                 } else {
                     // Si el elemento aún no está visible, intentar de nuevo
                     const retryTimer = setTimeout(() => {
                         if (!scannerRef.current) {
-                            initializeScanner();
+                            initializeScanner(useBackCamera);
                         }
                     }, 300);
                     
@@ -236,7 +280,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
             
             return () => clearTimeout(timer);
         }
-    }, [permissionStatus, initializeScanner]);
+    }, [permissionStatus, initializeScanner, useBackCamera]);
 
     const handleRetry = async () => {
         setPermissionStatus('requesting');
@@ -269,6 +313,24 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
         // Solicitar permisos nuevamente usando la función compartida
         await requestCameraPermission();
+    };
+
+    // Función para voltear la cámara
+    const handleFlipCamera = async () => {
+        if (!scannerRef.current || permissionStatus !== 'granted') {
+            return;
+        }
+
+        try {
+            // Cambiar el estado de la cámara
+            const newUseBackCamera = !useBackCamera;
+            setUseBackCamera(newUseBackCamera);
+            
+            // Reiniciar el escáner con la nueva cámara
+            await initializeScanner(newUseBackCamera);
+        } catch (error) {
+            console.error('Error al voltear la cámara:', error);
+        }
     };
 
     return (
@@ -314,7 +376,21 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                             </p>
                         </div>
 
-                        <div id="qr-reader" ref={readerElementRef} className="w-full min-h-[300px]"></div>
+                        {/* Contenedor relativo para posicionar el botón de voltear */}
+                        <div className="relative">
+                            <div id="qr-reader" ref={readerElementRef} className="w-full min-h-[300px]"></div>
+                            
+                            {/* Botón para voltear la cámara */}
+                            {availableCameras.length > 1 && (
+                                <button
+                                    onClick={handleFlipCamera}
+                                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                                    title={useBackCamera ? "Cambiar a cámara frontal" : "Cambiar a cámara trasera"}
+                                >
+                                    <RotateCcw className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
                         
                         {isScanning && (
                             <div className="mt-4 text-center">
