@@ -137,7 +137,7 @@ const ReceiptPage: React.FC = () => {
                                 <img 
                                     src={logoUrl} 
                                     alt={siteName}
-                                    className="max-w-[150px] max-h-[80px] mx-auto mb-4"
+                                    className="max-w-[220px] max-h-[110px] mx-auto mb-4"
                                 />
                             )}
                             <h1 className="text-3xl font-bold text-gray-900">{siteName}</h1>

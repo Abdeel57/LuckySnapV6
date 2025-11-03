@@ -56,7 +56,7 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ order, settings }) 
                     <img 
                         src={logoUrl} 
                         alt={siteName}
-                        style={{ maxWidth: '150px', maxHeight: '80px', marginBottom: '15px' }}
+                        style={{ maxWidth: '220px', maxHeight: '110px', marginBottom: '15px' }}
                     />
                 )}
                 <h1 style={{ margin: '10px 0', fontSize: '28px', fontWeight: 'bold' }}>{siteName}</h1>
