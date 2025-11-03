@@ -14,7 +14,21 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [useBackCamera, setUseBackCamera] = useState(true); // true = trasera, false = frontal
     const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+    const [isMobileDevice, setIsMobileDevice] = useState(false);
     const readerElementRef = useRef<HTMLDivElement>(null);
+
+    // Detectar si es un dispositivo móvil
+    useEffect(() => {
+        const checkIsMobile = () => {
+            const isMobile = window.innerWidth < 768 || 
+                /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            setIsMobileDevice(isMobile);
+        };
+        
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
 
     // Función para obtener lista de cámaras
     const getCameras = async (): Promise<MediaDeviceInfo[]> => {
@@ -315,21 +329,42 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
         await requestCameraPermission();
     };
 
-    // Función para voltear la cámara
+    // Función para voltear la cámara (solo en dispositivos móviles)
     const handleFlipCamera = async () => {
-        if (!scannerRef.current || permissionStatus !== 'granted') {
+        if (!isMobileDevice || !scannerRef.current || permissionStatus !== 'granted') {
             return;
         }
 
         try {
             // Cambiar el estado de la cámara
             const newUseBackCamera = !useBackCamera;
-            setUseBackCamera(newUseBackCamera);
             
-            // Reiniciar el escáner con la nueva cámara
+            // Detener el escáner actual
+            if (scannerRef.current) {
+                try {
+                    await scannerRef.current.stop();
+                    scannerRef.current.clear();
+                } catch (error) {
+                    console.log('Error al detener escáner:', error);
+                }
+                scannerRef.current = null;
+            }
+
+            // Limpiar el contenedor
+            const readerElement = readerElementRef.current || document.getElementById('qr-reader');
+            if (readerElement) {
+                readerElement.innerHTML = '';
+            }
+
+            // Esperar un momento antes de reiniciar con la nueva cámara
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Actualizar estado y reiniciar el escáner con la nueva cámara
+            setUseBackCamera(newUseBackCamera);
             await initializeScanner(newUseBackCamera);
         } catch (error) {
             console.error('Error al voltear la cámara:', error);
+            setErrorMessage('Error al cambiar de cámara. Por favor, intenta de nuevo.');
         }
     };
 
@@ -380,12 +415,13 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                         <div className="relative">
                             <div id="qr-reader" ref={readerElementRef} className="w-full min-h-[300px]"></div>
                             
-                            {/* Botón para voltear la cámara */}
-                            {availableCameras.length > 1 && (
+                            {/* Botón para voltear la cámara - Solo en dispositivos móviles con múltiples cámaras */}
+                            {isMobileDevice && availableCameras.length > 1 && (
                                 <button
                                     onClick={handleFlipCamera}
-                                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={useBackCamera ? "Cambiar a cámara frontal" : "Cambiar a cámara trasera"}
+                                    disabled={!isScanning || permissionStatus !== 'granted'}
                                 >
                                     <RotateCcw className="w-5 h-5" />
                                 </button>
