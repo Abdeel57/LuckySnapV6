@@ -65,17 +65,22 @@ const RaffleDetailPage = () => {
 
     // CRÍTICO: useCallback para evitar recrear función en cada render
     // CRÍTICO: Usar Set.has() en lugar de Array.includes() - O(1) vs O(n)
+    // NOTA: Usar arrays originales en dependencias (no Sets), Sets se recrean en cada render
     const handleTicketClick = useCallback((ticketNumber: number) => {
         // Validación defensiva
         if (!ticketNumber || typeof ticketNumber !== 'number') return;
         
         // CRÍTICO: Usar Set.has() - instantáneo incluso con 10,000 boletos
-        if (occupiedSet.has(ticketNumber)) {
+        // Recrear Sets en cada llamada para tener la versión más reciente
+        const currentOccupiedSet = Array.isArray(occupiedTickets) ? new Set(occupiedTickets) : new Set<number>();
+        const currentSelectedSet = Array.isArray(selectedTickets) ? new Set(selectedTickets) : new Set<number>();
+        
+        if (currentOccupiedSet.has(ticketNumber)) {
             toast.error('Boleto ocupado', 'Este boleto ya está ocupado. Por favor selecciona otro.');
             return;
         }
         
-        const wasSelected = selectedSet.has(ticketNumber);
+        const wasSelected = currentSelectedSet.has(ticketNumber);
         const newSelectedTickets = wasSelected 
             ? selectedTickets.filter(t => t !== ticketNumber)
             : [...selectedTickets, ticketNumber];
@@ -91,7 +96,7 @@ const RaffleDetailPage = () => {
                 metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
             }, 0);
         }
-    }, [occupiedSet, selectedSet, selectedTickets, raffle, toast]);
+    }, [occupiedTickets, selectedTickets, raffle, toast]);
     
     if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
@@ -100,7 +105,7 @@ const RaffleDetailPage = () => {
     const pricePerTicket = useMemo(() => {
         if (!raffle) return 50;
         return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-    }, [raffle]);
+    }, [raffle?.id, raffle?.price, raffle?.packs]);
 
     const totalPrice = useMemo(() => {
         return selectedTickets.length * pricePerTicket;
@@ -109,14 +114,15 @@ const RaffleDetailPage = () => {
     const boletosAdicionales = useMemo(() => {
         if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
         return selectedTickets.length * (raffle.numeroOportunidades - 1);
-    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
+    }, [raffle?.id, raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
 
     const progress = useMemo(() => {
         if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
         return (raffle.sold / raffle.tickets) * 100;
-    }, [raffle?.sold, raffle?.tickets]);
+    }, [raffle?.id, raffle?.sold, raffle?.tickets]);
 
     // CRÍTICO: Memoizar imágenes de galería para evitar recalcular
+    // Usar raffle.id como dependencia principal para evitar problemas con arrays
     const raffleImages = useMemo(() => {
         if (!raffle) return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
         
@@ -130,7 +136,7 @@ const RaffleDetailPage = () => {
             allImages.push(raffle.heroImage);
         }
         
-        if (raffle.gallery && raffle.gallery.length > 0) {
+        if (raffle.gallery && Array.isArray(raffle.gallery) && raffle.gallery.length > 0) {
             raffle.gallery.forEach(img => {
                 if (!allImages.includes(img)) {
                     allImages.push(img);
@@ -143,7 +149,7 @@ const RaffleDetailPage = () => {
         }
         
         return allImages;
-    }, [raffle?.imageUrl, raffle?.heroImage, raffle?.gallery]);
+    }, [raffle?.id, raffle?.imageUrl, raffle?.heroImage, raffle?.gallery?.length]);
 
     return (
         <PageAnimator>
