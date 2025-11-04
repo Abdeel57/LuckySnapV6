@@ -44,7 +44,7 @@ const RaffleDetailPage = () => {
                     setLoading(false);
                  }
             }).catch(err => {
-                console.error("Failed to load raffle details", err);
+                // Error logging removed for production
                 setLoading(false);
             });
         }

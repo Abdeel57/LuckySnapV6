@@ -104,19 +104,9 @@ class MetaPixelService {
   }
 
   private async sendToBackend(event: PixelEvent) {
-    try {
-      const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
-      await fetch(`${API_URL}/tracking/event`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(event),
-      });
-    } catch (error) {
-      console.error('Error sending event to backend:', error);
-      // No hacer nada, el tracking no es crítico
-    }
+    // DESACTIVADO: Causa 500 errors constantes y consume memoria en móviles
+    // El tracking de Meta Pixel funciona sin enviar al backend
+    return;
   }
 
   // Public methods

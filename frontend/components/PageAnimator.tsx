@@ -1,8 +1,24 @@
 import React, { PropsWithChildren } from 'react';
 import { motion } from 'framer-motion';
 
+// Función para detectar móvil de forma segura
+const isMobile = (): boolean => {
+  try {
+    return typeof window !== 'undefined' && window.innerWidth < 768;
+  } catch {
+    return false;
+  }
+};
+
 // FIX: Used PropsWithChildren to correctly type the component that accepts children.
 const PageAnimator = ({ children }: PropsWithChildren) => {
+  const mobile = isMobile();
+  
+  // CRÍTICO: En móviles, renderizar div estático sin animaciones
+  if (mobile) {
+    return <div style={{ opacity: 1 }}>{children}</div>;
+  }
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

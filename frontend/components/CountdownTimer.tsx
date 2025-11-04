@@ -29,18 +29,10 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
     useEffect(() => {
-        console.log('🕐 CountdownTimer initialized with targetDate:', targetDate);
-        console.log('🕐 Calculated time left:', calculateTimeLeft());
-        
+        // Removed console.log - causaba memory leak en móviles
         const timer = setInterval(() => {
-            const newTimeLeft = calculateTimeLeft();
-            setTimeLeft(newTimeLeft);
-            
-            // Log solo cuando cambien los minutos para evitar spam
-            if (newTimeLeft.minutes !== timeLeft.minutes) {
-                console.log('🕐 Time updated:', newTimeLeft);
-            }
-        }, 1000); // Update every second for more precision
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
         return () => clearInterval(timer);
     }, [targetDate]);
     

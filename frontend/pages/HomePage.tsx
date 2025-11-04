@@ -25,17 +25,43 @@ const HomePage = () => {
     useEffect(() => {
         setLoading(true);
         trackPageView('/');
-        Promise.all([
-            getActiveRaffles(),
-            getPastWinners()
-        ]).then(([raffleData, winnerData]) => {
-            setRaffles(raffleData);
-            setWinners(winnerData);
-        }).catch(err => {
-            console.error("Failed to load home page data", err);
-        }).finally(() => {
-            setLoading(false);
-        });
+        
+        // CRÍTICO: Cargar datos de forma secuencial en móviles (no paralelo)
+        // Promise.all puede sobrecargar móviles de gama baja
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        
+        if (isMobile) {
+            // Móviles: Cargar secuencialmente (más lento pero más estable)
+            getActiveRaffles()
+                .then(raffleData => {
+                    setRaffles(raffleData);
+                    return getPastWinners();
+                })
+                .then(winnerData => {
+                    setWinners(winnerData);
+                })
+                .catch(err => {
+                    setRaffles([]);
+                    setWinners([]);
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        } else {
+            // Desktop: Cargar en paralelo (más rápido)
+            Promise.all([
+                getActiveRaffles(),
+                getPastWinners()
+            ]).then(([raffleData, winnerData]) => {
+                setRaffles(raffleData);
+                setWinners(winnerData);
+            }).catch(err => {
+                setRaffles([]);
+                setWinners([]);
+            }).finally(() => {
+                setLoading(false);
+            });
+        }
     }, [trackPageView]);
 
     const mainRaffle = raffles.length > 0 ? raffles[0] : null;

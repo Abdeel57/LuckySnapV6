@@ -44,9 +44,10 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
         return images;
     })();
 
-    // Cambio automático de imágenes cada 5 segundos
+    // Cambio automático DESACTIVADO en móviles para mejor rendimiento
     useEffect(() => {
-        if (allImages.length > 1) {
+        // Solo activar en desktop
+        if (allImages.length > 1 && window.innerWidth >= 768) {
             const interval = setInterval(() => {
                 setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
             }, 5000);
@@ -54,32 +55,51 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
         }
     }, [allImages.length]);
 
+    // Detectar móvil para desactivar animaciones
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-secondary to-tertiary">
             {/* Imagen principal como fondo de pantalla completa */}
             <div className="absolute inset-0 w-full h-full">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentImageIndex}
-                        className="w-full h-full"
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.5 }}
-                    >
-                        <ResponsiveImage
-                            src={allImages[currentImageIndex]}
-                            alt={raffle.title}
-                            widths={[768, 1200, 1600, 1920, 2160]}
-                            sizesHint="100vw"
-                            preferFormat="auto"
-                            loading="eager"
-                            decoding="async"
-                            fetchPriority="high"
-                            className="w-full h-full object-cover"
-                        />
-                    </motion.div>
-                </AnimatePresence>
+                {isMobile ? (
+                    // Móvil: Sin animaciones, solo imagen estática
+                    <ResponsiveImage
+                        src={allImages[currentImageIndex]}
+                        alt={raffle.title}
+                        widths={[768, 1200]}
+                        sizesHint="100vw"
+                        preferFormat="auto"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    // Desktop: Con animaciones
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentImageIndex}
+                            className="w-full h-full"
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <ResponsiveImage
+                                src={allImages[currentImageIndex]}
+                                alt={raffle.title}
+                                widths={[768, 1200, 1600, 1920, 2160]}
+                                sizesHint="100vw"
+                                preferFormat="auto"
+                                loading="eager"
+                                decoding="async"
+                                fetchPriority="high"
+                                className="w-full h-full object-cover"
+                            />
+                        </motion.div>
+                    </AnimatePresence>
+                )}
                 
                 {/* Overlay oscuro para legibilidad */}
                 <div className="absolute inset-0 bg-black/35"></div>
