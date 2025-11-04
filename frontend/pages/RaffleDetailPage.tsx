@@ -119,7 +119,7 @@ const RaffleDetailPage = () => {
                                     return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
                                 }
                                 
-                                console.log('🖼️ Detail page using combined images:', allImages.length);
+                                // Removed console.log for production performance
                                 return allImages;
                             })()}
                             title={raffle.title}

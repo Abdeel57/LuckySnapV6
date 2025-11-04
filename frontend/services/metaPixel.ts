@@ -99,7 +99,7 @@ class MetaPixelService {
       // Also send to backend for analytics
       this.sendToBackend(event);
     } catch (error) {
-      console.error('Error tracking Meta Pixel event:', error);
+      // Error logging removed for production
     }
   }
 
