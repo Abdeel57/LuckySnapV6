@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRaffleBySlug, getOccupiedTickets, getSettings } from '../services/api';
 import { Raffle } from '../types';
@@ -21,6 +21,13 @@ const RaffleDetailPage = () => {
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
     const toast = useToast();
+    
+    // CRÍTICO: Usar useRef para mantener referencia estable a toast.error
+    // Esto evita que handleTicketClick se recree cuando toast cambia
+    const toastRef = useRef(toast);
+    useEffect(() => {
+        toastRef.current = toast;
+    }, [toast]);
 
     // CRÍTICO: Los Sets se crean dentro de handleTicketClick para evitar problemas de dependencias
     // No necesitamos memoizar Sets separados, se crean cuando se necesitan
@@ -68,7 +75,7 @@ const RaffleDetailPage = () => {
         const currentSelectedSet = Array.isArray(selectedTickets) ? new Set(selectedTickets) : new Set<number>();
         
         if (currentOccupiedSet.has(ticketNumber)) {
-            toast.error('Boleto ocupado', 'Este boleto ya está ocupado. Por favor selecciona otro.');
+            toastRef.current.error('Boleto ocupado', 'Este boleto ya está ocupado. Por favor selecciona otro.');
             return;
         }
         
@@ -88,16 +95,16 @@ const RaffleDetailPage = () => {
                 metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
             }, 0);
         }
-    }, [occupiedTickets, selectedTickets, raffle, toast]);
+    }, [occupiedTickets, selectedTickets, raffle]); // ✅ Removido toast, usando toastRef en su lugar
     
     // CRÍTICO: TODOS los hooks deben ejecutarse ANTES de cualquier return condicional
     // Esto es necesario para cumplir las reglas de los hooks de React
     // CRÍTICO: Memoizar cálculos costosos para evitar recalcular en cada render
-    // Usar solo raffle.id como dependencia (valor primitivo estable)
+    // Incluir TODAS las dependencias que se usan: price, packs.length (para detectar cambios en packs)
     const pricePerTicket = useMemo(() => {
         if (!raffle) return 50;
         return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-    }, [raffle?.id]);
+    }, [raffle?.id, raffle?.price, raffle?.packs?.length]);
 
     const totalPrice = useMemo(() => {
         return selectedTickets.length * pricePerTicket;
@@ -106,7 +113,7 @@ const RaffleDetailPage = () => {
     const boletosAdicionales = useMemo(() => {
         if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
         return selectedTickets.length * (raffle.numeroOportunidades - 1);
-    }, [raffle?.id, raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
+    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
 
     const progress = useMemo(() => {
         if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
@@ -114,7 +121,7 @@ const RaffleDetailPage = () => {
     }, [raffle?.id, raffle?.sold, raffle?.tickets]);
 
     // CRÍTICO: Memoizar imágenes de galería para evitar recalcular
-    // Usar solo raffle.id como dependencia (valor primitivo estable)
+    // Incluir TODAS las dependencias que se usan: imageUrl, heroImage, gallery.length
     const raffleImages = useMemo(() => {
         if (!raffle) return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
         
@@ -141,7 +148,7 @@ const RaffleDetailPage = () => {
         }
         
         return allImages;
-    }, [raffle?.id]);
+    }, [raffle?.id, raffle?.imageUrl, raffle?.heroImage, raffle?.gallery?.length]);
     
     // AHORA SÍ podemos hacer returns condicionales después de todos los hooks
     if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;
