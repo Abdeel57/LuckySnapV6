@@ -90,9 +90,8 @@ const RaffleDetailPage = () => {
         }
     }, [occupiedTickets, selectedTickets, raffle, toast]);
     
-    if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;
-    if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
-    
+    // CRÍTICO: TODOS los hooks deben ejecutarse ANTES de cualquier return condicional
+    // Esto es necesario para cumplir las reglas de los hooks de React
     // CRÍTICO: Memoizar cálculos costosos para evitar recalcular en cada render
     // Usar solo raffle.id como dependencia (valor primitivo estable)
     const pricePerTicket = useMemo(() => {
@@ -143,6 +142,10 @@ const RaffleDetailPage = () => {
         
         return allImages;
     }, [raffle?.id]);
+    
+    // AHORA SÍ podemos hacer returns condicionales después de todos los hooks
+    if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;
+    if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
 
     return (
         <PageAnimator>
