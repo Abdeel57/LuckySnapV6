@@ -22,16 +22,8 @@ const RaffleDetailPage = () => {
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
     const toast = useToast();
 
-    // CRÍTICO: Convertir arrays a Sets para búsquedas O(1) en handleTicketClick
-    const occupiedSet = useMemo(() => {
-        if (!Array.isArray(occupiedTickets)) return new Set<number>();
-        return new Set(occupiedTickets);
-    }, [occupiedTickets]);
-
-    const selectedSet = useMemo(() => {
-        if (!Array.isArray(selectedTickets)) return new Set<number>();
-        return new Set(selectedTickets);
-    }, [selectedTickets]);
+    // CRÍTICO: Los Sets se crean dentro de handleTicketClick para evitar problemas de dependencias
+    // No necesitamos memoizar Sets separados, se crean cuando se necesitan
 
     useEffect(() => {
         // Cargar preferencias de visualización desde settings públicos
@@ -102,10 +94,11 @@ const RaffleDetailPage = () => {
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
     
     // CRÍTICO: Memoizar cálculos costosos para evitar recalcular en cada render
+    // Usar solo raffle.id como dependencia (valor primitivo estable)
     const pricePerTicket = useMemo(() => {
         if (!raffle) return 50;
         return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-    }, [raffle?.id, raffle?.price, raffle?.packs]);
+    }, [raffle?.id]);
 
     const totalPrice = useMemo(() => {
         return selectedTickets.length * pricePerTicket;
@@ -122,7 +115,7 @@ const RaffleDetailPage = () => {
     }, [raffle?.id, raffle?.sold, raffle?.tickets]);
 
     // CRÍTICO: Memoizar imágenes de galería para evitar recalcular
-    // Usar raffle.id como dependencia principal para evitar problemas con arrays
+    // Usar solo raffle.id como dependencia (valor primitivo estable)
     const raffleImages = useMemo(() => {
         if (!raffle) return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
         
@@ -149,7 +142,7 @@ const RaffleDetailPage = () => {
         }
         
         return allImages;
-    }, [raffle?.id, raffle?.imageUrl, raffle?.heroImage, raffle?.gallery?.length]);
+    }, [raffle?.id]);
 
     return (
         <PageAnimator>

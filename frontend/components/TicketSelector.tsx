@@ -17,16 +17,8 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     const ticketsPerPage = 50;
     const totalPages = Math.ceil(totalTickets / ticketsPerPage);
 
-    // CRÍTICO: Convertir arrays a Sets para búsquedas O(1) en lugar de O(n)
-    const occupiedSet = useMemo(() => {
-        if (!Array.isArray(occupiedTickets)) return new Set<number>();
-        return new Set(occupiedTickets);
-    }, [occupiedTickets]);
-
-    const selectedSet = useMemo(() => {
-        if (!Array.isArray(selectedTickets)) return new Set<number>();
-        return new Set(selectedTickets);
-    }, [selectedTickets]);
+    // CRÍTICO: Los Sets se crean dentro de renderTickets para evitar problemas de dependencias
+    // No necesitamos memoizar Sets separados, se crean dentro del useMemo cuando se necesitan
 
     // Memoizar padding para evitar recalcular
     const ticketPadding = useMemo(() => {
@@ -44,11 +36,16 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     }, []);
 
     // CRÍTICO: Memoizar renderTickets para evitar recalcular en cada render
+    // Usar arrays directamente en dependencias (no Sets), Sets se recrean dentro
     const renderTickets = useMemo(() => {
         // Validaciones defensivas
         if (!totalTickets || totalTickets <= 0) return [];
         if (!Array.isArray(occupiedTickets)) return [];
         if (!Array.isArray(selectedTickets)) return [];
+
+        // Crear Sets una vez dentro del useMemo (más eficiente)
+        const currentOccupiedSet = new Set(occupiedTickets);
+        const currentSelectedSet = new Set(selectedTickets);
 
         const tickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
         const visibleTickets = listingMode === 'paginado'
@@ -56,11 +53,11 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
             : tickets;
 
         return visibleTickets
-            .filter(ticket => hideOccupied ? !occupiedSet.has(ticket) : true)
+            .filter(ticket => hideOccupied ? !currentOccupiedSet.has(ticket) : true)
             .map(ticket => {
             // CRÍTICO: Usar Set.has() en lugar de Array.includes() - O(1) vs O(n)
-            const isOccupied = occupiedSet.has(ticket);
-            const isSelected = selectedSet.has(ticket);
+            const isOccupied = currentOccupiedSet.has(ticket);
+            const isSelected = currentSelectedSet.has(ticket);
             
             let baseClasses = 'relative p-1 text-center rounded-md text-sm cursor-pointer transition-all duration-200 flex items-center justify-center aspect-square';
             let stateClasses = '';
@@ -120,7 +117,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                 </motion.div>
             );
         });
-    }, [totalTickets, occupiedSet, selectedSet, currentPage, listingMode, hideOccupied, ticketsPerPage, mobile, ticketPadding, onTicketClick]);
+    }, [totalTickets, occupiedTickets, selectedTickets, currentPage, listingMode, hideOccupied, ticketsPerPage, mobile, ticketPadding, onTicketClick]);
     
     const Legend = () => (
         <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mb-4 text-sm">
