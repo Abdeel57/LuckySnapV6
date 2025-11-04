@@ -195,8 +195,10 @@ app.use((req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+// CRÍTICO: Escuchar en '0.0.0.0' para Railway (no solo localhost)
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎉 Servidor ejecutándose en puerto ${PORT}`);
-  console.log(`🌐 Disponible en: http://localhost:${PORT}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🌐 Disponible en: http://0.0.0.0:${PORT}`);
+  console.log(`🔗 Health check: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`✅ Backend listo para recibir conexiones`);
 });
