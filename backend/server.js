@@ -184,7 +184,9 @@ app.get('/api/admin/stats', async (req, res) => {
 });
 
 // Manejar rutas no encontradas
-app.use('*', (req, res) => {
+// CRÍTICO: No usar '*' como patrón - incompatible con path-to-regexp v6+
+// Usar middleware sin patrón para capturar todas las rutas no manejadas
+app.use((req, res) => {
   res.status(404).json({ 
     error: 'Endpoint no encontrado',
     path: req.originalUrl,
