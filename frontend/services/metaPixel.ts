@@ -29,7 +29,7 @@ class MetaPixelService {
       this.pixelId = config.pixelId;
       this.initializePixel();
     } catch (error) {
-      console.error('Error loading pixel config:', error);
+      // Error logging removed for production
       // Usar ID por defecto si falla
       this.pixelId = '1234567890123456';
       this.initializePixel();
@@ -68,7 +68,7 @@ class MetaPixelService {
     document.body.appendChild(noscript);
 
     this.isInitialized = true;
-    console.log('✅ Meta Pixel initialized with ID:', this.pixelId);
+    // Removed console.log for production performance
 
     // Process queued events
     this.processEventQueue();
@@ -94,9 +94,9 @@ class MetaPixelService {
 
     try {
       window.fbq('track', event.eventName, event.eventData);
-      console.log('📊 Meta Pixel Event:', event.eventName, event.eventData);
+      // Removed console.log for production performance
       
-      // Also send to backend for analytics
+      // Also send to backend for analytics (DESACTIVADO)
       this.sendToBackend(event);
     } catch (error) {
       // Error logging removed for production
