@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRaffleBySlug, getOccupiedTickets, getSettings } from '../services/api';
 import { Raffle } from '../types';
@@ -10,6 +10,7 @@ import TicketSelector from '../components/TicketSelector';
 import RaffleGallery from '../components/RaffleGallery';
 import { motion } from 'framer-motion';
 import metaPixelService from '../services/metaPixel';
+import { useToast } from '../hooks/useToast';
 
 const RaffleDetailPage = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -19,6 +20,18 @@ const RaffleDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
+    const toast = useToast();
+
+    // CRÍTICO: Convertir arrays a Sets para búsquedas O(1) en handleTicketClick
+    const occupiedSet = useMemo(() => {
+        if (!Array.isArray(occupiedTickets)) return new Set<number>();
+        return new Set(occupiedTickets);
+    }, [occupiedTickets]);
+
+    const selectedSet = useMemo(() => {
+        if (!Array.isArray(selectedTickets)) return new Set<number>();
+        return new Set(selectedTickets);
+    }, [selectedTickets]);
 
     useEffect(() => {
         // Cargar preferencias de visualización desde settings públicos
@@ -50,39 +63,87 @@ const RaffleDetailPage = () => {
         }
     }, [slug]);
 
-    const handleTicketClick = (ticketNumber: number) => {
-        // Verificar si el boleto ya está ocupado
-        if (occupiedTickets.includes(ticketNumber)) {
-            alert('Este boleto ya está ocupado. Por favor selecciona otro.');
+    // CRÍTICO: useCallback para evitar recrear función en cada render
+    // CRÍTICO: Usar Set.has() en lugar de Array.includes() - O(1) vs O(n)
+    const handleTicketClick = useCallback((ticketNumber: number) => {
+        // Validación defensiva
+        if (!ticketNumber || typeof ticketNumber !== 'number') return;
+        
+        // CRÍTICO: Usar Set.has() - instantáneo incluso con 10,000 boletos
+        if (occupiedSet.has(ticketNumber)) {
+            toast.error('Boleto ocupado', 'Este boleto ya está ocupado. Por favor selecciona otro.');
             return;
         }
         
-        const wasSelected = selectedTickets.includes(ticketNumber);
+        const wasSelected = selectedSet.has(ticketNumber);
         const newSelectedTickets = wasSelected 
             ? selectedTickets.filter(t => t !== ticketNumber)
             : [...selectedTickets, ticketNumber];
         
         setSelectedTickets(newSelectedTickets);
         
-        // Track AddToCart when tickets are selected
+        // Track AddToCart cuando se selecciona (async, no bloquea UI)
         if (!wasSelected && raffle) {
-            const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-            const totalValue = newSelectedTickets.length * pricePerTicket;
-            metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
+            // Usar setTimeout para no bloquear la UI
+            setTimeout(() => {
+                const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
+                const totalValue = newSelectedTickets.length * pricePerTicket;
+                metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, totalValue);
+            }, 0);
         }
-    };
+    }, [occupiedSet, selectedSet, selectedTickets, raffle, toast]);
     
     if (loading) return <div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>;
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
     
-    const progress = (raffle.sold / raffle.tickets) * 100;
-    const pricePerTicket = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-    const totalPrice = selectedTickets.length * pricePerTicket;
-    
-    // Calcular boletos adicionales si tiene oportunidades
-    const boletosAdicionales = raffle.boletosConOportunidades && raffle.numeroOportunidades > 1
-        ? selectedTickets.length * (raffle.numeroOportunidades - 1)
-        : 0;
+    // CRÍTICO: Memoizar cálculos costosos para evitar recalcular en cada render
+    const pricePerTicket = useMemo(() => {
+        if (!raffle) return 50;
+        return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
+    }, [raffle]);
+
+    const totalPrice = useMemo(() => {
+        return selectedTickets.length * pricePerTicket;
+    }, [selectedTickets.length, pricePerTicket]);
+
+    const boletosAdicionales = useMemo(() => {
+        if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
+        return selectedTickets.length * (raffle.numeroOportunidades - 1);
+    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
+
+    const progress = useMemo(() => {
+        if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
+        return (raffle.sold / raffle.tickets) * 100;
+    }, [raffle?.sold, raffle?.tickets]);
+
+    // CRÍTICO: Memoizar imágenes de galería para evitar recalcular
+    const raffleImages = useMemo(() => {
+        if (!raffle) return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
+        
+        const allImages: string[] = [];
+        
+        if (raffle.imageUrl) {
+            allImages.push(raffle.imageUrl);
+        }
+        
+        if (raffle.heroImage && !allImages.includes(raffle.heroImage)) {
+            allImages.push(raffle.heroImage);
+        }
+        
+        if (raffle.gallery && raffle.gallery.length > 0) {
+            raffle.gallery.forEach(img => {
+                if (!allImages.includes(img)) {
+                    allImages.push(img);
+                }
+            });
+        }
+        
+        if (allImages.length === 0) {
+            return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
+        }
+        
+        return allImages;
+    }, [raffle?.imageUrl, raffle?.heroImage, raffle?.gallery]);
 
     return (
         <PageAnimator>
@@ -91,37 +152,7 @@ const RaffleDetailPage = () => {
                     {/* Main content */}
                     <div className="lg:col-span-3">
                         <RaffleGallery 
-                            images={(() => {
-                                // Combinar todas las imágenes: imageUrl, heroImage y gallery
-                                const allImages: string[] = [];
-                                
-                                // Agregar imageUrl si existe
-                                if (raffle.imageUrl) {
-                                    allImages.push(raffle.imageUrl);
-                                }
-                                
-                                // Agregar heroImage si existe y no está duplicado
-                                if (raffle.heroImage && !allImages.includes(raffle.heroImage)) {
-                                    allImages.push(raffle.heroImage);
-                                }
-                                
-                                // Agregar galería si existe (evitando duplicados)
-                                if (raffle.gallery && raffle.gallery.length > 0) {
-                                    raffle.gallery.forEach(img => {
-                                        if (!allImages.includes(img)) {
-                                            allImages.push(img);
-                                        }
-                                    });
-                                }
-                                
-                                // Si no hay ninguna imagen, usar default
-                                if (allImages.length === 0) {
-                                    return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop'];
-                                }
-                                
-                                // Removed console.log for production performance
-                                return allImages;
-                            })()}
+                            images={raffleImages}
                             title={raffle.title}
                             className="w-full max-w-2xl mx-auto mb-6"
                         />

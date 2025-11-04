@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { isMobile } from '../utils/deviceDetection';
 
 interface TicketSelectorProps {
     totalTickets: number;
@@ -16,17 +17,50 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     const ticketsPerPage = 50;
     const totalPages = Math.ceil(totalTickets / ticketsPerPage);
 
-    const renderTickets = () => {
+    // CRÍTICO: Convertir arrays a Sets para búsquedas O(1) en lugar de O(n)
+    const occupiedSet = useMemo(() => {
+        if (!Array.isArray(occupiedTickets)) return new Set<number>();
+        return new Set(occupiedTickets);
+    }, [occupiedTickets]);
+
+    const selectedSet = useMemo(() => {
+        if (!Array.isArray(selectedTickets)) return new Set<number>();
+        return new Set(selectedTickets);
+    }, [selectedTickets]);
+
+    // Memoizar padding para evitar recalcular
+    const ticketPadding = useMemo(() => {
+        if (!totalTickets || totalTickets <= 0) return 1;
+        return String(totalTickets).length;
+    }, [totalTickets]);
+
+    // Detectar móvil una vez
+    const mobile = useMemo(() => {
+        try {
+            return isMobile();
+        } catch {
+            return false;
+        }
+    }, []);
+
+    // CRÍTICO: Memoizar renderTickets para evitar recalcular en cada render
+    const renderTickets = useMemo(() => {
+        // Validaciones defensivas
+        if (!totalTickets || totalTickets <= 0) return [];
+        if (!Array.isArray(occupiedTickets)) return [];
+        if (!Array.isArray(selectedTickets)) return [];
+
         const tickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
         const visibleTickets = listingMode === 'paginado'
             ? tickets.slice((currentPage - 1) * ticketsPerPage, (currentPage * ticketsPerPage))
             : tickets;
 
         return visibleTickets
-            .filter(ticket => hideOccupied ? !occupiedTickets.includes(ticket) : true)
+            .filter(ticket => hideOccupied ? !occupiedSet.has(ticket) : true)
             .map(ticket => {
-            const isOccupied = occupiedTickets.includes(ticket);
-            const isSelected = selectedTickets.includes(ticket);
+            // CRÍTICO: Usar Set.has() en lugar de Array.includes() - O(1) vs O(n)
+            const isOccupied = occupiedSet.has(ticket);
+            const isSelected = selectedSet.has(ticket);
             
             let baseClasses = 'relative p-1 text-center rounded-md text-sm cursor-pointer transition-all duration-200 flex items-center justify-center aspect-square';
             let stateClasses = '';
@@ -39,6 +73,28 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                 stateClasses = 'bg-background-primary text-slate-300 hover:bg-slate-700 hover:shadow-neon-accent';
             }
             
+            // Móvil: div estático sin animaciones (mejor rendimiento)
+            // Desktop: motion.div con animaciones
+            if (mobile) {
+                return (
+                    <div 
+                        key={ticket} 
+                        className={`${baseClasses} ${stateClasses}`} 
+                        onClick={() => !isOccupied && onTicketClick(ticket)}
+                    >
+                        {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Check size={16} />
+                            </div>
+                        )}
+                        <span className={isSelected ? 'opacity-0' : 'opacity-100'}>
+                            {String(ticket).padStart(ticketPadding, '0')}
+                        </span>
+                    </div>
+                );
+            }
+
+            // Desktop: Con animaciones
             return (
                 <motion.div 
                     key={ticket} 
@@ -59,12 +115,12 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                         )}
                     </AnimatePresence>
                     <span className={isSelected ? 'opacity-0' : 'opacity-100'}>
-                         {String(ticket).padStart(String(totalTickets).length, '0')}
+                        {String(ticket).padStart(ticketPadding, '0')}
                     </span>
                 </motion.div>
             );
         });
-    };
+    }, [totalTickets, occupiedSet, selectedSet, currentPage, listingMode, hideOccupied, ticketsPerPage, mobile, ticketPadding, onTicketClick]);
     
     const Legend = () => (
         <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mb-4 text-sm">
@@ -79,7 +135,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
             <Legend />
             <div className={listingMode === 'scroll' ? 'max-h-[60vh] overflow-y-auto pr-1' : ''}>
                 <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                    {renderTickets()}
+                    {renderTickets}
                 </div>
             </div>
             {listingMode === 'paginado' && (
