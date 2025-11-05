@@ -44,6 +44,10 @@ const AdminLayout = () => {
     };
 
     const filteredNavLinks = getFilteredNavLinks();
+    
+    // Debug: Verificar qué links se están pasando al componente móvil
+    console.log('📱 AdminLayout - filteredNavLinks pasados a Mobile:', filteredNavLinks.map(l => ({ to: l.to, text: l.text })));
+    console.log('📱 AdminLayout - Total filteredNavLinks:', filteredNavLinks.length);
 
     return (
         <div className="min-h-screen bg-gray-100 text-gray-800 flex">

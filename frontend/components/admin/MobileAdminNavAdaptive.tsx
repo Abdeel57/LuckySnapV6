@@ -12,11 +12,21 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
     
+    // Debug: Verificar qué links se reciben
+    console.log('📱 MobileAdminNavAdaptive - Links recibidos:', navLinks.map(l => ({ to: l.to, text: l.text })));
+    console.log('📱 MobileAdminNavAdaptive - Total links:', navLinks.length);
+    
     // Encontrar el elemento activo actual
     const currentNav = navLinks.find(nav => nav.to === location.pathname);
     
     // Decidir qué tipo de menú usar basado en el número de opciones
     const useCascadeMenu = navLinks.length > 6;
+    
+    // Si no hay links, no renderizar nada
+    if (!navLinks || navLinks.length === 0) {
+        console.warn('⚠️ MobileAdminNavAdaptive - No hay links para mostrar');
+        return null;
+    }
     
     return (
         <>
@@ -82,7 +92,7 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                         <X className="w-6 h-6" />
                                     </motion.button>
                                     {/* Opciones de navegación */}
-                                    {navLinks.map(({ to, text, icon: Icon }, index) => (
+                                    {navLinks && navLinks.length > 0 ? navLinks.map(({ to, text, icon: Icon }, index) => (
                                         <motion.div
                                             key={to}
                                             initial={{ x: 100, opacity: 0 }}
@@ -109,7 +119,11 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                                 <span className="text-sm font-medium">{text}</span>
                                             </NavLink>
                                         </motion.div>
-                                    ))}
+                                    )) : (
+                                        <div className="text-white text-sm p-4 bg-red-500 rounded-lg">
+                                            ⚠️ No hay opciones de navegación disponibles
+                                        </div>
+                                    )}
                                     
                                     {/* Botón de logout eliminado - Ya existe en la parte superior */}
                                 </div>
@@ -136,7 +150,7 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                         <X className="w-5 h-5" />
                                     </motion.button>
                                     {/* Elementos del menú - Distribución inteligente */}
-                                    {navLinks.map(({ to, text, icon: Icon }, index) => {
+                                    {navLinks && navLinks.length > 0 ? navLinks.map(({ to, text, icon: Icon }, index) => {
                                         // Distribución más inteligente: semicírculo hacia arriba y lados
                                         const totalItems = navLinks.length;
                                         const angleStep = 180 / Math.max(1, totalItems - 1); // Distribuir en semicírculo, evitar división por cero
@@ -188,7 +202,11 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                                 </NavLink>
                                             </motion.div>
                                         );
-                                    })}
+                                    }) : (
+                                        <div className="absolute top-0 left-0 text-white text-xs p-2 bg-red-500 rounded-lg">
+                                            ⚠️ No hay opciones
+                                        </div>
+                                    )}
                                     
                                     {/* Botón de logout eliminado - Ya existe en la parte superior */}
                                 </div>
