@@ -339,6 +339,9 @@ const RaffleDetailPage = () => {
                 onRemoveTicket={handleTicketClick}
                 isSubmitting={false}
                 raffle={raffle}
+                selectedPack={selectedPack}
+                packQuantity={packQuantity}
+                onClearPack={() => setSelectedPack(null)}
             />
         </PageAnimator>
     );
