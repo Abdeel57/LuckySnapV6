@@ -19,7 +19,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
 
     return (
         <div
-            className="relative h-full flex flex-col group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+            className="relative h-full flex flex-col group overflow-hidden bg-background-secondary rounded-2xl shadow-lg border border-slate-700/50 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
         >
             <Link to={`/sorteo/${raffle.slug}`} className="block relative">
                 {/* Efecto de resplandor al hover */}
@@ -52,7 +52,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                             whileInView={reduceAnimations ? {} : { scale: 1 }}
                             viewport={{ once: true }}
                             transition={reduceAnimations ? {} : { delay: 0.2, type: "spring" }}
-                            className="bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-full text-sm font-bold shadow-xl border border-gray-200"
+                            className="bg-background-secondary/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-xl border border-slate-600/50"
                         >
                             {progress.toFixed(0)}% vendido
                         </motion.span>
@@ -71,9 +71,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 </div>
             </Link>
             
-            <div className="flex flex-col flex-grow p-6 bg-gradient-to-b from-white to-gray-50/50">
+            <div className="flex flex-col flex-grow p-6 bg-gradient-to-b from-background-secondary to-background-primary/50">
                 {/* Título mejorado */}
-                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-action group-hover:to-accent transition-all duration-300">
+                <h3 className="text-2xl md:text-3xl font-black text-white mb-3 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-action group-hover:to-accent transition-all duration-300">
                     {raffle.title}
                 </h3>
                 
@@ -85,7 +85,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                         onMouseLeave={() => setIsDescriptionExpanded(false)}
                     >
                         <p 
-                            className={`text-sm md:text-base text-gray-600 leading-relaxed transition-all duration-300 ${
+                            className={`text-sm md:text-base text-slate-300 leading-relaxed transition-all duration-300 ${
                                 isLongDescription && !isDescriptionExpanded 
                                     ? 'line-clamp-3 cursor-pointer' 
                                     : ''
@@ -97,7 +97,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                         
                         {/* Indicador de "ver más" */}
                         {isLongDescription && !isDescriptionExpanded && (
-                            <div className="absolute bottom-0 right-0 text-primary text-xs font-semibold bg-white/80 backdrop-blur-sm px-2 py-1 rounded-tl-lg border-l border-t border-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-0 right-0 text-accent text-xs font-semibold bg-background-secondary/80 backdrop-blur-sm px-2 py-1 rounded-tl-lg border-l border-t border-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 📖 Pasa el cursor para leer más
                             </div>
                         )}
@@ -106,11 +106,11 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-semibold text-gray-700">Boletos vendidos</span>
-                        <span className="text-sm font-bold text-primary">{raffle.sold} / {raffle.tickets}</span>
+                        <span className="text-sm font-semibold text-slate-300">Boletos vendidos</span>
+                        <span className="text-sm font-bold text-accent">{raffle.sold} / {raffle.tickets}</span>
                     </div>
                     {/* Barra de progreso mejorada */}
-                    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner border border-gray-300">
+                    <div className="w-full bg-slate-700/50 rounded-full h-4 overflow-hidden shadow-inner border border-slate-600/50">
                         <div 
                             className="h-4 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
                             style={{ 
@@ -127,9 +127,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                     </div>
                     {/* Indicador de porcentaje encima de la barra */}
                     <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-gray-500">0%</span>
-                        <span className="text-xs font-bold text-green-600">{progress.toFixed(0)}% vendido</span>
-                        <span className="text-xs text-gray-500">100%</span>
+                        <span className="text-xs text-slate-400">0%</span>
+                        <span className="text-xs font-bold text-accent">{progress.toFixed(0)}% vendido</span>
+                        <span className="text-xs text-slate-400">100%</span>
                     </div>
                 </div>
                 
