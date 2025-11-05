@@ -53,7 +53,8 @@ const Header = () => {
                                 <img 
                                     src={appearance.logo} 
                                     alt="Logo" 
-                                    className="relative h-12 w-12 md:h-14 md:w-14 object-contain drop-shadow-lg"
+                                    className="relative h-12 w-12 md:h-14 md:w-14 object-contain drop-shadow-lg bg-transparent"
+                                    style={{ mixBlendMode: 'normal' }}
                                 />
                             </motion.div>
                         )}

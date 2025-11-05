@@ -29,7 +29,7 @@ const ImageUploaderAdvanced: React.FC<ImageUploaderAdvancedProps> = ({
     setPreview(value || null);
   }, [value]);
 
-  // Función para redimensionar imagen
+  // Función para redimensionar imagen manteniendo transparencia
   const resizeImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
@@ -50,11 +50,28 @@ const ImageUploaderAdvanced: React.FC<ImageUploaderAdvancedProps> = ({
         canvas.width = width;
         canvas.height = height;
 
+        // Detectar si la imagen tiene transparencia
+        const isTransparent = file.type === 'image/png' || file.type === 'image/gif' || file.type === 'image/webp';
+        
+        // Para formatos sin transparencia (JPEG), llenar con fondo blanco
+        if (!isTransparent && ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, width, height);
+        }
+
         // Dibujar imagen redimensionada
         ctx?.drawImage(img, 0, 0, width, height);
 
-        // Convertir a base64 con calidad optimizada
-        const base64 = canvas.toDataURL('image/jpeg', quality);
+        // Convertir a base64 manteniendo formato original si tiene transparencia
+        let base64: string;
+        if (isTransparent) {
+          // Usar PNG para mantener transparencia (sin fondo blanco)
+          base64 = canvas.toDataURL('image/png');
+        } else {
+          // Usar JPEG para formatos sin transparencia
+          base64 = canvas.toDataURL('image/jpeg', quality);
+        }
+        
         resolve(base64);
       };
 
@@ -157,7 +174,8 @@ const ImageUploaderAdvanced: React.FC<ImageUploaderAdvancedProps> = ({
             <img
               src={preview}
               alt="Preview"
-              className="max-w-full max-h-48 mx-auto rounded-lg shadow-md"
+              className="max-w-full max-h-48 mx-auto rounded-lg shadow-md bg-transparent"
+              style={{ mixBlendMode: 'normal' }}
             />
             <button
               onClick={removeImage}
