@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { getSettings } from '../services/api';
 import { FaqItemData } from '../types';
 import FaqItem from './FaqItem';
-import { HelpCircle, Sparkles } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useOptimizedAnimations } from '../utils/deviceDetection';
 
@@ -41,7 +41,6 @@ const Faq = () => {
                     <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
                         <HelpCircle className="w-8 h-8 md:w-10 md:h-10 text-white" />
                     </div>
-                    {!reduceAnimations && <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />}
                 </div>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                     Preguntas Frecuentes

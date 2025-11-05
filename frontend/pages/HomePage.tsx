@@ -11,7 +11,7 @@ import Faq from '../components/Faq';
 import CountdownTimer from '../components/CountdownTimer';
 import HeroRaffle from '../components/HeroRaffle';
 import { useAnalytics } from '../contexts/AnalyticsContext';
-import { Trophy, Sparkles, Gift, Zap } from 'lucide-react';
+import { Trophy, Gift, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useOptimizedAnimations } from '../utils/deviceDetection';
 
@@ -106,7 +106,6 @@ const HomePage = () => {
                                 <div className="p-3 bg-gradient-to-br from-action to-accent rounded-2xl shadow-lg">
                                     <Gift className="w-8 h-8 md:w-10 md:h-10 text-white" />
                                 </div>
-                                {!reduceAnimations && <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-accent animate-pulse" />}
                                 <div className="p-3 bg-gradient-to-br from-accent to-action rounded-2xl shadow-lg">
                                     <Zap className="w-8 h-8 md:w-10 md:h-10 text-white" />
                                 </div>
@@ -194,7 +193,6 @@ const HomePage = () => {
                                 <div className="p-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg">
                                     <Trophy className="w-8 h-8 md:w-10 md:h-10 text-white" />
                                 </div>
-                                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 animate-pulse" />
                             </div>
                             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
                                 Nuestros Últimos Ganadores

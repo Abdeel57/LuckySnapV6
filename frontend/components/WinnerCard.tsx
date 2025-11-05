@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 // FIX: Corrected import path for 'es' locale.
 import { es } from 'date-fns/locale';
 import { motion } from 'framer-motion';
-import { Trophy, Sparkles, Calendar } from 'lucide-react';
+import { Trophy, Calendar } from 'lucide-react';
 import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
@@ -34,7 +34,6 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
                             className="relative"
                         >
                             <Trophy className="text-yellow-400 h-12 w-12 md:h-16 md:w-16 drop-shadow-lg" />
-                            {!reduceAnimations && <Sparkles className="absolute -top-1 -right-1 w-6 h-6 text-yellow-300 animate-pulse" />}
                         </motion.div>
                     </div>
                     <div className="text-center">
@@ -61,13 +60,6 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
                                 }}
                             />
                         </div>
-                        {/* Efecto de estrellas alrededor - solo en desktop */}
-                        {!reduceAnimations && (
-                            <>
-                                <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" style={{ animationDelay: '0s' }} />
-                                <Sparkles className="absolute -bottom-2 -left-2 w-5 h-5 text-orange-400 animate-pulse" style={{ animationDelay: '1s' }} />
-                            </>
-                        )}
                     </div>
                     
                     {/* Nombre del ganador */}

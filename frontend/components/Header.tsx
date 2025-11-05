@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOptimizedAnimations } from '../utils/deviceDetection';
 
@@ -61,7 +61,6 @@ const Header = () => {
                             <span className="text-xl md:text-3xl font-black bg-gradient-to-r from-white via-action/90 to-accent/90 bg-clip-text text-transparent drop-shadow-sm">
                                 {appearance?.siteName || 'Lucky Snap'}
                             </span>
-                            {!reduceAnimations && <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent animate-pulse opacity-0 md:opacity-100" />}
                         </div>
                     </Link>
                     

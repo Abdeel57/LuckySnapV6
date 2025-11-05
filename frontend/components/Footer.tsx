@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getSettings } from '../services/api';
 import { Settings } from '../types';
-import { Facebook, Instagram, Mail, MessageCircle, Sparkles, Heart } from 'lucide-react';
+import { Facebook, Instagram, Mail, MessageCircle, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useOptimizedAnimations } from '../utils/deviceDetection';
 
@@ -52,11 +52,9 @@ const Footer = () => {
                     className="text-center mb-8"
                 >
                     <div className="inline-flex items-center gap-3 mb-4">
-                        {!reduceAnimations && <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" />}
                         <h3 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white via-action/80 to-accent/80 bg-clip-text text-transparent">
                             {settings?.siteName || 'Lucky Snap'}
                         </h3>
-                        {!reduceAnimations && <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent animate-pulse" style={{ animationDelay: '0.5s' }} />}
                     </div>
                     <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
                         Participa en sorteos increíbles y gana premios fantásticos
@@ -117,7 +115,6 @@ const Footer = () => {
                             className="text-center flex flex-col items-center md:items-center"
                         >
                             <h4 className="text-white font-bold text-lg mb-5 flex items-center justify-center gap-2">
-                                <Sparkles className="w-5 h-5 text-accent" />
                                 Síguenos
                             </h4>
                             <div className="flex justify-center gap-3 flex-wrap items-center">
