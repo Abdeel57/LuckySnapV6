@@ -484,11 +484,12 @@ export class AdminService {
 
   async getFinishedRaffles() {
     const now = new Date();
-    // Buscar rifas que estén finalizadas por estado O que ya hayan pasado la fecha de sorteo
+    // Buscar rifas que estén finalizadas, activas, O que ya hayan pasado la fecha de sorteo
     return this.prisma.raffle.findMany({ 
       where: { 
         OR: [
           { status: 'finished' },
+          { status: 'active' }, // Incluir rifas activas para poder hacer sorteos
           { drawDate: { lte: now }, status: { not: 'draft' } }
         ]
       },
