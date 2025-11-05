@@ -139,17 +139,17 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                     {navLinks.map(({ to, text, icon: Icon }, index) => {
                                         // Distribución más inteligente: semicírculo hacia arriba y lados
                                         const totalItems = navLinks.length;
-                                        const angleStep = 180 / (totalItems - 1); // Distribuir en semicírculo
+                                        const angleStep = 180 / Math.max(1, totalItems - 1); // Distribuir en semicírculo, evitar división por cero
                                         const angle = (index * angleStep) - 90; // Empezar desde -90°
-                                        const radius = 70; // Radio más pequeño para mejor visibilidad
+                                        const radius = 85; // Radio aumentado para acomodar texto
                                         
                                         // Calcular posición con offset para evitar bordes de pantalla
                                         const x = Math.cos(angle * Math.PI / 180) * radius;
                                         const y = Math.sin(angle * Math.PI / 180) * radius;
                                         
-                                        // Ajustar posición para que no salga de la pantalla
-                                        const adjustedX = Math.max(-60, Math.min(60, x)); // Limitar horizontalmente
-                                        const adjustedY = Math.min(-40, y - 20); // Subir más las opciones
+                                        // Ajustar posición para que no salga de la pantalla (más espacio para texto)
+                                        const adjustedX = Math.max(-80, Math.min(80, x)); // Limitar horizontalmente, más espacio
+                                        const adjustedY = Math.min(-50, y - 30); // Subir más las opciones para acomodar texto
                                         
                                         return (
                                             <motion.div
@@ -158,7 +158,9 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                                 style={{
                                                     left: `${adjustedX + 32}px`, // 32px es la mitad del botón principal (16x16)
                                                     top: `${adjustedY + 32}px`,
-                                                    transform: 'translate(-50%, -50%)'
+                                                    transform: 'translate(-50%, -50%)',
+                                                    width: 'auto',
+                                                    minWidth: '90px'
                                                 }}
                                                 initial={{ scale: 0, opacity: 0 }}
                                                 animate={{ scale: 1, opacity: 1 }}
@@ -173,14 +175,16 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                                                     end={to === "/admin"}
                                                     onClick={() => setIsOpen(false)}
                                                     className={({ isActive }) =>
-                                                        `flex flex-col items-center justify-center w-11 h-11 bg-white rounded-full shadow-lg border-2 transition-all ${
+                                                        `flex flex-col items-center justify-center gap-1 px-3 py-2 bg-white rounded-full shadow-lg border-2 transition-all min-w-[80px] ${
                                                             isActive
                                                                 ? 'border-blue-600 text-blue-600'
                                                                 : 'border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-500'
                                                         }`
                                                     }
+                                                    title={text}
                                                 >
-                                                    <Icon className="w-4 h-4" />
+                                                    <Icon className="w-4 h-4 flex-shrink-0" />
+                                                    <span className="text-[10px] font-medium text-center leading-tight">{text}</span>
                                                 </NavLink>
                                             </motion.div>
                                         );
