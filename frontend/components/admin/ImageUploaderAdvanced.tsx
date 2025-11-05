@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 
 interface ImageUploaderAdvancedProps {
@@ -23,6 +23,11 @@ const ImageUploaderAdvanced: React.FC<ImageUploaderAdvancedProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
+
+  // Sincronizar preview con value cuando cambie desde fuera (ej: reset del formulario)
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
 
   // Función para redimensionar imagen
   const resizeImage = (file: File): Promise<string> => {

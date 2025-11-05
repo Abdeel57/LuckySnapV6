@@ -329,11 +329,15 @@ const AdminSettingsPage = () => {
             };
             
             // Validate data before sending
+            // Usar logo como favicon automáticamente
+            const logoUrl = data.appearance?.logo || '';
             const validatedData = {
                 ...data,
                 displayPreferences: formDisplayPrefs,
                 appearance: {
                     ...data.appearance,
+                    // Usar logo como favicon automáticamente
+                    favicon: logoUrl,
                     colors: {
                         backgroundPrimary: data.appearance?.colors?.backgroundPrimary || '#111827',
                         backgroundSecondary: data.appearance?.colors?.backgroundSecondary || '#1f2937',
@@ -472,24 +476,9 @@ const AdminSettingsPage = () => {
                                         />
                                     )}
                                 />
-                            </div>
-                            
-                            <div>
-                                <label className={labelClasses}>Favicon</label>
-                                <Controller
-                                    name="appearance.favicon"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <ImageUploaderAdvanced
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="Seleccionar favicon"
-                                            maxWidth={32}
-                                            maxHeight={32}
-                                            quality={0.8}
-                                        />
-                                    )}
-                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    El logo se usará automáticamente como favicon de la página
+                                </p>
                             </div>
 
                             <div>

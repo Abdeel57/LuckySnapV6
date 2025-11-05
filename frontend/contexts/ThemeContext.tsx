@@ -113,15 +113,16 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
           document.title = appearance.siteName;
         }
         
-        // Aplicar favicon
-        if (appearance.favicon) {
+        // Aplicar favicon - usar logo si no hay favicon específico
+        const faviconUrl = appearance.favicon || appearance.logo;
+        if (faviconUrl) {
           const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
           if (faviconLink) {
-            faviconLink.href = appearance.favicon;
+            faviconLink.href = faviconUrl;
           } else {
             const link = document.createElement('link');
             link.rel = 'icon';
-            link.href = appearance.favicon;
+            link.href = faviconUrl;
             document.head.appendChild(link);
           }
         }
