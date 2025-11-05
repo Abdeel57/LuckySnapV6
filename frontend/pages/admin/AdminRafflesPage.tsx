@@ -147,17 +147,35 @@ const AdminRafflesPage: React.FC = () => {
             }
         }
         
-        // Procesar bonuses - asegurar que sea un array
+        // Procesar bonuses - asegurar que sea un array de strings
         let processedBonuses: string[] = [];
         if (data.bonuses) {
             if (Array.isArray(data.bonuses)) {
-                processedBonuses = data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '');
+                processedBonuses = data.bonuses
+                    .map(b => {
+                        // Si es un objeto con 'value', extraer el valor
+                        if (typeof b === 'object' && b !== null && 'value' in b) {
+                            return String((b as any).value || '').trim();
+                        }
+                        // Si ya es un string, usarlo directamente
+                        return typeof b === 'string' ? b.trim() : '';
+                    })
+                    .filter(b => b !== '');
             } else if (typeof data.bonuses === 'string') {
                 try {
                     const parsed = JSON.parse(data.bonuses);
-                    processedBonuses = Array.isArray(parsed) ? parsed.filter((b: any) => b && typeof b === 'string' && b.trim() !== '') : [];
+                    if (Array.isArray(parsed)) {
+                        processedBonuses = parsed
+                            .map((b: any) => {
+                                if (typeof b === 'object' && b !== null && 'value' in b) {
+                                    return String(b.value || '').trim();
+                                }
+                                return typeof b === 'string' ? b.trim() : '';
+                            })
+                            .filter((b: string) => b !== '');
+                    }
                 } catch (e) {
-                    processedBonuses = data.bonuses.trim() !== '' ? [data.bonuses] : [];
+                    processedBonuses = data.bonuses.trim() !== '' ? [data.bonuses.trim()] : [];
                 }
             }
         }
