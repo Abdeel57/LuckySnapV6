@@ -14,10 +14,10 @@ const WinnerCard: React.FC<{ winner: Winner }> = ({ winner }) => {
     return (
         <motion.div 
             className="relative group w-full"
-            initial={{ opacity: 1, y: 0, scale: 1 }}
-            whileInView={{}}
+            initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 20 }}
+            whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
-            transition={{}}
+            transition={reduceAnimations ? { duration: 0.3 } : { duration: 0.5 }}
             whileHover={reduceAnimations ? {} : { scale: 1.05 }}
         >
             {/* Efecto de brillo de fondo - reducido en móviles */}

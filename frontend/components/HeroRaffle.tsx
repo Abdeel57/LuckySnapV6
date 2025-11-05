@@ -63,18 +63,25 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
             {/* Imagen principal como fondo de pantalla completa */}
             <div className="absolute inset-0 w-full h-full">
                 {isMobile ? (
-                    // Móvil: Sin animaciones, solo imagen estática
-                    <ResponsiveImage
-                        src={allImages[currentImageIndex]}
-                        alt={raffle.title}
-                        widths={[768, 1200]}
-                        sizesHint="100vw"
-                        preferFormat="auto"
-                        loading="eager"
-                        decoding="async"
-                        fetchPriority="high"
-                        className="w-full h-full object-cover"
-                    />
+                    // Móvil: Imagen estática con fade-in suave
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="w-full h-full"
+                    >
+                        <ResponsiveImage
+                            src={allImages[currentImageIndex]}
+                            alt={raffle.title}
+                            widths={[768, 1200]}
+                            sizesHint="100vw"
+                            preferFormat="auto"
+                            loading="eager"
+                            decoding="async"
+                            fetchPriority="high"
+                            className="w-full h-full object-cover"
+                        />
+                    </motion.div>
                 ) : (
                     // Desktop: Con animaciones
                     <AnimatePresence mode="wait">
@@ -110,9 +117,9 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
             {/* Contenido centrado sobre la imagen */}
             <div className="container mx-auto px-4 relative z-10 min-h-screen flex flex-col justify-center py-8">
                 <motion.div
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={isMobile ? { opacity: 0 } : { opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
+                    transition={isMobile ? { duration: 0.4 } : { duration: 0.8 }}
                     className="flex flex-col items-center text-center space-y-8"
                 >
                     {/* Título */}
@@ -144,9 +151,9 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
 
                     {/* Contador de tiempo */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={isMobile ? { opacity: 0 } : { opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
+                        transition={isMobile ? { duration: 0.4, delay: 0.1 } : { duration: 0.8, delay: 0.2 }}
                         className="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 border border-white/20 mt-8"
                     >
                         <div className="mb-4">

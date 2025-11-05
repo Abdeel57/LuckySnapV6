@@ -14,9 +14,18 @@ const isMobile = (): boolean => {
 const PageAnimator = ({ children }: PropsWithChildren) => {
   const mobile = isMobile();
   
-  // CRÍTICO: En móviles, renderizar div estático sin animaciones
+  // En móviles, usar animación ligera (solo fade-in, sin movimiento)
   if (mobile) {
-    return <div style={{ opacity: 1 }}>{children}</div>;
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {children}
+      </motion.div>
+    );
   }
   
   return (

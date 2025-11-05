@@ -124,10 +124,13 @@ const HomePage = () => {
                             {otherRaffles.map((raffle, index) => (
                                 <motion.div
                                     key={raffle.id}
-                                    initial={reduceAnimations ? {} : { opacity: 0, y: 40, scale: 0.9 }}
-                                    whileInView={reduceAnimations ? {} : { opacity: 1, y: 0, scale: 1 }}
+                                    initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.9 }}
+                                    whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
                                     viewport={{ once: true, amount: 0.2 }}
-                                    transition={reduceAnimations ? {} : { 
+                                    transition={reduceAnimations ? { 
+                                        duration: 0.3, 
+                                        delay: Math.min(index * 0.08, 0.4)
+                                    } : { 
                                         duration: 0.5, 
                                         delay: Math.min(index * 0.1, 0.6),
                                         type: "spring",
@@ -211,10 +214,10 @@ const HomePage = () => {
                             {winners.map((winner, index) => (
                                 <motion.div
                                     key={winner.id}
-                                    initial={{ opacity: 1, y: 0 }}
-                                    whileInView={{}}
+                                    initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 30 }}
+                                    whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
-                                    transition={{ duration: 0.3, delay: Math.min(index * 0.1, 0.5) }}
+                                    transition={{ duration: 0.4, delay: Math.min(index * 0.1, 0.5) }}
                                 >
                                     <WinnerCard winner={winner} />
                                 </motion.div>

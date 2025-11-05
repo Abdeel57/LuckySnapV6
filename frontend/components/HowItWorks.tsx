@@ -108,11 +108,11 @@ const HowItWorks = () => {
                     {steps.map((step, index) => (
                         <motion.div
                             key={index}
-                            initial={{ opacity: 1, y: 0 }}
-                            whileInView={{}}
+                            initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 20 }}
+                            whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0 }}
                             viewport={{ once: true, amount: 0.3 }}
-                            transition={reduceAnimations ? {} : { duration: 0.6, delay: index * 0.2 }}
-                            className={`relative ${step.bgColor.replace('dark:', '')} ${step.borderColor.replace('dark:', '')} border-2 rounded-3xl pt-12 pb-16 px-4 sm:px-6 text-center overflow-visible shadow-lg`}
+                            transition={reduceAnimations ? { duration: 0.3, delay: index * 0.1 } : { duration: 0.6, delay: index * 0.2 }}
+                            className={`relative ${step.bgColor.replace('dark:', '')} ${step.borderColor.replace('dark:', '')} border-2 rounded-3xl pt-12 pb-16 px-4 sm:px-6 text-center overflow-visible shadow-xl hover:shadow-2xl transition-shadow duration-300`}
                         >
                             {/* Número del paso */}
                             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-30">
