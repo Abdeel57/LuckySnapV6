@@ -113,11 +113,26 @@ const AdminRafflesPage: React.FC = () => {
         let processedPacks = null;
         if (data.packs) {
             if (Array.isArray(data.packs) && data.packs.length > 0) {
-                processedPacks = data.packs;
+                // Normalizar los packs: asegurar que todos los valores numéricos sean números
+                processedPacks = data.packs.map(pack => ({
+                    name: pack.name || '',
+                    tickets: Number(pack.tickets || pack.q || 1),
+                    q: Number(pack.q || pack.tickets || 1),
+                    price: Number(pack.price || 0)
+                })).filter(pack => pack.price > 0);
             } else if (typeof data.packs === 'string') {
                 try {
                     const parsed = JSON.parse(data.packs);
-                    processedPacks = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        processedPacks = parsed.map((pack: any) => ({
+                            name: pack.name || '',
+                            tickets: Number(pack.tickets || pack.q || 1),
+                            q: Number(pack.q || pack.tickets || 1),
+                            price: Number(pack.price || 0)
+                        })).filter((pack: any) => pack.price > 0);
+                    } else {
+                        processedPacks = null;
+                    }
                 } catch (e) {
                     console.warn('Error parsing packs string:', e);
                     processedPacks = null;
@@ -185,8 +200,11 @@ const AdminRafflesPage: React.FC = () => {
             
             let savedRaffle: Raffle;
             if (editingRaffle?.id) {
-                console.log('📝 Updating existing raffle:', editingRaffle.id);
-                savedRaffle = await updateRaffle(editingRaffle.id, cleanedData);
+                // Asegurar que el ID sea el correcto de la base de datos
+                const raffleId = editingRaffle.id;
+                console.log('📝 Updating existing raffle:', raffleId);
+                console.log('📝 Editing raffle object:', editingRaffle);
+                savedRaffle = await updateRaffle(raffleId, cleanedData);
                 toast.success('¡Rifa actualizada!', 'La rifa se actualizó correctamente');
             } else {
                 console.log('🆕 Creating new raffle');

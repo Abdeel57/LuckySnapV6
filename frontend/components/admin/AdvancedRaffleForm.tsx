@@ -138,9 +138,9 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
             // Asegurar que packs tenga la estructura correcta
             const processedPacks = data.packs?.map(pack => ({
                 name: pack.name || '',
-                tickets: pack.tickets || pack.q || 1,
-                q: pack.q || pack.tickets || 1,
-                price: pack.price || 0
+                tickets: Number(pack.tickets || pack.q || 1),
+                q: Number(pack.q || pack.tickets || 1),
+                price: Number(pack.price || 0)
             })).filter(pack => pack.price > 0) || [];
             
             const saveData = {

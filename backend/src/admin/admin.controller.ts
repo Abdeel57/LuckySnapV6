@@ -109,9 +109,18 @@ export class AdminController {
 
   // Raffles
   @Get('raffles')
-  getAllRaffles(@Query('limit') limit?: string) {
-    const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
-    return this.adminService.getAllRaffles(limitNum);
+  async getAllRaffles(@Query('limit') limit?: string) {
+    try {
+      const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
+      const raffles = await this.adminService.getAllRaffles(limitNum);
+      return raffles;
+    } catch (error) {
+      console.error('❌ Error in getAllRaffles controller:', error);
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al obtener las rifas',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
   
   @Get('raffles/finished')

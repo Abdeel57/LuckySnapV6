@@ -402,10 +402,23 @@ export class AdminService {
 
   // Raffles
   async getAllRaffles(limit: number = 50) {
-    return this.prisma.raffle.findMany({ 
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    try {
+      console.log('📋 Getting all raffles, limit:', limit);
+      const raffles = await this.prisma.raffle.findMany({ 
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+      console.log('✅ Found', raffles.length, 'raffles');
+      // Asegurar que packs y bonuses se serialicen correctamente
+      return raffles.map(raffle => ({
+        ...raffle,
+        packs: raffle.packs || null,
+        bonuses: raffle.bonuses || [],
+      }));
+    } catch (error) {
+      console.error('❌ Error in getAllRaffles:', error);
+      throw new Error(`Error al obtener las rifas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   }
 
   async getFinishedRaffles() {
