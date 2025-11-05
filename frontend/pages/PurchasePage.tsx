@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { motion } from 'framer-motion';
 import { getRaffleBySlug, createOrder, getSettings, getOccupiedTickets } from '../services/api';
 import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
