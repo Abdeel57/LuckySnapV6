@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -48,6 +48,16 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
     const [previewMode, setPreviewMode] = useState(false);
     const toast = useToast();
 
+    // Logs al inicializar el formulario
+    React.useEffect(() => {
+        console.log('🔵 FORM INITIALIZATION');
+        console.log('🔵 Raffle prop:', raffle);
+        console.log('🔵 Raffle packs:', raffle?.packs);
+        console.log('🔵 Raffle bonuses:', raffle?.bonuses);
+        console.log('🔵 Raffle packs type:', typeof raffle?.packs);
+        console.log('🔵 Raffle bonuses type:', typeof raffle?.bonuses);
+    }, [raffle]);
+
     const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } = useForm<RaffleFormValues>({
         defaultValues: raffle 
             ? { 
@@ -66,6 +76,19 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                 sold: 0 
             }
     });
+    
+    // Logs después de inicializar el formulario
+    React.useEffect(() => {
+        const subscription = watch((value, { name, type }) => {
+            if (name === 'packs' || name?.startsWith('packs.')) {
+                console.log('👁️ WATCH - Packs changed:', value.packs);
+            }
+            if (name === 'bonuses' || name?.startsWith('bonuses.')) {
+                console.log('👁️ WATCH - Bonuses changed:', value.bonuses);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [watch]);
 
     const { fields: bonusFields, append: appendBonus, remove: removeBonus } = useFieldArray({
         control, name: "bonuses"
@@ -100,10 +123,40 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                 return;
             }
 
+            // Logs para debug - expandir objetos
+            console.log('📝 FORM SUBMIT - INICIO');
+            console.log('📝 Original form data:', JSON.stringify(data, null, 2));
+            console.log('📦 Form packs:', data.packs);
+            console.log('📦 Form packs type:', typeof data.packs);
+            console.log('📦 Form packs isArray:', Array.isArray(data.packs));
+            console.log('📦 Form packs length:', data.packs?.length || 0);
+            console.log('🎁 Form bonuses:', data.bonuses);
+            console.log('🎁 Form bonuses type:', typeof data.bonuses);
+            console.log('🎁 Form bonuses isArray:', Array.isArray(data.bonuses));
+            console.log('🎁 Form bonuses length:', data.bonuses?.length || 0);
+            
+            // Asegurar que packs tenga la estructura correcta
+            const processedPacks = data.packs?.map(pack => ({
+                name: pack.name || '',
+                tickets: pack.tickets || pack.q || 1,
+                q: pack.q || pack.tickets || 1,
+                price: pack.price || 0
+            })).filter(pack => pack.price > 0) || [];
+            
             const saveData = {
                 ...data,
-                bonuses: data.bonuses.map(b => b.value),
+                bonuses: data.bonuses?.map(b => b.value).filter(b => b && b.trim() !== '') || [],
+                packs: processedPacks.length > 0 ? processedPacks : null
             };
+            
+            console.log('💾 SAVING DATA - FINAL');
+            console.log('💾 Full saveData:', JSON.stringify(saveData, null, 2));
+            console.log('📦 SaveData packs:', saveData.packs);
+            console.log('📦 SaveData packs type:', typeof saveData.packs);
+            console.log('📦 SaveData packs isArray:', Array.isArray(saveData.packs));
+            console.log('🎁 SaveData bonuses:', saveData.bonuses);
+            console.log('🎁 SaveData bonuses type:', typeof saveData.bonuses);
+            console.log('🎁 SaveData bonuses isArray:', Array.isArray(saveData.bonuses));
             
             await onSave({ ...raffle, ...saveData } as Raffle);
             
@@ -420,16 +473,22 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                                             <label className={labelClasses}>Cantidad de Boletos</label>
                                                             <input
                                                                 type="number"
-                                                                {...register(`packs.${index}.tickets`, { min: 1 })}
+                                                                {...register(`packs.${index}.tickets`, { min: 1, valueAsNumber: true })}
                                                                 className={inputClasses}
                                                                 placeholder="1"
+                                                            />
+                                                            <input
+                                                                type="hidden"
+                                                                {...register(`packs.${index}.q`)}
+                                                                value={watch(`packs.${index}.tickets`) || 1}
                                                             />
                                                         </div>
                                                         <div>
                                                             <label className={labelClasses}>Precio (LPS)</label>
                                                             <input
                                                                 type="number"
-                                                                {...register(`packs.${index}.price`, { min: 0 })}
+                                                                step="0.01"
+                                                                {...register(`packs.${index}.price`, { min: 0, valueAsNumber: true })}
                                                                 className={inputClasses}
                                                                 placeholder="50"
                                                             />

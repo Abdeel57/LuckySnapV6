@@ -3,15 +3,22 @@ import { intervalToDuration, isAfter } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
-    const calculateTimeLeft = () => {
-        const now = new Date();
-        const target = new Date(targetDate);
-        
-        // Verificar si la fecha es válida
-        if (isNaN(target.getTime())) {
+    // Normalizar targetDate a objeto Date para comparaciones consistentes
+    const target = React.useMemo(() => {
+        const date = new Date(targetDate);
+        if (isNaN(date.getTime())) {
             console.error('Invalid target date:', targetDate);
+            return null;
+        }
+        return date;
+    }, [targetDate]);
+
+    const calculateTimeLeft = React.useCallback(() => {
+        if (!target) {
             return { days: 0, hours: 0, minutes: 0, seconds: 0 };
         }
+
+        const now = new Date();
         
         if (isAfter(now, target)) {
             return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -24,17 +31,22 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
             minutes: duration.minutes || 0,
             seconds: duration.seconds || 0,
         };
-    };
+    }, [target]);
 
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
+    // Actualizar cuando cambia targetDate
     useEffect(() => {
-        // Removed console.log - causaba memory leak en móviles
+        setTimeLeft(calculateTimeLeft());
+    }, [calculateTimeLeft]);
+
+    useEffect(() => {
+        // Actualizar el contador cada segundo
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
         return () => clearInterval(timer);
-    }, [targetDate]);
+    }, [calculateTimeLeft]); // Recrear el timer cuando cambia la fecha objetivo
     
     const timeUnits = [
         { label: 'Día', value: timeLeft.days },
@@ -44,8 +56,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
     ];
     
     // Verificar si la fecha es válida
-    const target = new Date(targetDate);
-    if (isNaN(target.getTime())) {
+    if (!target) {
         return (
             <div className="text-center">
                 <div className="text-red-400 text-lg mb-2">⚠️</div>

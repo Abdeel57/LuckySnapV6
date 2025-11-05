@@ -40,6 +40,8 @@ model Raffle {
   boletosConOportunidades Boolean  @default(false)
   numeroOportunidades    Int      @default(1)
   giftTickets            Int?     @default(0)
+  packs       Json?    // Array de paquetes [{name, tickets/q, price}]
+  bonuses     String[] // Array de bonos/premios adicionales
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

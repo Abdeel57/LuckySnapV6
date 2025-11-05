@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRaffleBySlug, getOccupiedTickets, getSettings } from '../services/api';
-import { Raffle } from '../types';
+import { Raffle, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
 import CountdownTimer from '../components/CountdownTimer';
 import StickyPurchaseBar from '../components/StickyPurchaseBar';
 import TicketSelector from '../components/TicketSelector';
 import RaffleGallery from '../components/RaffleGallery';
+import BonusesCard from '../components/BonusesCard';
+import PackSelector from '../components/PackSelector';
 import { motion } from 'framer-motion';
 import metaPixelService from '../services/metaPixel';
 import { useToast } from '../hooks/useToast';
@@ -17,6 +19,8 @@ const RaffleDetailPage = () => {
     const [raffle, setRaffle] = useState<Raffle | null>(null);
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
+    const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
+    const [packQuantity, setPackQuantity] = useState<number>(1);
     const [loading, setLoading] = useState(true);
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
@@ -106,14 +110,35 @@ const RaffleDetailPage = () => {
         return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     }, [raffle?.id, raffle?.price, raffle?.packs?.length]);
 
+    // Calcular precio total considerando paquetes o boletos individuales
     const totalPrice = useMemo(() => {
+        if (selectedPack) {
+            // Si hay un paquete seleccionado, usar su precio
+            return selectedPack.price * packQuantity;
+        }
+        // Si no hay paquete, usar boletos individuales
         return selectedTickets.length * pricePerTicket;
-    }, [selectedTickets.length, pricePerTicket]);
+    }, [selectedPack, packQuantity, selectedTickets.length, pricePerTicket]);
+
+    // Manejar selección de paquetes
+    const handlePackSelect = useCallback((pack: Pack | null, quantity: number) => {
+        setSelectedPack(pack);
+        setPackQuantity(quantity);
+        // Limpiar selección de boletos individuales si se selecciona un paquete
+        if (pack) {
+            setSelectedTickets([]);
+        }
+    }, []);
 
     const boletosAdicionales = useMemo(() => {
         if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
+        // Calcular boletos adicionales según si hay paquete o boletos individuales
+        if (selectedPack) {
+            const ticketsInPack = (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
+            return ticketsInPack * (raffle.numeroOportunidades - 1);
+        }
         return selectedTickets.length * (raffle.numeroOportunidades - 1);
-    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length]);
+    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, selectedTickets.length, selectedPack, packQuantity]);
 
     const progress = useMemo(() => {
         if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
@@ -165,18 +190,13 @@ const RaffleDetailPage = () => {
                             title={raffle.title}
                             className="w-full max-w-2xl mx-auto mb-6"
                         />
-                        <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50">
+                        <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 mb-6">
                             <h1 className="text-3xl font-bold mb-4">{raffle.title}</h1>
                             <p className="text-slate-300 mb-6">{raffle.description || 'Participa en esta increíble rifa'}</p>
-                             {raffle.bonuses && raffle.bonuses.length > 0 && (
-                                <div className="mb-6">
-                                    <h3 className="font-bold mb-2 text-accent">Bonos y Premios Adicionales</h3>
-                                    <ul className="list-disc list-inside text-slate-300 space-y-1">
-                                        {raffle.bonuses.map((bonus, i) => <li key={i}>{bonus}</li>)}
-                                    </ul>
-                                </div>
-                            )}
                         </div>
+                        
+                        {/* Bonos y Premios Adicionales */}
+                        <BonusesCard bonuses={raffle.bonuses || []} className="mb-6" />
                     </div>
 
                     {/* Sidebar */}
@@ -196,12 +216,29 @@ const RaffleDetailPage = () => {
                                     </div>
                                     <p className="text-center text-sm text-slate-300 mt-2">{progress.toFixed(2)}% vendido</p>
                                 </div>
-                                <div className="text-center mb-4">
-                                    <p className="text-slate-400 mb-2">Selecciona tus boletos de la tabla de abajo para comenzar.</p>
-                                    <div className="bg-background-primary rounded-lg p-3 border border-slate-700/50 mb-4">
-                                        <p className="text-sm text-slate-300">Precio por boleto:</p>
-                                        <p className="text-xl font-bold text-accent">LPS {pricePerTicket.toFixed(2)}</p>
+                                {/* Selector de Paquetes */}
+                                {raffle.packs && raffle.packs.length > 0 && (
+                                    <div className="mb-6">
+                                        <PackSelector
+                                            packs={raffle.packs}
+                                            pricePerTicket={pricePerTicket}
+                                            onPackSelect={handlePackSelect}
+                                            selectedPack={selectedPack}
+                                            selectedQuantity={packQuantity}
+                                        />
                                     </div>
+                                )}
+                                
+                                <div className="text-center mb-4">
+                                    {!selectedPack && (
+                                        <>
+                                            <p className="text-slate-400 mb-2">Selecciona tus boletos de la tabla de abajo para comenzar.</p>
+                                            <div className="bg-background-primary rounded-lg p-3 border border-slate-700/50 mb-4">
+                                                <p className="text-sm text-slate-300">Precio por boleto:</p>
+                                                <p className="text-xl font-bold text-accent">LPS {pricePerTicket.toFixed(2)}</p>
+                                            </div>
+                                        </>
+                                    )}
                                     {raffle.boletosConOportunidades && raffle.numeroOportunidades > 1 && (
                                         <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border-2 border-green-500/50 rounded-xl p-4 shadow-lg">
                                             <div className="flex items-center justify-center space-x-2 mb-2">
@@ -218,34 +255,56 @@ const RaffleDetailPage = () => {
                                 </div>
                             </div>
                             
-                            <TicketSelector
-                                totalTickets={raffle.tickets}
-                                occupiedTickets={occupiedTickets}
-                                selectedTickets={selectedTickets}
-                                listingMode={listingMode}
-                                hideOccupied={hideOccupied}
-                                onTicketClick={handleTicketClick}
-                            />
+                            {/* Selector de boletos individuales - solo si no hay paquete seleccionado */}
+                            {!selectedPack && (
+                                <TicketSelector
+                                    totalTickets={raffle.tickets}
+                                    occupiedTickets={occupiedTickets}
+                                    selectedTickets={selectedTickets}
+                                    listingMode={listingMode}
+                                    hideOccupied={hideOccupied}
+                                    onTicketClick={handleTicketClick}
+                                />
+                            )}
                             
                             {/* Purchase Summary */}
-                            {selectedTickets.length > 0 && (
+                            {(selectedTickets.length > 0 || selectedPack) && (
                                 <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg">
                                     <h3 className="text-lg font-bold text-white mb-4 text-center">Resumen de Compra</h3>
                                     <div className="space-y-2 mb-4">
-                                        <div className="flex justify-between text-slate-300">
-                                            <span>Boletos seleccionados:</span>
-                                            <span>{selectedTickets.length}</span>
-                                        </div>
+                                        {selectedPack ? (
+                                            <>
+                                                <div className="flex justify-between text-slate-300">
+                                                    <span>Paquete seleccionado:</span>
+                                                    <span>{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</span>
+                                                </div>
+                                                <div className="flex justify-between text-slate-300">
+                                                    <span>Cantidad de paquetes:</span>
+                                                    <span>{packQuantity}</span>
+                                                </div>
+                                                <div className="flex justify-between text-slate-300">
+                                                    <span>Total de boletos:</span>
+                                                    <span>{(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between text-slate-300">
+                                                <span>Boletos seleccionados:</span>
+                                                <span>{selectedTickets.length}</span>
+                                            </div>
+                                        )}
                                         {boletosAdicionales > 0 && (
                                             <div className="flex justify-between text-green-400 font-semibold">
-                                                <span>🎁 Boletos de regalo:</span>
+                                                <span>Boletos de regalo:</span>
                                                 <span>+{boletosAdicionales}</span>
                                             </div>
                                         )}
-                                        <div className="flex justify-between text-slate-300">
-                                            <span>Precio por boleto:</span>
-                                            <span>LPS {pricePerTicket.toFixed(2)}</span>
-                                        </div>
+                                        {!selectedPack && (
+                                            <div className="flex justify-between text-slate-300">
+                                                <span>Precio por boleto:</span>
+                                                <span>LPS {pricePerTicket.toFixed(2)}</span>
+                                            </div>
+                                        )}
                                         <div className="border-t border-slate-700/50 pt-2">
                                             <div className="flex justify-between text-white font-bold text-lg">
                                                 <span>Total:</span>
@@ -262,7 +321,7 @@ const RaffleDetailPage = () => {
                                         )}
                                     </div>
                                     <Link
-                                        to={`/comprar/${raffle.slug}?tickets=${selectedTickets.join(',')}`}
+                                        to={`/comprar/${raffle.slug}?${selectedPack ? `pack=${selectedPack.name || 'pack'}&quantity=${packQuantity}` : `tickets=${selectedTickets.join(',')}`}`}
                                         className="block w-full text-center bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
                                     >
                                         Proceder al Pago

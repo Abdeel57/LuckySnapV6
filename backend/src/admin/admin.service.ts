@@ -463,6 +463,8 @@ export class AdminService {
         slug: autoSlug,
         boletosConOportunidades: data.boletosConOportunidades || false,
         numeroOportunidades: data.numeroOportunidades || 1,
+        packs: data.packs ? JSON.parse(JSON.stringify(data.packs)) : null,
+        bonuses: data.bonuses && Array.isArray(data.bonuses) ? data.bonuses.filter(b => b && b.trim() !== '') : [],
       };
 
       console.log('📝 Creating raffle with data:', raffleData);
@@ -546,6 +548,61 @@ export class AdminService {
         raffleData.numeroOportunidades = Number(data.numeroOportunidades);
       }
 
+      // Campos packs y bonuses siempre editables
+      // IMPORTANTE: Aceptar tanto undefined como null explícito
+      if (data.packs !== undefined) {
+        console.log('📦 Processing packs:', {
+          packs: data.packs,
+          type: typeof data.packs,
+          isArray: Array.isArray(data.packs),
+          isNull: data.packs === null
+        });
+        
+        if (data.packs === null) {
+          raffleData.packs = null;
+        } else if (Array.isArray(data.packs) && data.packs.length > 0) {
+          // Si es un array válido, guardarlo
+          raffleData.packs = JSON.parse(JSON.stringify(data.packs));
+        } else if (typeof data.packs === 'string') {
+          // Si viene como string, parsearlo
+          try {
+            const parsed = JSON.parse(data.packs);
+            raffleData.packs = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+          } catch (e) {
+            console.warn('Error parsing packs string:', e);
+            raffleData.packs = null;
+          }
+        } else {
+          raffleData.packs = null;
+        }
+        console.log('✅ Final packs value:', raffleData.packs);
+      }
+
+      if (data.bonuses !== undefined) {
+        console.log('🎁 Processing bonuses:', {
+          bonuses: data.bonuses,
+          type: typeof data.bonuses,
+          isArray: Array.isArray(data.bonuses),
+          isNull: data.bonuses === null
+        });
+        
+        if (data.bonuses === null) {
+          raffleData.bonuses = [];
+        } else if (Array.isArray(data.bonuses)) {
+          raffleData.bonuses = data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '');
+        } else if (typeof data.bonuses === 'string') {
+          try {
+            const parsed = JSON.parse(data.bonuses);
+            raffleData.bonuses = Array.isArray(parsed) ? parsed.filter((b: any) => b && typeof b === 'string' && b.trim() !== '') : [];
+          } catch (e) {
+            raffleData.bonuses = data.bonuses.trim() !== '' ? [data.bonuses] : [];
+          }
+        } else {
+          raffleData.bonuses = [];
+        }
+        console.log('✅ Final bonuses value:', raffleData.bonuses);
+      }
+
       // Campos editables solo si NO tiene boletos vendidos/pagados
       if (hasSoldTickets || hasPaidOrders) {
         console.log('⚠️ Rifa tiene boletos vendidos/pagados - limitando edición');
@@ -586,6 +643,8 @@ export class AdminService {
       }
       
       console.log('📝 Final update data:', raffleData);
+      console.log('📦 Packs in update data:', raffleData.packs);
+      console.log('🎁 Bonuses in update data:', raffleData.bonuses);
       
       const updatedRaffle = await this.prisma.raffle.update({ 
         where: { id }, 
@@ -593,6 +652,10 @@ export class AdminService {
       });
       
       console.log('✅ Raffle updated successfully');
+      console.log('📦 Updated raffle packs:', updatedRaffle.packs);
+      console.log('🎁 Updated raffle bonuses:', updatedRaffle.bonuses);
+      console.log('📊 Updated raffle full data:', JSON.stringify(updatedRaffle, null, 2));
+      
       return updatedRaffle;
     } catch (error) {
       console.error('❌ Error updating raffle:', error);

@@ -140,7 +140,24 @@ export class AdminController {
   @Patch('raffles/:id')
   async updateRaffle(@Param('id') id: string, @Body() data: Raffle) {
     try {
+      console.log('📥 Controller received update request:', {
+        id,
+        packs: data.packs,
+        bonuses: data.bonuses,
+        packsType: typeof data.packs,
+        bonusesType: typeof data.bonuses,
+        packsIsArray: Array.isArray(data.packs),
+        bonusesIsArray: Array.isArray(data.bonuses)
+      });
+      
       const raffle = await this.adminService.updateRaffle(id, data);
+      
+      console.log('✅ Controller returning updated raffle:', {
+        id: raffle.id,
+        packs: raffle.packs,
+        bonuses: raffle.bonuses
+      });
+      
       return {
         success: true,
         message: 'Rifa actualizada exitosamente',

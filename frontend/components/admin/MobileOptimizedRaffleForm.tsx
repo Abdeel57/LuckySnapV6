@@ -76,12 +76,36 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
 
     const watchedData = watch();
 
-    const onSubmit = (data: RaffleFormValues) => {
-        const saveData = {
-            ...data,
-            bonuses: data.bonuses.map(b => b.value),
-        };
-        onSave({ ...raffle, ...saveData } as Raffle);
+    const onSubmit = async (data: RaffleFormValues) => {
+        try {
+            console.log('📱 MOBILE FORM SUBMIT - INICIO');
+            console.log('📱 Form data:', JSON.stringify(data, null, 2));
+            console.log('📦 Form packs:', data.packs);
+            console.log('🎁 Form bonuses:', data.bonuses);
+            
+            // Asegurar que packs tenga la estructura correcta
+            const processedPacks = data.packs?.map(pack => ({
+                name: pack.name || '',
+                tickets: pack.tickets || pack.q || 1,
+                q: pack.q || pack.tickets || 1,
+                price: pack.price || 0
+            })).filter(pack => pack.price > 0) || null;
+            
+            const saveData = {
+                ...data,
+                bonuses: data.bonuses?.map(b => b.value).filter(b => b && b.trim() !== '') || [],
+                packs: processedPacks && processedPacks.length > 0 ? processedPacks : null
+            };
+            
+            console.log('💾 MOBILE SAVING DATA:', JSON.stringify(saveData, null, 2));
+            console.log('📦 SaveData packs:', saveData.packs);
+            console.log('🎁 SaveData bonuses:', saveData.bonuses);
+            
+            await onSave({ ...raffle, ...saveData } as Raffle);
+        } catch (error: any) {
+            console.error('❌ Error in mobile form submit:', error);
+            throw error;
+        }
     };
 
     const tabs = [

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRaffles, createRaffle, updateRaffle, deleteRaffle } from '../../services/api';
+import { getRaffles, createRaffle, updateRaffle, deleteRaffle, parseRaffleDates } from '../../services/api';
 import { Raffle } from '../../types';
 import { Plus, RefreshCw, Download, Upload } from 'lucide-react';
 import Spinner from '../../components/Spinner';
@@ -51,10 +51,18 @@ const AdminRafflesPage: React.FC = () => {
     const refreshRaffles = async () => {
         setRefreshing(true);
         try {
+            console.log('🔄 Fetching raffles from backend...');
             const data = await getRaffles();
+            console.log('✅ Raffles fetched:', data.length);
+            if (data.length > 0) {
+                console.log('📦 First raffle packs:', data[0]?.packs);
+                console.log('🎁 First raffle bonuses:', data[0]?.bonuses);
+            }
             setRaffles(data);
+            console.log('✅ Raffles state updated');
         } catch (error) {
-            console.error('Error refreshing raffles:', error);
+            console.error('❌ Error refreshing raffles:', error);
+            toast.error('Error al refrescar', 'No se pudieron cargar las rifas actualizadas');
         } finally {
             setRefreshing(false);
         }
@@ -91,7 +99,54 @@ const AdminRafflesPage: React.FC = () => {
         }
 
         const gallery = data.gallery || [];
-        return {
+        
+        // Logs detallados para debug - expandir objetos
+        console.log('🧹 CLEANING RAFFLE DATA - INICIO');
+        console.log('📦 Original packs:', data.packs);
+        console.log('📦 Packs type:', typeof data.packs);
+        console.log('📦 Packs isArray:', Array.isArray(data.packs));
+        console.log('🎁 Original bonuses:', data.bonuses);
+        console.log('🎁 Bonuses type:', typeof data.bonuses);
+        console.log('🎁 Bonuses isArray:', Array.isArray(data.bonuses));
+        
+        // Procesar packs - asegurar que sea un array o null
+        let processedPacks = null;
+        if (data.packs) {
+            if (Array.isArray(data.packs) && data.packs.length > 0) {
+                processedPacks = data.packs;
+            } else if (typeof data.packs === 'string') {
+                try {
+                    const parsed = JSON.parse(data.packs);
+                    processedPacks = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+                } catch (e) {
+                    console.warn('Error parsing packs string:', e);
+                    processedPacks = null;
+                }
+            }
+        }
+        
+        // Procesar bonuses - asegurar que sea un array
+        let processedBonuses: string[] = [];
+        if (data.bonuses) {
+            if (Array.isArray(data.bonuses)) {
+                processedBonuses = data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '');
+            } else if (typeof data.bonuses === 'string') {
+                try {
+                    const parsed = JSON.parse(data.bonuses);
+                    processedBonuses = Array.isArray(parsed) ? parsed.filter((b: any) => b && typeof b === 'string' && b.trim() !== '') : [];
+                } catch (e) {
+                    processedBonuses = data.bonuses.trim() !== '' ? [data.bonuses] : [];
+                }
+            }
+        }
+        
+        console.log('✅ PROCESSED DATA');
+        console.log('📦 Processed packs:', processedPacks);
+        console.log('📦 Packs length:', processedPacks?.length || 0);
+        console.log('🎁 Processed bonuses:', processedBonuses);
+        console.log('🎁 Bonuses length:', processedBonuses.length);
+        
+        const cleaned = {
             title: data.title.trim(),
             description: data.description || null,
             imageUrl: gallery.length > 0 ? gallery[0] : (data.imageUrl || data.heroImage || null),
@@ -102,10 +157,18 @@ const AdminRafflesPage: React.FC = () => {
             status: data.status || 'draft',
             slug: data.slug || null,
             boletosConOportunidades: data.boletosConOportunidades || false,
-            numeroOportunidades: data.numeroOportunidades || 1
-            // NO enviar: packs, bonuses, heroImage, sold, createdAt, updatedAt
+            numeroOportunidades: data.numeroOportunidades || 1,
+            packs: processedPacks,
+            bonuses: processedBonuses
+            // NO enviar: heroImage, sold, createdAt, updatedAt
             // Estos no existen en el esquema Prisma o son generados automáticamente
         };
+        
+        console.log('📤 SENDING TO BACKEND');
+        console.log('📤 Full cleaned object:', JSON.stringify(cleaned, null, 2));
+        console.log('📦 Packs in cleaned:', cleaned.packs);
+        console.log('🎁 Bonuses in cleaned:', cleaned.bonuses);
+        return cleaned;
     };
 
     const handleSaveRaffle = async (data: Raffle) => {
@@ -131,16 +194,29 @@ const AdminRafflesPage: React.FC = () => {
                 toast.success('¡Rifa creada!', 'La rifa se creó exitosamente');
             }
             
-            console.log('✅ Raffle saved successfully:', savedRaffle);
+            console.log('✅ RAFFLE SAVED SUCCESSFULLY');
+            console.log('✅ Saved raffle object:', JSON.stringify(savedRaffle, null, 2));
+            console.log('📦 Saved raffle packs:', savedRaffle.packs);
+            console.log('📦 Saved packs type:', typeof savedRaffle.packs);
+            console.log('📦 Saved packs isArray:', Array.isArray(savedRaffle.packs));
+            console.log('🎁 Saved raffle bonuses:', savedRaffle.bonuses);
+            console.log('🎁 Saved bonuses type:', typeof savedRaffle.bonuses);
+            console.log('🎁 Saved bonuses isArray:', Array.isArray(savedRaffle.bonuses));
             
-            // Actualizar la lista local
-            if (editingRaffle?.id) {
-                setRaffles(prev => prev.map(r => r.id === editingRaffle.id ? savedRaffle : r));
-            } else {
-                setRaffles(prev => [savedRaffle, ...prev]);
-            }
+            // Parsear el raffle guardado para asegurar que packs y bonuses estén correctos
+            const parsedRaffle = parseRaffleDates(savedRaffle);
+            console.log('✅ PARSED RAFFLE');
+            console.log('📦 Parsed packs:', parsedRaffle.packs);
+            console.log('🎁 Parsed bonuses:', parsedRaffle.bonuses);
             
+            // Cerrar modal primero
             handleCloseModal();
+            
+            // IMPORTANTE: Refrescar desde el backend para obtener los datos actualizados
+            // Esto asegura que se muestren los cambios correctamente
+            console.log('🔄 Refreshing raffles from backend...');
+            await refreshRaffles();
+            console.log('✅ Raffles refreshed successfully');
         } catch (error: any) {
             console.error('❌ Error saving raffle:', error);
             toast.error(

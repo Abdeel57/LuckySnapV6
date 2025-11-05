@@ -46,14 +46,75 @@ const parseDates = (data: any, fields: string[]): any => {
     const parsedData = { ...data };
     fields.forEach(field => {
         if (parsedData[field]) {
-            parsedData[field] = new Date(parsedData[field]);
+            // Parsear la fecha correctamente, manejando strings ISO y objetos Date
+            const dateValue = parsedData[field];
+            if (typeof dateValue === 'string') {
+                // Si es string, parsearlo directamente (ISO format)
+                parsedData[field] = new Date(dateValue);
+            } else if (dateValue instanceof Date) {
+                // Si ya es Date, mantenerlo pero crear una nueva instancia para evitar problemas de referencia
+                parsedData[field] = new Date(dateValue.getTime());
+            } else {
+                parsedData[field] = new Date(dateValue);
+            }
+            
+            // Validar que la fecha sea válida
+            if (isNaN(parsedData[field].getTime())) {
+                console.warn(`⚠️ Invalid date for field ${field}:`, dateValue);
+            }
         }
     });
     return parsedData;
 }
 
 const parseOrderDates = (order: any) => parseDates(order, ['createdAt', 'expiresAt']);
-const parseRaffleDates = (raffle: any) => parseDates(raffle, ['drawDate']);
+export const parseRaffleDates = (raffle: any) => {
+    const parsed = parseDates(raffle, ['drawDate']);
+    
+    // Parsear packs (JSON) - puede venir como string, array, objeto o null
+    if (parsed.packs !== null && parsed.packs !== undefined) {
+        if (Array.isArray(parsed.packs)) {
+            // Ya es un array, mantenerlo así
+            parsed.packs = parsed.packs;
+        } else if (typeof parsed.packs === 'string') {
+            try {
+                const parsedPacks = JSON.parse(parsed.packs);
+                parsed.packs = Array.isArray(parsedPacks) ? parsedPacks : null;
+            } catch (e) {
+                console.warn('Error parsing packs from string:', e);
+                parsed.packs = null;
+            }
+        } else if (typeof parsed.packs === 'object') {
+            // Si es un objeto pero no un array, convertirlo a null
+            parsed.packs = null;
+        }
+    } else {
+        parsed.packs = null;
+    }
+    
+    // Parsear bonuses (array de strings) - puede venir como array, string o null
+    if (parsed.bonuses) {
+        if (Array.isArray(parsed.bonuses)) {
+            // Ya es un array, filtrar valores vacíos
+            parsed.bonuses = parsed.bonuses.filter(b => b && b.trim && b.trim() !== '');
+        } else if (typeof parsed.bonuses === 'string') {
+            // Si viene como string, intentar parsearlo
+            try {
+                const parsedBonus = JSON.parse(parsed.bonuses);
+                parsed.bonuses = Array.isArray(parsedBonus) ? parsedBonus.filter(b => b && b.trim && b.trim() !== '') : [];
+            } catch (e) {
+                // Si no es JSON válido, tratarlo como array con un solo elemento
+                parsed.bonuses = parsed.bonuses.trim() !== '' ? [parsed.bonuses] : [];
+            }
+        } else {
+            parsed.bonuses = [];
+        }
+    } else {
+        parsed.bonuses = [];
+    }
+    
+    return parsed;
+};
 const parseWinnerDates = (winner: any) => parseDates(winner, ['drawDate']);
 
 
@@ -221,8 +282,10 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
 
 export const createRaffle = async (raffle: any): Promise<Raffle> => {
     try {
-        console.log('🚀 Trying backend for create raffle...');
-        console.log('📤 Payload:', raffle);
+        console.log('🚀 TRYING BACKEND FOR CREATE RAFFLE');
+        console.log('📤 Payload packs:', raffle.packs);
+        console.log('📤 Payload bonuses:', raffle.bonuses);
+        console.log('📤 Full payload:', JSON.stringify(raffle, null, 2));
         
         const response = await fetch(`${API_URL}/admin/raffles`, {
             method: 'POST',
@@ -235,10 +298,9 @@ export const createRaffle = async (raffle: any): Promise<Raffle> => {
             console.log('✅ Backend raffle created successfully');
             
             // Si la respuesta tiene estructura { success, data }, extraer data
-            if (result.success && result.data) {
-                return result.data;
-            }
-            return result;
+            const raffleData = result.success && result.data ? result.data : result;
+            // Parsear la rifa para asegurar que packs y bonuses estén correctos
+            return parseRaffleDates(raffleData);
         } else {
             const errorText = await response.text();
             console.log('❌ Backend returned error status:', response.status);
@@ -263,8 +325,11 @@ export const createRaffle = async (raffle: any): Promise<Raffle> => {
 
 export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise<Raffle> => {
     try {
-        console.log('Trying backend for update raffle...');
-        console.log('Update payload:', { id, raffle });
+        console.log('🔄 TRYING BACKEND FOR UPDATE RAFFLE');
+        console.log('🔄 Update ID:', id);
+        console.log('🔄 Update payload packs:', raffle.packs);
+        console.log('🔄 Update payload bonuses:', raffle.bonuses);
+        console.log('🔄 Full update payload:', JSON.stringify(raffle, null, 2));
         
         const response = await fetch(`${API_URL}/admin/raffles/${id}`, {
             method: 'PATCH',
@@ -274,13 +339,21 @@ export const updateRaffle = async (id: string, raffle: Partial<Raffle>): Promise
         
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ Backend raffle updated successfully');
+            console.log('✅ BACKEND RAFFLE UPDATED SUCCESSFULLY');
+            console.log('✅ Response result:', JSON.stringify(result, null, 2));
             
             // Si la respuesta tiene estructura { success, data }, extraer data
-            if (result.success && result.data) {
-                return result.data;
-            }
-            return result;
+            const raffleData = result.success && result.data ? result.data : result;
+            console.log('✅ Extracted raffleData:', JSON.stringify(raffleData, null, 2));
+            console.log('📦 RaffleData packs:', raffleData.packs);
+            console.log('🎁 RaffleData bonuses:', raffleData.bonuses);
+            
+            // Parsear la rifa para asegurar que packs y bonuses estén correctos
+            const parsed = parseRaffleDates(raffleData);
+            console.log('✅ PARSED RESPONSE');
+            console.log('📦 Parsed packs:', parsed.packs);
+            console.log('🎁 Parsed bonuses:', parsed.bonuses);
+            return parsed;
         } else {
             const errorText = await response.text();
             console.log('❌ Backend returned error status:', response.status);
@@ -478,6 +551,10 @@ export const getRaffles = async (): Promise<Raffle[]> => {
         if (response.ok) {
             const data = await response.json();
             console.log('✅ Backend raffles loaded successfully');
+            // Parsear cada rifa para asegurar que packs y bonuses estén correctos
+            if (Array.isArray(data)) {
+                return data.map(parseRaffleDates);
+            }
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { getRaffleBySlug, createOrder, getSettings } from '../services/api';
-import { Raffle, Order, PaymentAccount } from '../types';
+import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
+import BonusesCard from '../components/BonusesCard';
 import { Link } from 'react-router-dom';
 import metaPixelService from '../services/metaPixel';
 
@@ -28,6 +29,8 @@ const PurchasePage = () => {
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
     
     const initialTickets = searchParams.get('tickets')?.split(',').map(Number).filter(n => !isNaN(n)) || [];
+    const selectedPackName = searchParams.get('pack');
+    const packQuantity = parseInt(searchParams.get('quantity') || '1', 10);
 
     // Lista de departamentos de Honduras
     const honduranDepartments = [
@@ -124,21 +127,54 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         }
     }, [slug]);
 
+    // Determinar si se está usando un paquete o boletos individuales
+    const selectedPack = useMemo(() => {
+        if (!raffle || !selectedPackName || !raffle.packs) return null;
+        return raffle.packs.find(p => (p.name || '').toLowerCase() === selectedPackName.toLowerCase()) || null;
+    }, [raffle, selectedPackName]);
+
     // Usar el precio base del esquema Prisma (no packs)
     const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-    const total = initialTickets.length * pricePerTicket;
+    
+    // Calcular total según si hay paquete o boletos individuales
+    const total = useMemo(() => {
+        if (selectedPack) {
+            return selectedPack.price * packQuantity;
+        }
+        return initialTickets.length * pricePerTicket;
+    }, [selectedPack, packQuantity, initialTickets.length, pricePerTicket]);
     
     // Calcular boletos de regalo si tiene oportunidades
-    const boletosAdicionales = raffle?.boletosConOportunidades && raffle?.numeroOportunidades > 1
-        ? initialTickets.length * (raffle.numeroOportunidades - 1)
-        : 0;
+    const boletosAdicionales = useMemo(() => {
+        if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
+        if (selectedPack) {
+            const ticketsInPack = (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
+            return ticketsInPack * (raffle.numeroOportunidades - 1);
+        }
+        return initialTickets.length * (raffle.numeroOportunidades - 1);
+    }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, initialTickets.length, selectedPack, packQuantity]);
 
     const onSubmit = async (data: FormData) => {
-        if (!raffle || initialTickets.length === 0) return;
+        if (!raffle || (initialTickets.length === 0 && !selectedPack)) return;
         setIsSubmitting(true);
         try {
+            // Determinar tickets según si hay paquete o boletos individuales
+            let ticketsToOrder: number[] = [];
+            let orderNotes = '';
+            
+            if (selectedPack) {
+                // Si hay paquete, generar tickets aleatorios (el backend manejará esto mejor)
+                // Por ahora, usamos un placeholder
+                const ticketsInPack = (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
+                ticketsToOrder = Array.from({ length: ticketsInPack }, (_, i) => i + 1); // Placeholder
+                orderNotes = `Compra de ${packQuantity} paquete(s) "${selectedPack.name || 'Pack'}" (${ticketsInPack} boletos) para ${raffle.title}`;
+            } else {
+                ticketsToOrder = initialTickets;
+                orderNotes = `Compra de ${initialTickets.length} boleto(s) para ${raffle.title}`;
+            }
+            
             // Track InitiateCheckout event
-            metaPixelService.trackInitiateCheckout(raffle.id, initialTickets, total);
+            metaPixelService.trackInitiateCheckout(raffle.id, ticketsToOrder, total);
 
             // Primero crear o buscar el usuario
             const userData = {
@@ -154,10 +190,10 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
             const orderData = {
                 userId: userId,
                 raffleId: raffle.id,
-                tickets: initialTickets,
+                tickets: ticketsToOrder,
                 total: total,
                 paymentMethod: 'transfer',
-                notes: `Compra de ${initialTickets.length} boleto(s) para ${raffle.title}`,
+                notes: orderNotes,
                 // Datos del usuario para crear en el backend
                 userData: userData
             };
@@ -166,7 +202,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
             console.log('✅ Order created successfully:', newOrder);
             
             // Track Purchase event
-            metaPixelService.trackPurchase(newOrder.id, raffle.id, initialTickets, total);
+            metaPixelService.trackPurchase(newOrder.id, raffle.id, ticketsToOrder, total);
             
             // Guardar datos del cliente para el mensaje de WhatsApp
             setCustomerData({
@@ -417,6 +453,9 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                             </div>
                         </div>
 
+                        {/* Bonos y Premios Adicionales */}
+                        <BonusesCard bonuses={raffle.bonuses || []} className="mb-6" />
+
                         {/* Boletos seleccionados */}
                         <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
                             <h3 className="text-xl font-bold text-white mb-4 flex items-center">
@@ -426,14 +465,24 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 Tus Boletos
                             </h3>
                             
-                            {/* Boletos comprados */}
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {initialTickets.map(t => (
-                                    <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                        #{t.toString().padStart(3, '0')}
-                                    </span>
-                                ))}
-                            </div>
+                            {/* Boletos comprados o paquete seleccionado */}
+                            {selectedPack ? (
+                                <div className="mb-4">
+                                    <div className="bg-gradient-to-r from-accent to-action px-4 py-3 rounded-xl mb-3">
+                                        <p className="text-white font-bold text-lg">{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</p>
+                                        <p className="text-white/80 text-sm">Cantidad: {packQuantity} paquete(s)</p>
+                                        <p className="text-white/80 text-sm">Total de boletos: {(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {initialTickets.map(t => (
+                                        <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
+                                            #{t.toString().padStart(3, '0')}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                             
                             {/* Boletos de regalo */}
                             {boletosAdicionales > 0 && (
@@ -451,10 +500,27 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                             )}
                             
                             <div className="bg-background-primary rounded-xl p-4 border border-slate-700/50">
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="text-slate-300">Cantidad de boletos:</span>
-                                    <span className="text-white font-bold text-lg">{initialTickets.length}</span>
-                                </div>
+                                {selectedPack ? (
+                                    <>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-slate-300">Paquete:</span>
+                                            <span className="text-white font-bold text-lg">{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-slate-300">Cantidad de paquetes:</span>
+                                            <span className="text-white font-bold text-lg">{packQuantity}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-slate-300">Total de boletos:</span>
+                                            <span className="text-white font-bold text-lg">{(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-slate-300">Cantidad de boletos:</span>
+                                        <span className="text-white font-bold text-lg">{initialTickets.length}</span>
+                                    </div>
+                                )}
                                 {boletosAdicionales > 0 && (
                                     <div className="flex justify-between items-center mb-3">
                                         <span className="text-green-400">Boletos de regalo:</span>
@@ -540,7 +606,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 <div className="pt-6">
                                     <button 
                                         type="submit" 
-                                        disabled={isSubmitting || initialTickets.length === 0} 
+                                        disabled={isSubmitting || (initialTickets.length === 0 && !selectedPack)} 
                                         className="w-full bg-gradient-to-r from-action to-accent text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                                     >
                                         {isSubmitting ? (

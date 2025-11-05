@@ -11,7 +11,7 @@ export class PublicService {
   async getActiveRaffles() {
     return this.prisma.raffle.findMany({
       where: { status: 'active' },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { drawDate: 'asc' }, // Ordenar por fecha de sorteo (más próximas primero)
     });
   }
 
