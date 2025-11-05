@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import { AuthProvider } from './contexts/AuthContext';
 import { AnalyticsProvider } from './contexts/AnalyticsContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute';
 import Spinner from './components/Spinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -67,13 +68,36 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }>
                 <Route index element={<AdminDashboardPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="sorteos" element={<AdminRafflesPage />} />
+                {/* Rutas solo para admin/superadmin */}
+                <Route path="analytics" element={
+                  <RoleProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <AdminAnalyticsPage />
+                  </RoleProtectedRoute>
+                } />
+                <Route path="sorteos" element={
+                  <RoleProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <AdminRafflesPage />
+                  </RoleProtectedRoute>
+                } />
+                {/* Rutas accesibles para todos los roles autenticados */}
                 <Route path="apartados" element={<AdminOrdersPage />} />
                 <Route path="clientes" element={<AdminCustomersPage />} />
-                <Route path="ganadores" element={<AdminWinnersPage />} />
-                <Route path="usuarios" element={<AdminUsersPage />} />
-                <Route path="ajustes" element={<AdminSettingsPage />} />
+                {/* Rutas solo para admin/superadmin */}
+                <Route path="ganadores" element={
+                  <RoleProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <AdminWinnersPage />
+                  </RoleProtectedRoute>
+                } />
+                <Route path="usuarios" element={
+                  <RoleProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <AdminUsersPage />
+                  </RoleProtectedRoute>
+                } />
+                <Route path="ajustes" element={
+                  <RoleProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <AdminSettingsPage />
+                  </RoleProtectedRoute>
+                } />
               </Route>
                   </Routes>
                 </Suspense>

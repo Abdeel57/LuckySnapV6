@@ -6,6 +6,7 @@ import MetaPixelManager from '../../components/admin/MetaPixelManager';
 import { getDashboardStats, getOrders, getRaffles } from '../../services/api';
 import { Order, Raffle } from '../../types';
 import Spinner from '../../components/Spinner';
+import { useAuth } from '../../contexts/AuthContext';
 
 const QuickActionCard = ({ 
     icon: Icon, 
@@ -83,29 +84,57 @@ const StatCard = ({
 
 const AdminDashboardPage: React.FC = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const isVendedor = user?.role === 'ventas';
     const [activeTab, setActiveTab] = useState<'overview' | 'meta'>('overview');
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     const [recentRaffles, setRecentRaffles] = useState<Raffle[]>([]);
+    const [recentCustomers, setRecentCustomers] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadDashboardData = async () => {
             setLoading(true);
             try {
-                // Cargar estadísticas
-                const statsData = await getDashboardStats();
-                setStats(statsData);
+                // Si es vendedor, solo cargar órdenes y clientes
+                if (isVendedor) {
+                    // Cargar últimas órdenes (10 más recientes)
+                    const ordersData = await getOrders(1, 10);
+                    const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any)?.orders || [];
+                    setRecentOrders(orders.slice(0, 5)); // Últimas 5 órdenes
+                    
+                    // Extraer clientes únicos de órdenes pagadas
+                    const paidOrders = orders.filter(order => 
+                        order.status === 'PAID' || order.status === 'COMPLETED'
+                    );
+                    // Agrupar por cliente y tomar los más recientes
+                    const uniqueCustomers = new Map();
+                    paidOrders.forEach(order => {
+                        if (order.customer?.name || order.customer?.phone) {
+                            const customerKey = order.customer?.phone || order.customer?.name;
+                            if (!uniqueCustomers.has(customerKey) || 
+                                new Date(order.createdAt) > new Date(uniqueCustomers.get(customerKey).createdAt)) {
+                                uniqueCustomers.set(customerKey, order);
+                            }
+                        }
+                    });
+                    setRecentCustomers(Array.from(uniqueCustomers.values()).slice(0, 5));
+                } else {
+                    // Cargar estadísticas (solo para admin/superadmin)
+                    const statsData = await getDashboardStats();
+                    setStats(statsData);
 
-                // Cargar últimas órdenes (5 más recientes)
-                const ordersData = await getOrders(1, 5);
-                const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any)?.orders || [];
-                setRecentOrders(orders);
+                    // Cargar últimas órdenes (5 más recientes)
+                    const ordersData = await getOrders(1, 5);
+                    const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any)?.orders || [];
+                    setRecentOrders(orders);
 
-                // Cargar rifas recientes (5 más recientes)
-                const rafflesData = await getRaffles();
-                const activeRaffles = (Array.isArray(rafflesData) ? rafflesData : []).slice(0, 5);
-                setRecentRaffles(activeRaffles);
+                    // Cargar rifas recientes (5 más recientes)
+                    const rafflesData = await getRaffles();
+                    const activeRaffles = (Array.isArray(rafflesData) ? rafflesData : []).slice(0, 5);
+                    setRecentRaffles(activeRaffles);
+                }
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
             } finally {
@@ -116,7 +145,7 @@ const AdminDashboardPage: React.FC = () => {
         if (activeTab === 'overview') {
             loadDashboardData();
         }
-    }, [activeTab]);
+    }, [activeTab, isVendedor]);
 
     const formatDate = (date: Date | string) => {
         const d = new Date(date);
@@ -150,31 +179,33 @@ const AdminDashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                            activeTab === 'overview'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Resumen
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('meta')}
-                        className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                            activeTab === 'meta'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        Meta Pixel & Ads
-                    </button>
-                </nav>
-            </div>
+            {/* Tabs - Solo mostrar si no es vendedor */}
+            {!isVendedor && (
+                <div className="border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                                activeTab === 'overview'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Resumen
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('meta')}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                                activeTab === 'meta'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Meta Pixel & Ads
+                        </button>
+                    </nav>
+                </div>
+            )}
 
             {/* Tab Content */}
             {activeTab === 'overview' && (
@@ -186,7 +217,136 @@ const AdminDashboardPage: React.FC = () => {
                                 <p className="mt-4 text-gray-600">Cargando dashboard...</p>
                             </div>
                         </div>
+                    ) : isVendedor ? (
+                        /* Vista simplificada para vendedores */
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            {/* Últimas Órdenes */}
+                            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                                        <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                                        <span className="hidden sm:inline">Últimas Órdenes</span>
+                                        <span className="sm:hidden">Órdenes</span>
+                                    </h2>
+                                    <button
+                                        onClick={() => navigate('/admin/apartados')}
+                                        className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
+                                    >
+                                        Ver todas →
+                                    </button>
+                                </div>
+                                <div className="space-y-2 sm:space-y-3">
+                                    {recentOrders.length === 0 ? (
+                                        <p className="text-gray-500 text-xs sm:text-sm text-center py-4">No hay órdenes recientes</p>
+                                    ) : (
+                                        recentOrders.map((order) => (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                                                onClick={() => navigate('/admin/apartados')}
+                                            >
+                                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                                    <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
+                                                        order.status === 'PAID' 
+                                                            ? 'bg-green-100' 
+                                                            : order.status === 'PENDING' 
+                                                            ? 'bg-orange-100' 
+                                                            : 'bg-gray-100'
+                                                    }`}>
+                                                        {order.status === 'PAID' ? (
+                                                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                                                        ) : (
+                                                            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                                                            {order.customer?.name || 'Sin nombre'}
+                                                        </p>
+                                                        <div className="flex items-center gap-1 sm:gap-2 text-xs text-gray-500 truncate">
+                                                            <span className="font-mono text-xs">{order.folio}</span>
+                                                            <span className="hidden sm:inline">•</span>
+                                                            <span className="truncate">{order.raffleTitle}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex-shrink-0 ml-2">
+                                                    <p className="text-xs sm:text-sm font-bold text-gray-900 whitespace-nowrap">
+                                                        L. {order.total?.toFixed(2) || order.totalAmount?.toFixed(2) || '0.00'}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 whitespace-nowrap">
+                                                        {formatDate(order.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Clientes Recientes */}
+                            <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                                        <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                                        <span>Clientes Recientes</span>
+                                    </h2>
+                                    <button
+                                        onClick={() => navigate('/admin/clientes')}
+                                        className="text-xs sm:text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
+                                    >
+                                        Ver todos →
+                                    </button>
+                                </div>
+                                <div className="space-y-2 sm:space-y-3">
+                                    {recentCustomers.length === 0 ? (
+                                        <p className="text-gray-500 text-xs sm:text-sm text-center py-4">No hay clientes recientes</p>
+                                    ) : (
+                                        recentCustomers.map((order) => (
+                                            <motion.div
+                                                key={order.id}
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                                                onClick={() => navigate('/admin/clientes')}
+                                            >
+                                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                                    <div className="p-1.5 sm:p-2 rounded-lg flex-shrink-0 bg-green-100">
+                                                        <Users className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                                                            {order.customer?.name || 'Sin nombre'}
+                                                        </p>
+                                                        <div className="flex items-center gap-1 sm:gap-2 text-xs text-gray-500 truncate">
+                                                            {order.customer?.phone && (
+                                                                <>
+                                                                    <span>{order.customer.phone}</span>
+                                                                    <span className="hidden sm:inline">•</span>
+                                                                </>
+                                                            )}
+                                                            <span className="truncate">{order.raffleTitle}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex-shrink-0 ml-2">
+                                                    <div className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full inline-block bg-green-100 text-green-700">
+                                                        Pagado
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 whitespace-nowrap mt-1">
+                                                        {formatDate(order.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     ) : (
+                        /* Vista completa para admin/superadmin */
                         <>
                             {/* Estadísticas principales - Optimizado para móvil */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -385,7 +545,7 @@ const AdminDashboardPage: React.FC = () => {
                 </>
             )}
 
-            {activeTab === 'meta' && (
+            {activeTab === 'meta' && !isVendedor && (
                 <MetaPixelManager />
             )}
 
