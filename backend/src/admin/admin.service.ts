@@ -547,7 +547,7 @@ export class AdminService {
             return data.bonuses
               .map(b => {
                 // Si es null o undefined, o no es un objeto, no se puede acceder a 'value'
-                if (typeof b === 'object' && b !== null && 'value' in b) {
+                if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'value')) {
                   const value = (b as any).value;
                   return value ? String(value).trim() : '';
                 }
@@ -700,7 +700,7 @@ export class AdminService {
           raffleData.bonuses = data.bonuses
             .map(b => {
               // Si es null, undefined, o no es un objeto, no se puede acceder a 'value'
-              if (typeof b === 'object' && b !== null && 'value' in b) {
+              if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'value')) {
                 const value = (b as any).value;
                 return value ? String(value).trim() : '';
               }
