@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { getRaffleBySlug, createOrder, getSettings } from '../services/api';
+import { getRaffleBySlug, createOrder, getSettings, getOccupiedTickets } from '../services/api';
 import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -27,6 +27,8 @@ const PurchasePage = () => {
     const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>([]);
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
+    const [assignedPackTickets, setAssignedPackTickets] = useState<number[]>([]);
+    const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     
     const initialTickets = searchParams.get('tickets')?.split(',').map(Number).filter(n => !isNaN(n)) || [];
     const selectedPackName = searchParams.get('pack');
@@ -119,6 +121,16 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                 setPaymentAccounts(settingsData.paymentAccounts || []);
                 // Usar número por defecto si no existe contactInfo
                 setContactWhatsapp(settingsData.contactInfo?.whatsapp || '50400000000');
+                
+                // Cargar boletos ocupados para poder asignar los disponibles
+                if (raffleData?.id) {
+                    getOccupiedTickets(raffleData.id).then(occupied => {
+                        setOccupiedTickets(occupied || []);
+                    }).catch(err => {
+                        console.error('❌ Error loading occupied tickets:', err);
+                        setOccupiedTickets([]);
+                    });
+                }
             })
             .catch(err => {
                 console.error('❌ Error loading raffle for purchase:', err);
@@ -132,6 +144,35 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         if (!raffle || !selectedPackName || !raffle.packs) return null;
         return raffle.packs.find(p => (p.name || '').toLowerCase() === selectedPackName.toLowerCase()) || null;
     }, [raffle, selectedPackName]);
+    
+    // Calcular y asignar boletos cuando hay un paquete seleccionado
+    useEffect(() => {
+        if (selectedPack && raffle && occupiedTickets.length >= 0) {
+            const ticketsInPack = (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
+            const totalTickets = raffle.tickets || 1000;
+            
+            // Generar todos los números de boletos posibles (1 a totalTickets)
+            const allTickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
+            
+            // Filtrar solo los disponibles (no ocupados)
+            const availableTickets = allTickets.filter(ticket => !occupiedTickets.includes(ticket));
+            
+            // Asignar los primeros N boletos disponibles
+            const assigned = availableTickets.slice(0, ticketsInPack);
+            setAssignedPackTickets(assigned);
+            
+            console.log('🎫 Assigned pack tickets:', {
+                pack: selectedPack.name,
+                quantity: packQuantity,
+                ticketsNeeded: ticketsInPack,
+                occupiedCount: occupiedTickets.length,
+                availableCount: availableTickets.length,
+                assigned: assigned
+            });
+        } else {
+            setAssignedPackTickets([]);
+        }
+    }, [selectedPack, packQuantity, raffle, occupiedTickets]);
 
     // Usar el precio base del esquema Prisma (no packs)
     const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
@@ -163,10 +204,9 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
             let orderNotes = '';
             
             if (selectedPack) {
-                // Si hay paquete, generar tickets aleatorios (el backend manejará esto mejor)
-                // Por ahora, usamos un placeholder
-                const ticketsInPack = (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
-                ticketsToOrder = Array.from({ length: ticketsInPack }, (_, i) => i + 1); // Placeholder
+                // Usar los boletos asignados previamente
+                ticketsToOrder = assignedPackTickets;
+                const ticketsInPack = assignedPackTickets.length;
                 orderNotes = `Compra de ${packQuantity} paquete(s) "${selectedPack.name || 'Pack'}" (${ticketsInPack} boletos) para ${raffle.title}`;
             } else {
                 ticketsToOrder = initialTickets;
@@ -473,6 +513,23 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                         <p className="text-white/80 text-sm">Cantidad: {packQuantity} paquete(s)</p>
                                         <p className="text-white/80 text-sm">Total de boletos: {(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</p>
                                     </div>
+                                    {/* Mostrar los boletos asignados */}
+                                    {assignedPackTickets.length > 0 ? (
+                                        <div className="mb-4">
+                                            <h4 className="text-white font-semibold mb-2 text-sm">Tus boletos asignados:</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {assignedPackTickets.map(t => (
+                                                    <span key={t} className="bg-gradient-to-r from-accent to-action px-3 py-2 rounded-full text-sm font-bold text-white shadow-lg">
+                                                        #{t.toString().padStart(3, '0')}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="mb-4">
+                                            <p className="text-slate-400 text-sm">Calculando boletos disponibles...</p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex flex-wrap gap-2 mb-4">
