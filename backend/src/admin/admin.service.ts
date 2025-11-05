@@ -485,17 +485,21 @@ export class AdminService {
           if (Array.isArray(data.bonuses)) {
             return data.bonuses
               .map(b => {
+                // Si es null o undefined, retornar string vacío
+                if (b === null || b === undefined) return '';
                 // Si es un objeto con 'value', extraer el valor
-                if (typeof b === 'object' && b !== null && 'value' in b) {
-                  return String(b.value || '').trim();
+                if (typeof b === 'object' && 'value' in b) {
+                  const value = (b as any).value;
+                  return value ? String(value).trim() : '';
                 }
                 // Si ya es un string, usarlo directamente
-                return String(b || '').trim();
+                return String(b).trim();
               })
               .filter(b => b !== '');
           }
           if (typeof data.bonuses === 'string') {
-            return data.bonuses.trim() !== '' ? [data.bonuses.trim()] : [];
+            const trimmed = data.bonuses.trim();
+            return trimmed !== '' ? [trimmed] : [];
           }
           return [];
         })(),
@@ -633,12 +637,15 @@ export class AdminService {
         } else if (Array.isArray(data.bonuses)) {
           raffleData.bonuses = data.bonuses
             .map(b => {
+              // Si es null o undefined, retornar string vacío
+              if (b === null || b === undefined) return '';
               // Si es un objeto con 'value', extraer el valor
-              if (typeof b === 'object' && b !== null && 'value' in b) {
-                return String(b.value || '').trim();
+              if (typeof b === 'object' && 'value' in b) {
+                const value = (b as any).value;
+                return value ? String(value).trim() : '';
               }
               // Si ya es un string, usarlo directamente
-              return String(b || '').trim();
+              return String(b).trim();
             })
             .filter(b => b !== '');
         } else if (typeof data.bonuses === 'string') {
