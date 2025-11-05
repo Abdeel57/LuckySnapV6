@@ -137,7 +137,7 @@ const ReceiptPage: React.FC = () => {
                                 <img 
                                     src={logoUrl} 
                                     alt={siteName}
-                                    className="max-w-[220px] max-h-[110px] mx-auto mb-4 bg-transparent"
+                                    className="max-w-[320px] max-h-[160px] mx-auto mb-4 bg-transparent"
                                     style={{ mixBlendMode: 'normal' }}
                                 />
                             )}
