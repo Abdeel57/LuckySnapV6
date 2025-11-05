@@ -479,9 +479,26 @@ export class AdminService {
         packs: data.packs && Array.isArray(data.packs) && data.packs.length > 0 
           ? JSON.parse(JSON.stringify(data.packs)) 
           : null,
-        bonuses: data.bonuses && Array.isArray(data.bonuses) 
-          ? data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '') 
-          : [],
+        bonuses: (() => {
+          // Asegurar que bonuses sea siempre un array de strings
+          if (!data.bonuses) return [];
+          if (Array.isArray(data.bonuses)) {
+            return data.bonuses
+              .map(b => {
+                // Si es un objeto con 'value', extraer el valor
+                if (typeof b === 'object' && b !== null && 'value' in b) {
+                  return String(b.value || '').trim();
+                }
+                // Si ya es un string, usarlo directamente
+                return String(b || '').trim();
+              })
+              .filter(b => b !== '');
+          }
+          if (typeof data.bonuses === 'string') {
+            return data.bonuses.trim() !== '' ? [data.bonuses.trim()] : [];
+          }
+          return [];
+        })(),
       };
 
       console.log('📝 Creating raffle with data:', {
