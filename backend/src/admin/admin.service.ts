@@ -631,7 +631,16 @@ export class AdminService {
         if (data.bonuses === null) {
           raffleData.bonuses = [];
         } else if (Array.isArray(data.bonuses)) {
-          raffleData.bonuses = data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '');
+          raffleData.bonuses = data.bonuses
+            .map(b => {
+              // Si es un objeto con 'value', extraer el valor
+              if (typeof b === 'object' && b !== null && 'value' in b) {
+                return String(b.value || '').trim();
+              }
+              // Si ya es un string, usarlo directamente
+              return String(b || '').trim();
+            })
+            .filter(b => b !== '');
         } else if (typeof data.bonuses === 'string') {
           try {
             const parsed = JSON.parse(data.bonuses);
