@@ -542,6 +542,7 @@ export class AdminService {
           : null,
         bonuses: (() => {
           // Asegurar que bonuses sea siempre un array de strings
+          // Force rebuild v2: Using hasOwnProperty for robust type checking
           if (!data.bonuses) return [];
           if (Array.isArray(data.bonuses)) {
             return data.bonuses
