@@ -64,11 +64,11 @@ const AdminLoginPage = () => {
                                 <img
                                     src={logoUrl}
                                     alt="Lucky Snap"
-                                    className="mx-auto h-24 sm:h-28 w-auto object-contain mb-4"
+                                    className="mx-auto h-48 sm:h-56 w-auto object-contain mb-4"
                                 />
                             ) : (
-                                <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                                    <span className="text-4xl font-bold text-white">LS</span>
+                                <div className="mx-auto w-48 h-48 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                                    <span className="text-6xl font-bold text-white">LS</span>
                                 </div>
                             )}
                         </motion.div>
