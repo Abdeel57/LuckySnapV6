@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { isMobile } from '../utils/deviceDetection';
@@ -16,6 +16,15 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 50;
     const totalPages = Math.ceil(totalTickets / ticketsPerPage);
+    
+    // CRÍTICO: Para modo scroll, implementar lazy loading para evitar cargar todos los tickets
+    const [visibleTicketsCount, setVisibleTicketsCount] = useState(200); // Límite inicial: 200 tickets
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const loadingMoreRef = useRef(false);
+    
+    // Límite máximo de tickets renderizados en modo scroll (para prevenir crashes)
+    const MAX_VISIBLE_TICKETS = 500;
+    const LOAD_MORE_THRESHOLD = 100; // Cargar más cuando queden 100 tickets visibles
 
     // CRÍTICO: Los Sets se crean dentro de renderTickets para evitar problemas de dependencias
     // No necesitamos memoizar Sets separados, se crean dentro del useMemo cuando se necesitan
@@ -34,6 +43,43 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
             return false;
         }
     }, []);
+    
+    // CRÍTICO: Lazy loading para modo scroll - cargar más tickets al hacer scroll
+    const handleScroll = useCallback(() => {
+        if (listingMode !== 'scroll' || loadingMoreRef.current) return;
+        
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        
+        // Si estamos cerca del final y no hemos alcanzado el límite máximo
+        if (distanceFromBottom < LOAD_MORE_THRESHOLD * 50 && visibleTicketsCount < Math.min(totalTickets, MAX_VISIBLE_TICKETS)) {
+            loadingMoreRef.current = true;
+            // Cargar 100 tickets más
+            setVisibleTicketsCount(prev => Math.min(prev + 100, Math.min(totalTickets, MAX_VISIBLE_TICKETS)));
+            
+            // Permitir cargar más después de un pequeño delay
+            setTimeout(() => {
+                loadingMoreRef.current = false;
+            }, 300);
+        }
+    }, [listingMode, visibleTicketsCount, totalTickets]);
+    
+    // Agregar event listener para scroll solo en modo scroll
+    useEffect(() => {
+        if (listingMode !== 'scroll') {
+            setVisibleTicketsCount(200); // Resetear cuando se cambia a modo paginado
+            return;
+        }
+        
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [listingMode, handleScroll]);
 
     // CRÍTICO: Memoizar renderTickets para evitar recalcular en cada render
     // Usar arrays directamente en dependencias (no Sets), Sets se recrean dentro
@@ -48,9 +94,12 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
         const currentSelectedSet = new Set(selectedTickets);
 
         const tickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
+        
+        // CRÍTICO: En modo scroll, limitar tickets visibles para evitar crashes
+        // Solo renderizar los primeros N tickets (lazy loading)
         const visibleTickets = listingMode === 'paginado'
             ? tickets.slice((currentPage - 1) * ticketsPerPage, (currentPage * ticketsPerPage))
-            : tickets;
+            : tickets.slice(0, visibleTicketsCount); // ✅ Solo renderizar hasta visibleTicketsCount
 
         return visibleTickets
             .filter(ticket => hideOccupied ? !currentOccupiedSet.has(ticket) : true)
@@ -117,7 +166,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                 </motion.div>
             );
         });
-    }, [totalTickets, occupiedTickets, selectedTickets, currentPage, listingMode, hideOccupied, ticketsPerPage, mobile, ticketPadding, onTicketClick]);
+    }, [totalTickets, occupiedTickets, selectedTickets, currentPage, listingMode, hideOccupied, ticketsPerPage, mobile, ticketPadding, onTicketClick, visibleTicketsCount]);
     
     const Legend = () => (
         <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mb-4 text-sm">
@@ -130,10 +179,27 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     return (
         <div className="bg-background-secondary p-4 rounded-lg shadow-lg border border-slate-700/50">
             <Legend />
-            <div className={listingMode === 'scroll' ? 'max-h-[60vh] overflow-y-auto pr-1' : ''}>
+            <div 
+                ref={scrollContainerRef}
+                className={listingMode === 'scroll' ? 'max-h-[60vh] overflow-y-auto pr-1' : ''}
+            >
                 <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                     {renderTickets}
                 </div>
+                {/* Indicador de más tickets disponibles en modo scroll */}
+                {listingMode === 'scroll' && visibleTicketsCount < totalTickets && visibleTicketsCount < MAX_VISIBLE_TICKETS && (
+                    <div className="text-center py-4 text-slate-400 text-sm">
+                        Mostrando {visibleTicketsCount} de {totalTickets} boletos. Desplázate hacia abajo para ver más...
+                    </div>
+                )}
+                {/* Advertencia si se alcanza el límite máximo */}
+                {listingMode === 'scroll' && visibleTicketsCount >= MAX_VISIBLE_TICKETS && visibleTicketsCount < totalTickets && (
+                    <div className="text-center py-4 text-yellow-400 text-sm">
+                        ⚠️ Límite de rendimiento alcanzado. Mostrando {MAX_VISIBLE_TICKETS} de {totalTickets} boletos.
+                        <br />
+                        <span className="text-xs text-slate-500">Usa el modo "Por página" para ver todos los boletos.</span>
+                    </div>
+                )}
             </div>
             {listingMode === 'paginado' && (
                 <div className="flex justify-center items-center gap-4 mt-4 text-white">
