@@ -595,7 +595,9 @@ export class AdminService {
             const parsed = JSON.parse(data.bonuses);
             raffleData.bonuses = Array.isArray(parsed) ? parsed.filter((b: any) => b && typeof b === 'string' && b.trim() !== '') : [];
           } catch (e) {
-            raffleData.bonuses = data.bonuses.trim() !== '' ? [data.bonuses] : [];
+            // Si no es JSON válido, tratarlo como string simple
+            const bonusString = String(data.bonuses);
+            raffleData.bonuses = bonusString.trim() !== '' ? [bonusString] : [];
           }
         } else {
           raffleData.bonuses = [];
