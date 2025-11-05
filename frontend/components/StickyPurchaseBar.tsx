@@ -5,15 +5,17 @@ import { useNavigate } from 'react-router-dom';
 import { Raffle, Pack } from '../types';
 
 interface StickyPurchaseBarProps {
-  raffleSlug: string;
-  selectedTickets: number[];
-  totalPrice: number;
-  onRemoveTicket: (ticket: number) => void;
-  isSubmitting: boolean;
-  raffle?: Raffle;
-  selectedPack?: Pack | null;
-  packQuantity?: number;
-  onClearPack?: () => void;
+    raffleSlug: string;
+    selectedTickets: number[];
+    totalPrice: number;
+    onRemoveTicket: (ticket: number) => void;
+    isSubmitting: boolean;
+    raffle?: Raffle;
+    selectedPack?: Pack | null;
+    packQuantity?: number;
+    onClearPack?: () => void;
+    matchedPack?: Pack | null;
+    savingsFromPack?: number;
 }
 
 const StickyPurchaseBar = ({ 
@@ -25,7 +27,9 @@ const StickyPurchaseBar = ({
     raffle,
     selectedPack,
     packQuantity = 1,
-    onClearPack
+    onClearPack,
+    matchedPack,
+    savingsFromPack = 0
 }: StickyPurchaseBarProps) => {
     const navigate = useNavigate();
 
@@ -79,12 +83,19 @@ const StickyPurchaseBar = ({
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-sm text-slate-300">
-                                    Has seleccionado {selectedTickets.length} boleto(s)
-                                    {boletosAdicionales > 0 && (
-                                        <span className="text-green-400 font-semibold"> + {boletosAdicionales} de regalo</span>
+                                <>
+                                    <p className="text-sm text-slate-300">
+                                        Has seleccionado {selectedTickets.length} boleto(s)
+                                        {boletosAdicionales > 0 && (
+                                            <span className="text-green-400 font-semibold"> + {boletosAdicionales} de regalo</span>
+                                        )}
+                                    </p>
+                                    {matchedPack && savingsFromPack > 0 && (
+                                        <p className="text-xs text-green-400 font-semibold mt-1">
+                                            🎁 Descuento aplicado: -LPS {savingsFromPack.toFixed(2)}
+                                        </p>
                                     )}
-                                </p>
+                                </>
                             )}
                             <p className="font-bold text-white text-lg">
                                 LPS {totalPrice.toFixed(2)}

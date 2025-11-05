@@ -177,13 +177,39 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
     // Usar el precio base del esquema Prisma (no packs)
     const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     
+    // Detectar si la selección manual coincide con algún paquete
+    const matchedPack = useMemo(() => {
+        if (selectedPack || initialTickets.length === 0 || !raffle?.packs) return null;
+        
+        // Buscar un paquete que coincida con la cantidad de boletos seleccionados
+        const matchingPack = raffle.packs.find(pack => {
+            const packTicketCount = pack.tickets || pack.q || 1;
+            return packTicketCount === initialTickets.length;
+        });
+        
+        return matchingPack || null;
+    }, [selectedPack, initialTickets.length, raffle?.packs]);
+
     // Calcular total según si hay paquete o boletos individuales
     const total = useMemo(() => {
         if (selectedPack) {
             return selectedPack.price * packQuantity;
         }
+        
+        // Si la selección manual coincide con un paquete, aplicar su precio
+        if (matchedPack) {
+            return matchedPack.price;
+        }
+        
         return initialTickets.length * pricePerTicket;
-    }, [selectedPack, packQuantity, initialTickets.length, pricePerTicket]);
+    }, [selectedPack, packQuantity, initialTickets.length, pricePerTicket, matchedPack]);
+    
+    // Calcular ahorro si se aplicó un paquete automáticamente
+    const savingsFromPack = useMemo(() => {
+        if (!matchedPack || selectedPack) return 0;
+        const individualPrice = initialTickets.length * pricePerTicket;
+        return individualPrice - matchedPack.price;
+    }, [matchedPack, initialTickets.length, pricePerTicket, selectedPack]);
     
     // Calcular boletos de regalo si tiene oportunidades
     const boletosAdicionales = useMemo(() => {
@@ -532,12 +558,35 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {initialTickets.map(t => (
-                                        <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                            #{t.toString().padStart(3, '0')}
-                                        </span>
-                                    ))}
+                                <div className="mb-4">
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {initialTickets.map(t => (
+                                            <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
+                                                #{t.toString().padStart(3, '0')}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    {/* Mostrar si se aplicó un paquete automáticamente */}
+                                    {matchedPack && savingsFromPack > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="bg-gradient-to-r from-green-900/30 to-green-800/30 border-2 border-green-500/50 rounded-xl p-3"
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-green-400 font-semibold text-sm flex items-center">
+                                                    <span className="mr-2">🎁</span>
+                                                    Descuento de Paquete Aplicado
+                                                </span>
+                                                <span className="text-green-400 font-bold text-sm">
+                                                    -LPS {savingsFromPack.toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <p className="text-green-300 text-xs">
+                                                {matchedPack.name || `Pack de ${matchedPack.tickets || matchedPack.q || 1} boletos`} aplicado automáticamente
+                                            </p>
+                                        </motion.div>
+                                    )}
                                 </div>
                             )}
                             
@@ -573,10 +622,24 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-slate-300">Cantidad de boletos:</span>
-                                        <span className="text-white font-bold text-lg">{initialTickets.length}</span>
-                                    </div>
+                                    <>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-slate-300">Cantidad de boletos:</span>
+                                            <span className="text-white font-bold text-lg">{initialTickets.length}</span>
+                                        </div>
+                                        {matchedPack && savingsFromPack > 0 && (
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-green-400">Descuento aplicado:</span>
+                                                <span className="text-green-400 font-bold">-LPS {savingsFromPack.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                        {!matchedPack && (
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-slate-300">Precio unitario:</span>
+                                                <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {boletosAdicionales > 0 && (
                                     <div className="flex justify-between items-center mb-3">
@@ -584,15 +647,17 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                         <span className="text-green-400 font-bold">+ {boletosAdicionales}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="text-slate-300">Precio unitario:</span>
-                                    <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
-                                </div>
                                 <div className="border-t border-slate-700/50 pt-3">
                                     <div className="flex justify-between items-center">
                                         <span className="text-white font-bold text-xl">Total a pagar:</span>
                                         <span className="text-accent font-bold text-2xl">LPS {total.toFixed(2)}</span>
                                     </div>
+                                    {matchedPack && savingsFromPack > 0 && (
+                                        <div className="flex justify-between items-center mt-2">
+                                            <span className="text-green-400 text-sm">Ahorro:</span>
+                                            <span className="text-green-400 font-bold text-sm">LPS {savingsFromPack.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

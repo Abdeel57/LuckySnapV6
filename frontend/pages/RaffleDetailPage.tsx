@@ -110,15 +110,41 @@ const RaffleDetailPage = () => {
         return raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
     }, [raffle?.id, raffle?.price, raffle?.packs?.length]);
 
+    // Detectar si la selección manual coincide con algún paquete
+    const matchedPack = useMemo(() => {
+        if (selectedPack || selectedTickets.length === 0 || !raffle?.packs) return null;
+        
+        // Buscar un paquete que coincida con la cantidad de boletos seleccionados
+        const matchingPack = raffle.packs.find(pack => {
+            const packTicketCount = pack.tickets || pack.q || 1;
+            return packTicketCount === selectedTickets.length;
+        });
+        
+        return matchingPack || null;
+    }, [selectedPack, selectedTickets.length, raffle?.packs]);
+
     // Calcular precio total considerando paquetes o boletos individuales
     const totalPrice = useMemo(() => {
         if (selectedPack) {
-            // Si hay un paquete seleccionado, usar su precio
+            // Si hay un paquete seleccionado explícitamente, usar su precio
             return selectedPack.price * packQuantity;
         }
+        
+        // Si la selección manual coincide con un paquete, aplicar su precio
+        if (matchedPack) {
+            return matchedPack.price;
+        }
+        
         // Si no hay paquete, usar boletos individuales
         return selectedTickets.length * pricePerTicket;
-    }, [selectedPack, packQuantity, selectedTickets.length, pricePerTicket]);
+    }, [selectedPack, packQuantity, selectedTickets.length, pricePerTicket, matchedPack]);
+    
+    // Calcular ahorro si se aplicó un paquete automáticamente
+    const savingsFromPack = useMemo(() => {
+        if (!matchedPack || selectedPack) return 0;
+        const individualPrice = selectedTickets.length * pricePerTicket;
+        return individualPrice - matchedPack.price;
+    }, [matchedPack, selectedTickets.length, pricePerTicket, selectedPack]);
 
     // Manejar selección de paquetes
     const handlePackSelect = useCallback((pack: Pack | null, quantity: number) => {
@@ -288,10 +314,39 @@ const RaffleDetailPage = () => {
                                                 </div>
                                             </>
                                         ) : (
-                                            <div className="flex justify-between text-slate-300">
-                                                <span>Boletos seleccionados:</span>
-                                                <span>{selectedTickets.length}</span>
-                                            </div>
+                                            <>
+                                                <div className="flex justify-between text-slate-300">
+                                                    <span>Boletos seleccionados:</span>
+                                                    <span>{selectedTickets.length}</span>
+                                                </div>
+                                                {/* Mostrar si se aplicó un paquete automáticamente */}
+                                                {matchedPack && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="bg-gradient-to-r from-green-900/30 to-green-800/30 border-2 border-green-500/50 rounded-xl p-3 mb-2"
+                                                    >
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="text-green-400 font-semibold text-sm flex items-center">
+                                                                <span className="mr-2">🎁</span>
+                                                                Descuento de Paquete Aplicado
+                                                            </span>
+                                                            <span className="text-green-400 font-bold text-sm">
+                                                                -LPS {savingsFromPack.toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-green-300 text-xs">
+                                                            {matchedPack.name || `Pack de ${matchedPack.tickets || matchedPack.q || 1} boletos`} aplicado automáticamente
+                                                        </p>
+                                                    </motion.div>
+                                                )}
+                                                {!matchedPack && (
+                                                    <div className="flex justify-between text-slate-300">
+                                                        <span>Precio por boleto:</span>
+                                                        <span>LPS {pricePerTicket.toFixed(2)}</span>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                         {boletosAdicionales > 0 && (
                                             <div className="flex justify-between text-green-400 font-semibold">
@@ -299,17 +354,17 @@ const RaffleDetailPage = () => {
                                                 <span>+{boletosAdicionales}</span>
                                             </div>
                                         )}
-                                        {!selectedPack && (
-                                            <div className="flex justify-between text-slate-300">
-                                                <span>Precio por boleto:</span>
-                                                <span>LPS {pricePerTicket.toFixed(2)}</span>
-                                            </div>
-                                        )}
                                         <div className="border-t border-slate-700/50 pt-2">
                                             <div className="flex justify-between text-white font-bold text-lg">
                                                 <span>Total:</span>
                                                 <span className="text-accent">LPS {totalPrice.toFixed(2)}</span>
                                             </div>
+                                            {matchedPack && savingsFromPack > 0 && (
+                                                <div className="flex justify-between text-green-400 text-sm mt-1">
+                                                    <span>Ahorro:</span>
+                                                    <span>LPS {savingsFromPack.toFixed(2)}</span>
+                                                </div>
+                                            )}
                                         </div>
                                         {boletosAdicionales > 0 && (
                                             <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 mt-3">
@@ -332,17 +387,19 @@ const RaffleDetailPage = () => {
                     </div>
                 </div>
             </div>
-            <StickyPurchaseBar 
-                raffleSlug={raffle.slug}
-                selectedTickets={selectedTickets}
-                totalPrice={totalPrice}
-                onRemoveTicket={handleTicketClick}
-                isSubmitting={false}
-                raffle={raffle}
-                selectedPack={selectedPack}
-                packQuantity={packQuantity}
-                onClearPack={() => setSelectedPack(null)}
-            />
+                <StickyPurchaseBar 
+                    raffleSlug={raffle.slug}
+                    selectedTickets={selectedTickets}
+                    totalPrice={totalPrice}
+                    onRemoveTicket={handleTicketClick}
+                    isSubmitting={false}
+                    raffle={raffle}
+                    selectedPack={selectedPack}
+                    packQuantity={packQuantity}
+                    onClearPack={() => setSelectedPack(null)}
+                    matchedPack={matchedPack}
+                    savingsFromPack={savingsFromPack}
+                />
         </PageAnimator>
     );
 };
