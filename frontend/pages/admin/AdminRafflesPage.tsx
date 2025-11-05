@@ -39,10 +39,17 @@ const AdminRafflesPage: React.FC = () => {
     const fetchRaffles = async () => {
         setLoading(true);
         try {
+            console.log('📋 Fetching raffles...');
             const data = await getRaffles();
+            console.log('✅ Raffles fetched:', data.length);
+            if (data.length > 0) {
+                console.log('📝 First raffle ID:', data[0]?.id);
+                console.log('📝 First raffle title:', data[0]?.title);
+            }
             setRaffles(data);
         } catch (error) {
-            console.error('Error fetching raffles:', error);
+            console.error('❌ Error fetching raffles:', error);
+            toast.error('Error al cargar rifas', 'No se pudieron cargar las rifas desde el backend');
         } finally {
             setLoading(false);
         }
