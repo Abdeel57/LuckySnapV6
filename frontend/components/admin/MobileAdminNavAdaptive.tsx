@@ -11,6 +11,8 @@ interface MobileAdminNavAdaptiveProps {
 const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
+    const { user } = useAuth();
+    const isVendedor = user?.role === 'ventas';
     
     // Debug: Verificar qué links se reciben
     console.log('📱 MobileAdminNavAdaptive - Links recibidos:', navLinks.map(l => ({ to: l.to, text: l.text })));
@@ -25,6 +27,11 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
     // Si no hay links, no renderizar nada
     if (!navLinks || navLinks.length === 0) {
         console.warn('⚠️ MobileAdminNavAdaptive - No hay links para mostrar');
+        return null;
+    }
+    
+    // Si es vendedor, no mostrar el botón flotante ni el menú
+    if (isVendedor) {
         return null;
     }
     
@@ -52,10 +59,6 @@ const MobileAdminNavAdaptive = ({ navLinks }: MobileAdminNavAdaptiveProps) => {
                 )}
             </AnimatePresence>
             
-            {/* Indicador de que es la nueva navegación */}
-            <div className="lg:hidden fixed bottom-6 left-6 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold z-50">
-                NUEVA NAV
-            </div>
 
             {/* Menú adaptativo */}
             <AnimatePresence>
