@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Raffle } from '../types';
 import CountdownTimer from './CountdownTimer';
-import { ShoppingBag } from 'lucide-react';
+// Removed ShoppingBag import - no longer needed
 import ResponsiveImage from './ResponsiveImage';
 
 interface HeroRaffleProps {
@@ -120,7 +120,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                     initial={isMobile ? { opacity: 0 } : { opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={isMobile ? { duration: 0.4 } : { duration: 0.8 }}
-                    className="flex flex-col items-center text-center space-y-8"
+                    className="flex flex-col items-center text-center space-y-6 sm:space-y-8"
                 >
                     {/* Título */}
                     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight max-w-4xl">
@@ -134,19 +134,20 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                         </p>
                     )}
 
-                    {/* Precio */}
-                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-accent rounded-full">
-                        <span className="text-white/80 text-sm font-medium">Precio por boleto:</span>
-                        <span className="text-white text-xl font-bold">L. {raffle.price}</span>
+                    {/* Espacio adicional para mover elementos más abajo */}
+                    <div className="h-4 sm:h-6 md:h-8"></div>
+
+                    {/* Precio - Simplificado */}
+                    <div className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 bg-accent rounded-full">
+                        <span className="text-white text-lg sm:text-xl font-bold">L. {raffle.price}</span>
                     </div>
 
-                    {/* Botón principal - Comprar Boletos */}
+                    {/* Botón principal - Comprar Boletos - Más delgado, sin ícono */}
                     <Link
                         to={`/sorteo/${raffle.slug}`}
-                        className="inline-flex items-center gap-3 bg-accent hover:bg-accent/90 text-white font-bold text-lg sm:text-xl px-8 py-4 rounded-2xl shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
+                        className="inline-flex items-center justify-center gap-0 bg-accent hover:bg-accent/90 text-white font-bold text-base sm:text-lg px-8 sm:px-10 py-2.5 sm:py-3 rounded-2xl shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
                     >
-                        <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8" />
-                        <span>Comprar Boletos</span>
+                        <span>COMPRAR BOLETOS</span>
                     </Link>
 
                     {/* Contador de tiempo */}
