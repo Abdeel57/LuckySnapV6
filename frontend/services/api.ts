@@ -1104,3 +1104,16 @@ export const adminUpdateSettings = async (settings: Settings): Promise<Settings>
     });
     return handleResponse(response);
 }
+
+// Admin Authentication
+export const adminLogin = async (username: string, password: string): Promise<AdminUser> => {
+    const response = await fetch(`${API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+    });
+    
+    const result = await handleResponse(response);
+    // La respuesta tiene estructura { success, message, data }
+    return result.data;
+}

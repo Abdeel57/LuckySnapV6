@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AdminUser } from '../types';
-import { getUsers } from '../services/api';
+import { getUsers, adminLogin } from '../services/api';
 
 interface AuthContextType {
     user: AdminUser | null;
@@ -66,39 +66,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true);
         
         try {
-            // Simular delay de autenticación
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
             console.log('🔐 Intentando login para:', username);
-            console.log('📋 Usuarios disponibles:', allUsers.length);
             
-            // Buscar usuario en la lista
-            console.log('🔍 Buscando usuario:', username);
-            console.log('🔑 Usuarios en lista:', allUsers.map(u => ({ username: u.username, role: u.role })));
-            
-            const foundUser = allUsers.find(u => 
-                u.username.toLowerCase() === username.toLowerCase() && 
-                u.password === password
-            );
-            
-            if (foundUser) {
-                const userData = { ...foundUser };
+            // Primero intentar con el superadmin hardcodeado (sin hash)
+            if (username.toLowerCase() === SUPER_ADMIN.username.toLowerCase() && password === SUPER_ADMIN.password) {
+                const userData = { ...SUPER_ADMIN };
                 delete userData.password; // No guardar la contraseña
                 
-                console.log('✅ Usuario encontrado:', userData);
+                console.log('✅ Login exitoso con superadmin');
+                setUser(userData);
+                localStorage.setItem('admin_user', JSON.stringify(userData));
+                setIsLoading(false);
+                return true;
+            }
+            
+            // Intentar login con el backend (usando bcrypt)
+            try {
+                const userData = await adminLogin(username, password);
+                console.log('✅ Login exitoso con backend:', userData);
                 
                 setUser(userData);
                 localStorage.setItem('admin_user', JSON.stringify(userData));
-                console.log('✅ Login exitoso para:', username, 'con rol:', userData.role);
                 setIsLoading(false);
                 return true;
-            } else {
+            } catch (backendError) {
+                console.log('❌ Error en login del backend:', backendError);
                 console.log('❌ Credenciales incorrectas para:', username);
-                console.log('🔍 Comparando contra usuarios:', allUsers.map(u => ({ 
-                    username: u.username, 
-                    matches: u.username.toLowerCase() === username.toLowerCase(),
-                    passwordMatch: u.password === password
-                })));
                 setIsLoading(false);
                 return false;
             }

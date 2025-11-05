@@ -906,6 +906,37 @@ export class AdminService {
   }
 
   // Users
+  async login(username: string, password: string) {
+    try {
+      // Buscar usuario por username
+      const user = await this.prisma.adminUser.findUnique({
+        where: { username }
+      });
+
+      if (!user) {
+        throw new BadRequestException('Credenciales incorrectas');
+      }
+
+      // Comparar contraseña con bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (!isPasswordValid) {
+        throw new BadRequestException('Credenciales incorrectas');
+      }
+
+      // Retornar usuario sin contraseña
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al autenticar usuario');
+    }
+  }
+
   async getUsers() {
     // ✅ NUNCA devolver passwords en las respuestas por seguridad
     const users = await this.prisma.adminUser.findMany({

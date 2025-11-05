@@ -259,6 +259,30 @@ export class AdminController {
   }
 
   // Users
+  @Post('login')
+  async login(@Body() data: { username: string; password: string }) {
+    try {
+      if (!data.username || !data.password) {
+        throw new BadRequestException('Username and password are required');
+      }
+      const user = await this.adminService.login(data.username, data.password);
+      return {
+        success: true,
+        message: 'Login exitoso',
+        data: user
+      };
+    } catch (error) {
+      console.error('❌ Error in login controller:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new HttpException(
+        error instanceof Error ? error.message : 'Error al autenticar',
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+  }
+
   @Get('users')
   async getUsers() {
     try {
