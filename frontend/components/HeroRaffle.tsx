@@ -73,7 +73,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                         <ResponsiveImage
                             src={allImages[currentImageIndex]}
                             alt={raffle.title}
-                            widths={[768, 1200]}
+                            widths={[1200, 1920]}
                             sizesHint="100vw"
                             preferFormat="auto"
                             loading="eager"
@@ -96,7 +96,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
                             <ResponsiveImage
                                 src={allImages[currentImageIndex]}
                                 alt={raffle.title}
-                                widths={[768, 1200, 1600, 1920, 2160]}
+                                widths={[1920, 2560]}
                                 sizesHint="100vw"
                                 preferFormat="auto"
                                 loading="eager"
