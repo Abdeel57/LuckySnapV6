@@ -203,7 +203,7 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
 
                 {/* Contenido principal con scroll optimizado */}
                 <div className="flex-1 overflow-y-auto bg-gray-50">
-                    <form onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
+                    <form id="mobile-raffle-form" onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
                         <AnimatePresence mode="wait">
                             {/* Tab: Información Básica */}
                             {activeTab === 'basic' && (
@@ -564,6 +564,7 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                         </button>
                         <button
                             type="submit"
+                            form="mobile-raffle-form"
                             disabled={isSubmitting || loading}
                             className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
