@@ -1,17 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import Spinner from '../../components/Spinner';
+import { getSettings } from '../../services/api';
 
 const AdminLoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [logoUrl, setLogoUrl] = useState('');
     const { login, isLoading } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Cargar logo del sitio desde la configuración
+        getSettings().then(settings => {
+            if (settings?.appearance?.logo) {
+                setLogoUrl(settings.appearance.logo);
+            }
+        }).catch(() => {
+            // Si falla, continuar sin logo
+        });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,7 +52,7 @@ const AdminLoginPage = () => {
                 className="w-full max-w-md"
             >
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 sm:p-10">
-                    {/* Logo del sitio - Texto Lucky Snap */}
+                    {/* Logo del sitio */}
                     <div className="text-center mb-8">
                         <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
@@ -47,10 +60,17 @@ const AdminLoginPage = () => {
                             transition={{ duration: 0.5 }}
                             className="mb-6"
                         >
-                            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-                                <span className="text-3xl font-bold text-white">LS</span>
-                            </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Lucky Snap</h1>
+                            {logoUrl ? (
+                                <img
+                                    src={logoUrl}
+                                    alt="Lucky Snap"
+                                    className="mx-auto h-24 sm:h-28 w-auto object-contain mb-4"
+                                />
+                            ) : (
+                                <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                                    <span className="text-4xl font-bold text-white">LS</span>
+                                </div>
+                            )}
                         </motion.div>
                         <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Bienvenido</h2>
                         <p className="text-gray-500 text-sm">Inicia sesión para acceder al panel</p>
