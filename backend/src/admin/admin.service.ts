@@ -476,11 +476,23 @@ export class AdminService {
         slug: autoSlug,
         boletosConOportunidades: data.boletosConOportunidades || false,
         numeroOportunidades: data.numeroOportunidades || 1,
-        packs: data.packs ? JSON.parse(JSON.stringify(data.packs)) : null,
-        bonuses: data.bonuses && Array.isArray(data.bonuses) ? data.bonuses.filter(b => b && b.trim() !== '') : [],
+        packs: data.packs && Array.isArray(data.packs) && data.packs.length > 0 
+          ? JSON.parse(JSON.stringify(data.packs)) 
+          : null,
+        bonuses: data.bonuses && Array.isArray(data.bonuses) 
+          ? data.bonuses.filter(b => b && typeof b === 'string' && b.trim() !== '') 
+          : [],
       };
 
-      console.log('📝 Creating raffle with data:', raffleData);
+      console.log('📝 Creating raffle with data:', {
+        ...raffleData,
+        packs: raffleData.packs,
+        bonuses: raffleData.bonuses,
+        packsType: typeof raffleData.packs,
+        bonusesType: typeof raffleData.bonuses,
+        packsIsArray: Array.isArray(raffleData.packs),
+        bonusesIsArray: Array.isArray(raffleData.bonuses)
+      });
       
       const createdRaffle = await this.prisma.raffle.create({ 
         data: raffleData 
