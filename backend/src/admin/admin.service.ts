@@ -412,27 +412,69 @@ export class AdminService {
       // Asegurar que packs y bonuses se serialicen correctamente
       // Convertir a JSON plano para evitar problemas de serialización
       return raffles.map(raffle => {
-        const serialized = {
-          id: raffle.id,
-          title: raffle.title,
-          description: raffle.description,
-          imageUrl: raffle.imageUrl,
-          gallery: raffle.gallery,
-          price: raffle.price,
-          tickets: raffle.tickets,
-          sold: raffle.sold,
-          drawDate: raffle.drawDate,
-          status: raffle.status,
-          slug: raffle.slug,
-          boletosConOportunidades: raffle.boletosConOportunidades,
-          numeroOportunidades: raffle.numeroOportunidades,
-          giftTickets: raffle.giftTickets,
-          packs: raffle.packs || null,
-          bonuses: Array.isArray(raffle.bonuses) ? [...raffle.bonuses] : [],
-          createdAt: raffle.createdAt,
-          updatedAt: raffle.updatedAt,
-        };
-        return serialized;
+        try {
+          // Serializar packs de forma segura
+          let serializedPacks = null;
+          if (raffle.packs) {
+            try {
+              serializedPacks = JSON.parse(JSON.stringify(raffle.packs));
+            } catch (e) {
+              console.warn('⚠️ Error serializing packs for raffle:', raffle.id, e);
+              serializedPacks = null;
+            }
+          }
+          
+          // Serializar bonuses de forma segura
+          let serializedBonuses: string[] = [];
+          if (Array.isArray(raffle.bonuses)) {
+            serializedBonuses = raffle.bonuses.map(b => String(b || ''));
+          }
+          
+          const serialized = {
+            id: raffle.id,
+            title: raffle.title,
+            description: raffle.description,
+            imageUrl: raffle.imageUrl,
+            gallery: raffle.gallery,
+            price: Number(raffle.price),
+            tickets: Number(raffle.tickets),
+            sold: Number(raffle.sold),
+            drawDate: raffle.drawDate,
+            status: raffle.status,
+            slug: raffle.slug,
+            boletosConOportunidades: Boolean(raffle.boletosConOportunidades),
+            numeroOportunidades: Number(raffle.numeroOportunidades),
+            giftTickets: raffle.giftTickets ? Number(raffle.giftTickets) : null,
+            packs: serializedPacks,
+            bonuses: serializedBonuses,
+            createdAt: raffle.createdAt,
+            updatedAt: raffle.updatedAt,
+          };
+          return serialized;
+        } catch (err) {
+          console.error('❌ Error serializing raffle:', raffle.id, err);
+          // Retornar un objeto básico si hay error de serialización
+          return {
+            id: raffle.id,
+            title: raffle.title || 'Error',
+            description: raffle.description,
+            imageUrl: raffle.imageUrl,
+            gallery: null,
+            price: Number(raffle.price) || 0,
+            tickets: Number(raffle.tickets) || 0,
+            sold: Number(raffle.sold) || 0,
+            drawDate: raffle.drawDate,
+            status: raffle.status || 'draft',
+            slug: raffle.slug,
+            boletosConOportunidades: Boolean(raffle.boletosConOportunidades),
+            numeroOportunidades: Number(raffle.numeroOportunidades) || 1,
+            giftTickets: null,
+            packs: null,
+            bonuses: [],
+            createdAt: raffle.createdAt,
+            updatedAt: raffle.updatedAt,
+          };
+        }
       });
     } catch (error) {
       console.error('❌ Error in getAllRaffles:', error);
