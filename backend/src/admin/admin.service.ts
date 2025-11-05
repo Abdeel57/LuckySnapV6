@@ -546,24 +546,24 @@ export class AdminService {
           if (Array.isArray(data.bonuses)) {
             return data.bonuses
               .map(b => {
-                // Si es null o undefined, retornar string vacío
-                if (b === null || b === undefined) return '';
-                // Si es un objeto con 'value', extraer el valor
+                // Si es null o undefined, o no es un objeto, no se puede acceder a 'value'
                 if (typeof b === 'object' && b !== null && 'value' in b) {
                   const value = (b as any).value;
                   return value ? String(value).trim() : '';
                 }
                 // Si ya es un string, usarlo directamente
-                return String(b).trim();
+                if (typeof b === 'string') {
+                  return b.trim();
+                }
+                // Para cualquier otro caso (null, undefined, etc.), se filtrará
+                return '';
               })
               .filter(b => b !== '');
           }
-          if (typeof data.bonuses === 'string') {
-            const bonusString = String(data.bonuses);
-            const trimmed = bonusString.trim();
-            return trimmed !== '' ? [trimmed] : [];
-          }
-          return [];
+          // Si no es un array, tratarlo como un posible string
+          const bonusString = String(data.bonuses || '');
+          const trimmed = bonusString.trim();
+          return trimmed !== '' ? [trimmed] : [];
         })(),
       };
 
@@ -699,42 +699,24 @@ export class AdminService {
         } else if (Array.isArray(data.bonuses)) {
           raffleData.bonuses = data.bonuses
             .map(b => {
-              // Si es null o undefined, retornar string vacío
-              if (b === null || b === undefined) return '';
-              // Si es un objeto con 'value', extraer el valor
+              // Si es null, undefined, o no es un objeto, no se puede acceder a 'value'
               if (typeof b === 'object' && b !== null && 'value' in b) {
                 const value = (b as any).value;
                 return value ? String(value).trim() : '';
               }
-              // Si ya es un string, usarlo directamente
-              return String(b).trim();
+               // Si ya es un string, usarlo directamente
+              if (typeof b === 'string') {
+                return b.trim();
+              }
+              // Para cualquier otro caso, se filtrará
+              return '';
             })
             .filter(b => b !== '');
-        } else if (typeof data.bonuses === 'string') {
-          try {
-            const parsed = JSON.parse(data.bonuses);
-            if (Array.isArray(parsed)) {
-              raffleData.bonuses = parsed
-                .map((b: any) => {
-                  if (b === null || b === undefined) return '';
-                  if (typeof b === 'object' && b !== null && 'value' in b) {
-                    const value = b.value;
-                    return value ? String(value).trim() : '';
-                  }
-                  return String(b).trim();
-                })
-                .filter((b: string) => b !== '');
-            } else {
-              raffleData.bonuses = [];
-            }
-          } catch (e) {
-            // Si no es JSON válido, tratarlo como string simple
-            const bonusString = String(data.bonuses);
-            const trimmed = bonusString.trim();
-            raffleData.bonuses = trimmed !== '' ? [trimmed] : [];
-          }
         } else {
-          raffleData.bonuses = [];
+           // Si no es un array, tratarlo como un posible string
+          const bonusString = String(data.bonuses || '');
+          const trimmed = bonusString.trim();
+          raffleData.bonuses = trimmed !== '' ? [trimmed] : [];
         }
         console.log('✅ Final bonuses value:', raffleData.bonuses);
       }
