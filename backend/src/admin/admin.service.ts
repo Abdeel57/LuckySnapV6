@@ -1122,12 +1122,16 @@ export class AdminService {
       const contactData = contactInfo || {};
       const socialData = socialLinks || {};
       
+      // Usar logo como favicon automáticamente si no hay favicon específico
+      const logoUrl = appearanceData.logo || null;
+      const faviconUrl = appearanceData.favicon || logoUrl;
+      
       const settingsData = {
         siteName: appearanceData.siteName || 'Lucky Snap',
         
         // Appearance settings
-        logo: appearanceData.logo || null,
-        favicon: appearanceData.favicon || null,
+        logo: logoUrl,
+        favicon: faviconUrl, // Usar logo como favicon automáticamente
         logoAnimation: appearanceData.logoAnimation || 'rotate',
         primaryColor: appearanceData.colors?.backgroundPrimary || '#111827',
         secondaryColor: appearanceData.colors?.backgroundSecondary || '#1f2937',
