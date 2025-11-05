@@ -1,34 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import Spinner from '../../components/Spinner';
-import { getSettings } from '../../services/api';
 
 const AdminLoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-    const [logoUrl, setLogoUrl] = useState('');
-    const [siteName, setSiteName] = useState('Lucky Snap');
     const { login, isLoading } = useAuth();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        // Cargar logo del sitio
-        getSettings().then(settings => {
-            if (settings?.appearance?.logo) {
-                setLogoUrl(settings.appearance.logo);
-            }
-            if (settings?.siteName) {
-                setSiteName(settings.siteName);
-            }
-        }).catch(() => {
-            // Si falla, usar valores por defecto
-        });
-    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,31 +31,28 @@ const AdminLoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md"
             >
-                <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-10">
-                    {/* Logo del sitio */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 sm:p-10">
+                    {/* Logo del sitio - Texto Lucky Snap */}
                     <div className="text-center mb-8">
-                        {logoUrl ? (
-                            <motion.img
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ duration: 0.5 }}
-                                src={logoUrl}
-                                alt={siteName}
-                                className="mx-auto h-20 w-auto object-contain mb-6"
-                            />
-                        ) : (
-                            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                                <Lock className="h-10 w-10 text-white" />
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                            className="mb-6"
+                        >
+                            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                                <span className="text-3xl font-bold text-white">LS</span>
                             </div>
-                        )}
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Bienvenido</h1>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Lucky Snap</h1>
+                        </motion.div>
+                        <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">Bienvenido</h2>
                         <p className="text-gray-500 text-sm">Inicia sesión para acceder al panel</p>
                     </div>
 
@@ -90,7 +70,7 @@ const AdminLoginPage = () => {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                    placeholder="Orlando12"
+                                    placeholder="Usuario"
                                     disabled={isLoading}
                                     autoComplete="username"
                                 />
@@ -158,9 +138,9 @@ const AdminLoginPage = () => {
                     </form>
                 </div>
 
-                {/* Texto de copyright o información adicional */}
+                {/* Texto de copyright */}
                 <p className="text-center text-gray-400 text-xs mt-6">
-                    {siteName} © {new Date().getFullYear()}
+                    Lucky Snap © {new Date().getFullYear()}
                 </p>
             </motion.div>
         </div>
