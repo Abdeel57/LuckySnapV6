@@ -45,11 +45,20 @@ const AdminRafflesPage: React.FC = () => {
             if (data.length > 0) {
                 console.log('📝 First raffle ID:', data[0]?.id);
                 console.log('📝 First raffle title:', data[0]?.title);
+                // Verificar que los IDs sean válidos (no "1", "2", etc. de datos locales)
+                const hasInvalidIds = data.some(r => r.id === '1' || r.id === '2' || r.id === '3');
+                if (hasInvalidIds) {
+                    console.warn('⚠️ WARNING: Detected local data with invalid IDs. Backend may not be responding correctly.');
+                    toast.error('Error de conexión', 'No se pudo conectar con el backend. Verifica la configuración.');
+                    setRaffles([]);
+                    return;
+                }
             }
             setRaffles(data);
         } catch (error) {
             console.error('❌ Error fetching raffles:', error);
-            toast.error('Error al cargar rifas', 'No se pudieron cargar las rifas desde el backend');
+            toast.error('Error al cargar rifas', 'No se pudieron cargar las rifas desde el backend. Verifica la conexión.');
+            setRaffles([]); // No usar datos locales
         } finally {
             setLoading(false);
         }

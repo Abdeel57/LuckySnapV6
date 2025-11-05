@@ -558,15 +558,15 @@ export const getRaffles = async (): Promise<Raffle[]> => {
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);
+            const errorText = await response.text();
+            console.log('❌ Error response:', errorText);
+            throw new Error(`Backend returned ${response.status}: ${errorText}`);
         }
     } catch (error) {
-        console.log('❌ Backend failed with exception:', error);
+        console.error('❌ Backend failed with exception:', error);
+        // NO usar datos locales - mejor lanzar el error para que el frontend lo maneje
+        throw error;
     }
-    
-    // Fallback to local data
-    console.log('🔄 Using local data for get raffles');
-    const { localApi } = await import('./localApi');
-    return localApi.getRaffles();
 };
 
 export const getUsers = async (): Promise<AdminUser[]> => {

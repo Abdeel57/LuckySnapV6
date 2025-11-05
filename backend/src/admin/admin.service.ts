@@ -410,11 +410,30 @@ export class AdminService {
       });
       console.log('✅ Found', raffles.length, 'raffles');
       // Asegurar que packs y bonuses se serialicen correctamente
-      return raffles.map(raffle => ({
-        ...raffle,
-        packs: raffle.packs || null,
-        bonuses: raffle.bonuses || [],
-      }));
+      // Convertir a JSON plano para evitar problemas de serialización
+      return raffles.map(raffle => {
+        const serialized = {
+          id: raffle.id,
+          title: raffle.title,
+          description: raffle.description,
+          imageUrl: raffle.imageUrl,
+          gallery: raffle.gallery,
+          price: raffle.price,
+          tickets: raffle.tickets,
+          sold: raffle.sold,
+          drawDate: raffle.drawDate,
+          status: raffle.status,
+          slug: raffle.slug,
+          boletosConOportunidades: raffle.boletosConOportunidades,
+          numeroOportunidades: raffle.numeroOportunidades,
+          giftTickets: raffle.giftTickets,
+          packs: raffle.packs || null,
+          bonuses: Array.isArray(raffle.bonuses) ? [...raffle.bonuses] : [],
+          createdAt: raffle.createdAt,
+          updatedAt: raffle.updatedAt,
+        };
+        return serialized;
+      });
     } catch (error) {
       console.error('❌ Error in getAllRaffles:', error);
       throw new Error(`Error al obtener las rifas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
