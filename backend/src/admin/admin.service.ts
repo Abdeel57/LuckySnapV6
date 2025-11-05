@@ -651,11 +651,25 @@ export class AdminService {
         } else if (typeof data.bonuses === 'string') {
           try {
             const parsed = JSON.parse(data.bonuses);
-            raffleData.bonuses = Array.isArray(parsed) ? parsed.filter((b: any) => b && typeof b === 'string' && b.trim() !== '') : [];
+            if (Array.isArray(parsed)) {
+              raffleData.bonuses = parsed
+                .map((b: any) => {
+                  if (b === null || b === undefined) return '';
+                  if (typeof b === 'object' && 'value' in b) {
+                    const value = b.value;
+                    return value ? String(value).trim() : '';
+                  }
+                  return String(b).trim();
+                })
+                .filter((b: string) => b !== '');
+            } else {
+              raffleData.bonuses = [];
+            }
           } catch (e) {
             // Si no es JSON válido, tratarlo como string simple
             const bonusString = String(data.bonuses);
-            raffleData.bonuses = bonusString.trim() !== '' ? [bonusString] : [];
+            const trimmed = bonusString.trim();
+            raffleData.bonuses = trimmed !== '' ? [trimmed] : [];
           }
         } else {
           raffleData.bonuses = [];
