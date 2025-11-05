@@ -549,7 +549,7 @@ export class AdminService {
                 // Si es null o undefined, retornar string vacío
                 if (b === null || b === undefined) return '';
                 // Si es un objeto con 'value', extraer el valor
-                if (typeof b === 'object' && 'value' in b) {
+                if (typeof b === 'object' && b !== null && 'value' in b) {
                   const value = (b as any).value;
                   return value ? String(value).trim() : '';
                 }
@@ -559,7 +559,8 @@ export class AdminService {
               .filter(b => b !== '');
           }
           if (typeof data.bonuses === 'string') {
-            const trimmed = data.bonuses.trim();
+            const bonusString = String(data.bonuses);
+            const trimmed = bonusString.trim();
             return trimmed !== '' ? [trimmed] : [];
           }
           return [];
@@ -701,7 +702,7 @@ export class AdminService {
               // Si es null o undefined, retornar string vacío
               if (b === null || b === undefined) return '';
               // Si es un objeto con 'value', extraer el valor
-              if (typeof b === 'object' && 'value' in b) {
+              if (typeof b === 'object' && b !== null && 'value' in b) {
                 const value = (b as any).value;
                 return value ? String(value).trim() : '';
               }
@@ -716,7 +717,7 @@ export class AdminService {
               raffleData.bonuses = parsed
                 .map((b: any) => {
                   if (b === null || b === undefined) return '';
-                  if (typeof b === 'object' && 'value' in b) {
+                  if (typeof b === 'object' && b !== null && 'value' in b) {
                     const value = b.value;
                     return value ? String(value).trim() : '';
                   }
