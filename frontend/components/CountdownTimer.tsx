@@ -24,12 +24,26 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
             return { days: 0, hours: 0, minutes: 0, seconds: 0 };
         }
         
-        const duration = intervalToDuration({ start: now, end: target });
+        // Calcular diferencia total en milisegundos
+        const diffMs = target.getTime() - now.getTime();
+        
+        // Convertir a diferentes unidades de tiempo
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours = Math.floor(totalMinutes / 60);
+        const totalDays = Math.floor(totalHours / 24);
+        
+        // Calcular los valores restantes después de extraer las unidades mayores
+        const days = totalDays;
+        const hours = totalHours % 24;
+        const minutes = totalMinutes % 60;
+        const seconds = totalSeconds % 60;
+        
         return {
-            days: duration.days || 0,
-            hours: duration.hours || 0,
-            minutes: duration.minutes || 0,
-            seconds: duration.seconds || 0,
+            days,
+            hours,
+            minutes,
+            seconds,
         };
     }, [target]);
 
