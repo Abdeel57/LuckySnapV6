@@ -52,7 +52,8 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
     const getDigitCount = (value: number): number => {
         if (value >= 1000) return 4; // Para valores muy grandes (aunque es raro)
         if (value >= 100) return 3;  // Para valores >= 100
-        return 2;                    // Mínimo 2 dígitos
+        if (value >= 10) return 2;  // Para valores >= 10
+        return 2;                    // Mínimo 2 dígitos (incluye 0-9)
     };
 
     const timeUnits = [
@@ -81,17 +82,26 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date | string }) => {
             {timeUnits.map((unit, index) => {
                 // Determinar el tamaño de los dígitos basado en el número de dígitos
                 const isThreeOrMoreDigits = unit.digitCount >= 3;
-                const digitSizeClasses = isThreeOrMoreDigits
-                    ? "w-7 h-11 sm:w-9 sm:h-13 md:w-11 md:h-15 lg:w-13 lg:h-19" // Más pequeño cuando hay 3+ dígitos
+                const isFourDigits = unit.digitCount >= 4;
+                
+                // Tamaños de contenedor ajustados según número de dígitos
+                const digitSizeClasses = isFourDigits
+                    ? "w-6 h-9 sm:w-7 sm:h-11 md:w-8 md:h-12 lg:w-9 lg:h-14" // Muy pequeño para 4 dígitos
+                    : isThreeOrMoreDigits
+                    ? "w-7 h-10 sm:w-8 sm:h-12 md:w-9 md:h-14 lg:w-10 lg:h-16" // Más pequeño cuando hay 3 dígitos
                     : "w-8 h-12 sm:w-10 sm:h-14 md:w-12 md:h-16 lg:w-14 lg:h-20"; // Tamaño normal para 2 dígitos
                 
-                const textSizeClasses = isThreeOrMoreDigits
-                    ? "text-base sm:text-lg md:text-xl lg:text-3xl" // Texto más pequeño para 3+ dígitos
-                    : "text-lg sm:text-xl md:text-2xl lg:text-4xl"; // Tamaño normal
+                // Tamaños de texto ajustados
+                const textSizeClasses = isFourDigits
+                    ? "text-sm sm:text-base md:text-lg lg:text-xl" // Muy pequeño para 4 dígitos
+                    : isThreeOrMoreDigits
+                    ? "text-base sm:text-lg md:text-xl lg:text-2xl" // Texto más pequeño para 3 dígitos
+                    : "text-lg sm:text-xl md:text-2xl lg:text-4xl"; // Tamaño normal para 2 dígitos
                 
+                // Espacios entre dígitos ajustados
                 const gapClasses = isThreeOrMoreDigits
-                    ? "gap-0.5 sm:gap-1 md:gap-1.5" // Gaps más pequeños
-                    : "gap-1 sm:gap-1.5 md:gap-2"; // Gaps normales
+                    ? "gap-0.5 sm:gap-1 md:gap-1" // Gaps más pequeños para 3+ dígitos
+                    : "gap-1 sm:gap-1.5 md:gap-2"; // Gaps normales para 2 dígitos
 
                 return (
                     <React.Fragment key={unit.label}>
