@@ -167,6 +167,32 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         return raffle.packs.find(p => (p.name || '').toLowerCase() === selectedPackName.toLowerCase()) || null;
     }, [raffle, selectedPackName]);
     
+    /**
+     * Función para seleccionar N elementos aleatorios de un array sin repetir
+     */
+    const selectRandomElements = <T,>(array: T[], count: number): T[] => {
+        if (count >= array.length) {
+            return [...array]; // Devolver todos si se piden más de los disponibles
+        }
+        
+        const shuffled = [...array]; // Copia para no modificar el original
+        const selected: T[] = [];
+        
+        // Algoritmo Fisher-Yates para mezclar y seleccionar
+        for (let i = 0; i < count && i < shuffled.length; i++) {
+            // Generar índice aleatorio entre i y el final del array
+            const randomIndex = i + Math.floor(Math.random() * (shuffled.length - i));
+            
+            // Intercambiar elementos
+            [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+            
+            // Agregar el elemento seleccionado
+            selected.push(shuffled[i]);
+        }
+        
+        return selected;
+    };
+
     // Calcular y asignar boletos cuando hay un paquete seleccionado
     useEffect(() => {
         if (selectedPack && raffle && occupiedTickets.length >= 0) {
@@ -179,17 +205,22 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
             // Filtrar solo los disponibles (no ocupados)
             const availableTickets = allTickets.filter(ticket => !occupiedTickets.includes(ticket));
             
-            // Asignar los primeros N boletos disponibles
-            const assigned = availableTickets.slice(0, ticketsInPack);
+            // Seleccionar boletos aleatorios en lugar de secuenciales
+            const assigned = selectRandomElements(availableTickets, ticketsInPack);
+            
+            // Ordenar los boletos asignados para mostrarlos ordenados (opcional)
+            assigned.sort((a, b) => a - b);
+            
             setAssignedPackTickets(assigned);
             
-            console.log('🎫 Assigned pack tickets:', {
+            console.log('🎫 Assigned pack tickets (random):', {
                 pack: selectedPack.name,
                 quantity: packQuantity,
                 ticketsNeeded: ticketsInPack,
                 occupiedCount: occupiedTickets.length,
                 availableCount: availableTickets.length,
-                assigned: assigned
+                assigned: assigned,
+                isRandom: true
             });
         } else {
             setAssignedPackTickets([]);
