@@ -132,6 +132,42 @@ const AdminCustomersPage: React.FC = () => {
         }
     };
 
+    /**
+     * Formatea una fecha a formato hondureño con fecha y hora
+     * Formato: "DD/MM/YYYY HH:MM:SS"
+     */
+    const formatDateTime = (date: Date | string | undefined): string => {
+        if (!date) return 'No disponible';
+        try {
+            const dateObj = typeof date === 'string' ? new Date(date) : date;
+            if (isNaN(dateObj.getTime())) return 'Fecha inválida';
+            
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            const hours = String(dateObj.getHours()).padStart(2, '0');
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+            
+            return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        } catch (error) {
+            console.error('Error formateando fecha:', error);
+            return 'Fecha inválida';
+        }
+    };
+
+    /**
+     * Obtiene la fecha de pago de una orden
+     * Para órdenes pagadas, usa updatedAt (fecha de última actualización)
+     * Si no está pagada, retorna null
+     */
+    const getPaymentDate = (order: Order): Date | string | undefined => {
+        if (isPaid(order.status)) {
+            return order.updatedAt;
+        }
+        return undefined;
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -294,7 +330,7 @@ const AdminCustomersPage: React.FC = () => {
 
                                 <div className="space-y-6">
                                     <div className="bg-gray-50 rounded-xl p-4">
-                                        <h3 className="font-semibold text-gray-900 mb-3">Información</h3>
+                                        <h3 className="font-semibold text-gray-900 mb-3">Información del Cliente</h3>
                                         <div className="grid grid-cols-2 gap-4">
                                             {selectedOrder.customer && (
                                                 <>
@@ -315,13 +351,49 @@ const AdminCustomersPage: React.FC = () => {
                                                 </div>
                                             )}
                                             <div>
-                                                <span className="text-sm text-gray-600">Fecha:</span>
-                                                <p className="font-medium">{selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleDateString('es-ES') : ''}</p>
-                                            </div>
-                                            <div>
                                                 <span className="text-sm text-gray-600">Monto:</span>
                                                 <p className="font-bold text-green-600">${(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}</p>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                            <Clock className="w-4 h-4 mr-2 text-blue-600" />
+                                            Fechas Importantes
+                                        </h3>
+                                        <div className="space-y-3">
+                                            <div className="bg-white rounded-lg p-3 border border-blue-100">
+                                                <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">📅 Fecha y Hora de Apartado</span>
+                                                <p className="font-medium text-gray-900 mt-1">
+                                                    {formatDateTime(selectedOrder.createdAt)}
+                                                </p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Momento en que el cliente apartó los boletos
+                                                </p>
+                                            </div>
+                                            {isPaid(selectedOrder.status) && (
+                                                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">✅ Fecha y Hora de Pago</span>
+                                                    <p className="font-medium text-gray-900 mt-1">
+                                                        {formatDateTime(getPaymentDate(selectedOrder))}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        Momento en que se confirmó el pago
+                                                    </p>
+                                                </div>
+                                            )}
+                                            {!isPaid(selectedOrder.status) && (
+                                                <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                                                    <span className="text-xs font-semibold text-yellow-700 uppercase tracking-wide">⏳ Estado de Pago</span>
+                                                    <p className="font-medium text-gray-900 mt-1">
+                                                        Pendiente
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        El pago aún no ha sido confirmado
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 

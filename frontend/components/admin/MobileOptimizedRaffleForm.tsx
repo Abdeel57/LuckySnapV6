@@ -62,7 +62,6 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                 packs: [{ q: 1, price: 100 }], 
                 bonuses: [], 
                 gallery: [], 
-                sold: 0 
             }
     });
 
@@ -485,19 +484,6 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={labelClasses}>
-                                                        <Users className="w-4 h-4 inline mr-2" />
-                                                        Boletos Vendidos
-                                                    </label>
-                                                    <input
-                                                        {...register('sold', { min: 0 })}
-                                                        type="number"
-                                                        className={inputClasses}
-                                                        placeholder="0"
-                                                    />
-                                                </div>
-
                                                 <div>
                                                     <label className={labelClasses}>
                                                         <CheckCircle className="w-4 h-4 inline mr-2" />

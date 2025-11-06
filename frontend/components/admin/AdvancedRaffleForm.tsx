@@ -72,8 +72,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                 price: 50,
                 packs: [{ q: 1, price: 100 }], 
                 bonuses: [], 
-                gallery: [], 
-                sold: 0 
+                gallery: []
             }
     });
     
@@ -582,18 +581,6 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                                 </p>
                                             </div>
 
-                                            <div>
-                                                <label className={labelClasses}>Boletos Vendidos</label>
-                                                <input
-                                                    type="number"
-                                                    {...register('sold', { min: 0 })}
-                                                    className={inputClasses}
-                                                    placeholder="0"
-                                                />
-                                                <p className="text-gray-500 text-sm mt-1">
-                                                    Número inicial de boletos vendidos
-                                                </p>
-                                            </div>
                                         </div>
 
                                         {/* Boletos con Múltiples Oportunidades */}
@@ -647,7 +634,6 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                             </div>
                                             <ul className="text-yellow-800 text-sm space-y-1">
                                                 <li>• El slug debe ser único y no contener espacios</li>
-                                                <li>• Los boletos vendidos no pueden exceder el total de boletos</li>
                                                 <li>• Una vez activada, la rifa será visible públicamente</li>
                                                 <li>• Las imágenes se optimizan automáticamente</li>
                                                 <li>• Las múltiples oportunidades permiten que cada boleto participe varias veces</li>
