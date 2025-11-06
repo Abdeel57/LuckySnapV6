@@ -20,10 +20,74 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
 
     if (!isOpen || !order) return null;
 
-    const formatPhoneNumber = (phone?: string) => {
+    /**
+     * Normaliza un número de teléfono para Honduras
+     * Formato requerido por WhatsApp: 504XXXXXXXX (código de país + 8 dígitos, sin +)
+     * 
+     * @param phone - Número de teléfono en cualquier formato
+     * @returns Número normalizado para WhatsApp (ej: 50499999999) o cadena vacía si no es válido
+     */
+    const formatPhoneNumberForHonduras = (phone?: string): string => {
         if (!phone) return '';
-        // Remover espacios, guiones y caracteres especiales
-        return phone.replace(/[\s\-\(\)]/g, '');
+        
+        // Remover todos los caracteres no numéricos (espacios, guiones, paréntesis, +, etc.)
+        const digitsOnly = phone.replace(/\D/g, '');
+        
+        // Si no hay dígitos, retornar vacío
+        if (!digitsOnly) return '';
+        
+        // Código de país de Honduras
+        const countryCode = '504';
+        
+        // Casos posibles:
+        // 1. Número local de 8 dígitos (ej: 99999999) → Agregar 504
+        if (digitsOnly.length === 8) {
+            return `${countryCode}${digitsOnly}`;
+        }
+        
+        // 2. Número con código de país al inicio (ej: 50499999999 o 50499999999)
+        if (digitsOnly.startsWith(countryCode) && digitsOnly.length === 11) {
+            return digitsOnly; // Ya tiene el formato correcto
+        }
+        
+        // 3. Número con código de país pero con formato diferente (ej: 00504, etc.)
+        if (digitsOnly.length > 8) {
+            // Buscar si termina con 8 dígitos (asumir que los últimos 8 son el número local)
+            const last8 = digitsOnly.slice(-8);
+            if (last8.length === 8) {
+                return `${countryCode}${last8}`;
+            }
+        }
+        
+        // 4. Si tiene menos de 8 dígitos, no es válido
+        if (digitsOnly.length < 8) {
+            console.warn('Número de teléfono muy corto:', phone);
+            return '';
+        }
+        
+        // 5. Por defecto, si tiene 8+ dígitos, usar los últimos 8 y agregar código de país
+        const last8Digits = digitsOnly.slice(-8);
+        return `${countryCode}${last8Digits}`;
+    };
+
+    /**
+     * Obtiene el número de teléfono del cliente desde la orden
+     * Verifica tanto customer.phone como user.phone (por compatibilidad)
+     */
+    const getCustomerPhone = (): string => {
+        // Intentar obtener de customer primero (formato actual)
+        const customerPhone = order?.customer?.phone;
+        if (customerPhone) {
+            return formatPhoneNumberForHonduras(customerPhone);
+        }
+        
+        // Si no está en customer, intentar user (formato alternativo)
+        const userPhone = (order as any)?.user?.phone;
+        if (userPhone) {
+            return formatPhoneNumberForHonduras(userPhone);
+        }
+        
+        return '';
     };
 
     const getReceiptUrl = () => {
@@ -44,19 +108,37 @@ const PaymentConfirmationModal: React.FC<PaymentConfirmationModalProps> = ({
     };
 
     const handleSendReceipt = () => {
-        // Preparar mensaje para WhatsApp con el link del comprobante
-        const phoneNumber = formatPhoneNumber(order.customer?.phone);
+        // Obtener número de teléfono normalizado
+        const phoneNumber = getCustomerPhone();
+        
         if (!phoneNumber) {
-            alert('No se encontró número de teléfono del cliente');
+            const originalPhone = order?.customer?.phone || (order as any)?.user?.phone || 'No disponible';
+            alert(`No se pudo obtener un número de teléfono válido del cliente.\n\nNúmero encontrado: ${originalPhone}\n\nPor favor, verifica que el cliente tenga un número de teléfono válido de 8 dígitos.`);
+            return;
+        }
+
+        // Validar que el número tenga el formato correcto (11 dígitos: 504 + 8 dígitos)
+        if (phoneNumber.length !== 11 || !phoneNumber.startsWith('504')) {
+            console.error('Número de teléfono con formato incorrecto:', phoneNumber);
+            alert(`El número de teléfono tiene un formato incorrecto: ${phoneNumber}\n\nDebe ser un número de Honduras válido (8 dígitos).`);
             return;
         }
 
         const receiptUrl = getReceiptUrl();
         const message = `¡Tu comprobante de pago está listo! Folio: ${order.folio || 'N/A'}\n\nVer tu comprobante aquí: ${receiptUrl}`;
         const encodedMessage = encodeURIComponent(message);
+        
+        // WhatsApp Web/App URL format: https://wa.me/504XXXXXXXX
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
-        // Abrir WhatsApp
+        console.log('📱 Abriendo WhatsApp:', {
+            phoneNumber,
+            whatsappUrl,
+            customerName: order.customer?.name,
+            folio: order.folio
+        });
+
+        // Abrir WhatsApp en nueva pestaña
         window.open(whatsappUrl, '_blank');
 
         // Cerrar modal después de un momento
