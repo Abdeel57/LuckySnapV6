@@ -61,11 +61,15 @@ const AdvancedRaffleManager: React.FC<AdvancedRaffleManagerProps> = ({
         const active = raffles.filter(r => r.status === 'active').length;
         const draft = raffles.filter(r => r.status === 'draft').length;
         const finished = raffles.filter(r => r.status === 'finished').length;
-        const totalTickets = raffles.reduce((sum, r) => sum + r.tickets, 0);
-        const soldTickets = raffles.reduce((sum, r) => sum + r.sold, 0);
+        const totalTickets = raffles.reduce((sum, r) => sum + (r.tickets || 0), 0);
+        const soldTickets = raffles.reduce((sum, r) => {
+            const sold = typeof r.sold === 'number' && r.sold >= 0 ? r.sold : 0;
+            return sum + sold;
+        }, 0);
         const revenue = raffles.reduce((sum, r) => {
-            const pricePerTicket = r.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
-            return sum + (r.sold * pricePerTicket);
+            const pricePerTicket = r.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+            const sold = typeof r.sold === 'number' && r.sold >= 0 ? r.sold : 0;
+            return sum + (sold * pricePerTicket);
         }, 0);
 
         return {
@@ -76,7 +80,7 @@ const AdvancedRaffleManager: React.FC<AdvancedRaffleManagerProps> = ({
             totalTickets,
             soldTickets,
             revenue,
-            conversionRate: totalTickets > 0 ? (soldTickets / totalTickets) * 100 : 0
+            conversionRate: totalTickets > 0 ? Math.max(0, Math.min(100, (soldTickets / totalTickets) * 100)) : 0
         };
     }, [raffles]);
 
@@ -130,7 +134,12 @@ const AdvancedRaffleManager: React.FC<AdvancedRaffleManagerProps> = ({
     };
 
     const getProgressPercentage = (raffle: Raffle) => {
-        return raffle.tickets > 0 ? (raffle.sold / raffle.tickets) * 100 : 0;
+        if (!raffle.tickets || raffle.tickets <= 0) return 0;
+        // Validar que sold sea un número válido y no negativo
+        const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+        const percentage = (sold / raffle.tickets) * 100;
+        // Asegurar que el porcentaje esté entre 0 y 100
+        return Math.max(0, Math.min(100, percentage));
     };
 
     const isExpiringSoon = (raffle: Raffle) => {

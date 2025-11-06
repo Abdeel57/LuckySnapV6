@@ -28,16 +28,20 @@ const RaffleAnalytics: React.FC<RaffleAnalyticsProps> = ({ raffles }) => {
         const draftRaffles = raffles.filter(r => r.status === 'draft').length;
         const finishedRaffles = raffles.filter(r => r.status === 'finished').length;
         
-        const totalTickets = raffles.reduce((sum, r) => sum + r.tickets, 0);
-        const soldTickets = raffles.reduce((sum, r) => sum + r.sold, 0);
-        const availableTickets = totalTickets - soldTickets;
+        const totalTickets = raffles.reduce((sum, r) => sum + (r.tickets || 0), 0);
+        const soldTickets = raffles.reduce((sum, r) => {
+            const sold = typeof r.sold === 'number' && r.sold >= 0 ? r.sold : 0;
+            return sum + sold;
+        }, 0);
+        const availableTickets = Math.max(0, totalTickets - soldTickets);
         
         const totalRevenue = raffles.reduce((sum, r) => {
-            const pricePerTicket = r.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
-            return sum + (r.sold * pricePerTicket);
+            const pricePerTicket = r.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+            const sold = typeof r.sold === 'number' && r.sold >= 0 ? r.sold : 0;
+            return sum + (sold * pricePerTicket);
         }, 0);
         
-        const conversionRate = totalTickets > 0 ? (soldTickets / totalTickets) * 100 : 0;
+        const conversionRate = totalTickets > 0 ? Math.max(0, Math.min(100, (soldTickets / totalTickets) * 100)) : 0;
         
         // Rifas próximas a vencer (3 días)
         const expiringSoon = raffles.filter(r => {
@@ -48,13 +52,21 @@ const RaffleAnalytics: React.FC<RaffleAnalyticsProps> = ({ raffles }) => {
         
         // Rifas más populares (por ventas)
         const mostPopular = [...raffles]
-            .sort((a, b) => b.sold - a.sold)
+            .sort((a, b) => {
+                const soldA = typeof a.sold === 'number' && a.sold >= 0 ? a.sold : 0;
+                const soldB = typeof b.sold === 'number' && b.sold >= 0 ? b.sold : 0;
+                return soldB - soldA;
+            })
             .slice(0, 3);
         
         // Rifas con mejor conversión
         const bestConversion = [...raffles]
             .filter(r => r.tickets > 0)
-            .sort((a, b) => (b.sold / b.tickets) - (a.sold / a.tickets))
+            .sort((a, b) => {
+                const soldA = typeof a.sold === 'number' && a.sold >= 0 ? a.sold : 0;
+                const soldB = typeof b.sold === 'number' && b.sold >= 0 ? b.sold : 0;
+                return (soldB / b.tickets) - (soldA / a.tickets);
+            })
             .slice(0, 3);
         
         // Estadísticas por mes
@@ -64,9 +76,10 @@ const RaffleAnalytics: React.FC<RaffleAnalyticsProps> = ({ raffles }) => {
                 acc[month] = { count: 0, revenue: 0, tickets: 0 };
             }
             acc[month].count += 1;
-            acc[month].tickets += raffle.sold;
-            const pricePerTicket = raffle.packs.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
-            acc[month].revenue += raffle.sold * pricePerTicket;
+            const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+            acc[month].tickets += sold;
+            const pricePerTicket = raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 0;
+            acc[month].revenue += sold * pricePerTicket;
             return acc;
         }, {} as Record<string, { count: number; revenue: number; tickets: number }>);
 
@@ -265,7 +278,12 @@ const RaffleAnalytics: React.FC<RaffleAnalyticsProps> = ({ raffles }) => {
                             <RaffleCard
                                 key={raffle.id}
                                 raffle={raffle}
-                                metric={`${((raffle.sold / raffle.tickets) * 100).toFixed(1)}% vendido`}
+                                metric={`${(() => {
+                                    const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+                                    const tickets = raffle.tickets > 0 ? raffle.tickets : 1;
+                                    const percentage = Math.max(0, Math.min(100, (sold / tickets) * 100));
+                                    return percentage.toFixed(1);
+                                })()}% vendido`}
                                 icon={CheckCircle}
                             />
                         ))}

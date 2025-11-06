@@ -168,7 +168,11 @@ const RaffleDetailPage = () => {
 
     const progress = useMemo(() => {
         if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
-        return (raffle.sold / raffle.tickets) * 100;
+        // Validar que sold sea un número válido y no negativo
+        const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+        const percentage = (sold / raffle.tickets) * 100;
+        // Asegurar que el porcentaje esté entre 0 y 100
+        return Math.max(0, Math.min(100, percentage));
     }, [raffle?.id, raffle?.sold, raffle?.tickets]);
 
     // CRÍTICO: Memoizar imágenes de galería para evitar recalcular

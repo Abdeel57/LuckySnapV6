@@ -80,6 +80,7 @@ const PurchasePage = () => {
         const ticketsText = formatTickets(tickets);
         const totalFormatted = total.toFixed(2);
 
+        // Usar emojis Unicode directamente para asegurar compatibilidad
         return `Hola! 👋
 
 Acabo de realizar mi pago y quiero enviarte mi comprobante para confirmar mi apartado.
@@ -95,6 +96,26 @@ Acabo de realizar mi pago y quiero enviarte mi comprobante para confirmar mi apa
 • Total pagado: L. ${totalFormatted}
 
 Adjunto el comprobante de pago. Gracias! 🙏`;
+    };
+
+    /**
+     * Codifica un mensaje para WhatsApp preservando correctamente los emojis
+     * WhatsApp acepta emojis Unicode codificados en UTF-8
+     * encodeURIComponent codifica correctamente los emojis si el string está en UTF-8
+     */
+    const encodeWhatsAppMessage = (message: string): string => {
+        // encodeURIComponent debería codificar correctamente los emojis Unicode
+        // Si los emojis aparecen como "?", puede ser un problema de codificación del archivo fuente
+        // o del navegador. Esta función asegura que se codifique correctamente.
+        
+        // Normalizar el string para asegurar que los emojis estén en formato Unicode normalizado
+        const normalized = message.normalize('NFC');
+        
+        // Codificar usando encodeURIComponent que maneja UTF-8 correctamente
+        // Los emojis Unicode se codificarán como %F0%9F%... (formato UTF-8)
+        const encoded = encodeURIComponent(normalized);
+        
+        return encoded;
     };
     
     useEffect(() => {
@@ -422,7 +443,9 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                         orderTotal
                                     );
                                     
-                                    const whatsappUrl = `https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
+                                    // Codificar el mensaje preservando los emojis correctamente
+                                    const encodedMessage = encodeWhatsAppMessage(whatsappMessage);
+                                    const whatsappUrl = `https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=${encodedMessage}`;
                                     
                                     return (
                                         <a 

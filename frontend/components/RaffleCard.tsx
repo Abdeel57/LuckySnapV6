@@ -12,7 +12,15 @@ interface RaffleCardProps {
 const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
     const reduceAnimations = useOptimizedAnimations();
-    const progress = (raffle.sold / raffle.tickets) * 100;
+    
+    // Calcular progreso con validación para evitar valores negativos o inválidos
+    const progress = React.useMemo(() => {
+        const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+        const tickets = typeof raffle.tickets === 'number' && raffle.tickets > 0 ? raffle.tickets : 1;
+        const percentage = (sold / tickets) * 100;
+        // Asegurar que el porcentaje esté entre 0 y 100
+        return Math.max(0, Math.min(100, percentage));
+    }, [raffle.sold, raffle.tickets]);
 
     // Detectar si la descripción es larga
     const isLongDescription = raffle.description && raffle.description.length > 120;
@@ -107,7 +115,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-3">
                         <span className="text-sm font-semibold text-slate-300">Boletos vendidos</span>
-                        <span className="text-sm font-bold text-accent">{raffle.sold} / {raffle.tickets}</span>
+                        <span className="text-sm font-bold text-accent">{(typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0)} / {raffle.tickets}</span>
                     </div>
                     {/* Barra de progreso mejorada */}
                     <div className="w-full bg-slate-700/50 rounded-full h-4 overflow-hidden shadow-inner border border-slate-600/50">
