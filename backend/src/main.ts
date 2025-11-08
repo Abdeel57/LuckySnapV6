@@ -18,7 +18,10 @@ async function bootstrap() {
       /^http:\/\/localhost:5173$/, // Vite dev server
       /\.onrender\.com$/, // Any Render subdomain
       /\.netlify\.app$/, // Any Netlify subdomain
-      /dashboard\.render\.com$/ // Render dashboard
+      /dashboard\.render\.com$/, // Render dashboard
+      'https://luckysnaphn.com',
+      'https://www.luckysnaphn.com',
+      'https://luckysnap.netlify.app', // optional legacy domain
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
