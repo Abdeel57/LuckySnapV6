@@ -13,19 +13,39 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
   
   // Enable CORS with specific configuration
+  const allowedOrigins = [
+    /^http:\/\/localhost:5173$/, // Vite dev server
+    /\.onrender\.com$/, // Any Render subdomain
+    /\.netlify\.app$/, // Any Netlify subdomain
+    /dashboard\.render\.com$/, // Render dashboard
+    'https://luckysnaphn.com',
+    'https://www.luckysnaphn.com',
+    'https://luckysnap.netlify.app', // optional legacy domain
+  ];
+
   app.enableCors({
-    origin: [
-      /^http:\/\/localhost:5173$/, // Vite dev server
-      /\.onrender\.com$/, // Any Render subdomain
-      /\.netlify\.app$/, // Any Netlify subdomain
-      /dashboard\.render\.com$/, // Render dashboard
-      'https://luckysnaphn.com',
-      'https://www.luckysnaphn.com',
-      'https://luckysnap.netlify.app', // optional legacy domain
-    ],
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true); // Allow non-browser requests
+      }
+
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return allowed === origin;
+      });
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+
+      console.warn(`CORS bloqueado para origen no permitido: ${origin}`);
+      return callback(new Error(`CORS origin not allowed: ${origin}`), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: true,
   });
   
   // Add a simple root route before setting the global prefix
