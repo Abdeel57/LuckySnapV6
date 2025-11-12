@@ -62,7 +62,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
         defaultValues: raffle 
             ? { 
                 ...raffle, 
-                packs: raffle.packs?.length ? raffle.packs : [{q: 1, price: 100}], 
+                packs: Array.isArray(raffle.packs) ? raffle.packs : [], 
                 bonuses: raffle.bonuses?.map(b => ({ value: b })) || [],
                 gallery: raffle.gallery || []
             }
@@ -70,7 +70,7 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                 status: 'draft', 
                 tickets: 1000,
                 price: 50,
-                packs: [{ q: 1, price: 100 }], 
+                packs: [], 
                 bonuses: [], 
                 gallery: []
             }
@@ -445,19 +445,22 @@ const AdvancedRaffleForm: React.FC<AdvancedRaffleFormProps> = ({
                                         </div>
 
                                         <div className="space-y-4">
+                                            {packFields.length === 0 && (
+                                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 text-sm">
+                                                    Aún no has agregado paquetes. Esta sección es opcional; agrégalos solo si quieres ofrecer combos con precio especial.
+                                                </div>
+                                            )}
                                             {packFields.map((field, index) => (
                                                 <div key={field.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <h4 className="font-semibold text-gray-700">Paquete {index + 1}</h4>
-                                                        {packFields.length > 1 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removePack(index)}
-                                                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removePack(index)}
+                                                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                         <div>
