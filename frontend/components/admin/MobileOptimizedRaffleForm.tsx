@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -46,6 +46,7 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'form' | 'images'>('form');
     const [previewMode, setPreviewMode] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     const defaultPacks = Array.isArray(raffle?.packs)
         ? raffle!.packs!.map((pack) => ({
@@ -127,10 +128,26 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
         }
     };
 
+    useEffect(() => {
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
+
     const tabs = [
         { id: 'form', label: 'Detalles', icon: Info, shortLabel: 'Detalles' },
         { id: 'images', label: 'Imágenes', icon: ImageIcon, shortLabel: 'Fotos' },
     ];
+
+    const handleTabChange = (tab: typeof activeTab) => {
+        setActiveTab(tab);
+        requestAnimationFrame(() => {
+            scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+        });
+    };
 
     return (
         <motion.div
@@ -180,7 +197,7 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                                        onClick={() => handleTabChange(tab.id as typeof activeTab)}
                                         className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                                             isActive ? 'bg-white text-blue-600 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'
                                         }`}
@@ -195,7 +212,10 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-gray-50">
+                <div
+                    ref={scrollContainerRef}
+                    className="flex-1 overflow-y-auto bg-gray-50 overscroll-contain"
+                >
                     <form id="mobile-raffle-form" onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
                         <AnimatePresence mode="wait">
                             {activeTab === 'form' && (
