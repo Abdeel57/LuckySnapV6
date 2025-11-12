@@ -1,30 +1,31 @@
 import React, { useState } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    X, 
-    Plus, 
-    Trash2, 
-    Save, 
-    Eye, 
-    Calendar,
+import {
+    X,
+    Plus,
+    Trash2,
+    Save,
+    Eye,
+    Info,
     DollarSign,
-    Users,
     Image as ImageIcon,
-    Star,
     Gift,
     Settings,
     Clock,
-    AlertCircle,
-    CheckCircle,
-    Info,
-    ChevronLeft,
-    ChevronRight,
-    Smartphone
+    Star
 } from 'lucide-react';
 import { Raffle } from '../../types';
 import MultiImageUploader from './MultiImageUploader';
 import { format } from 'date-fns';
+
+type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
+    id?: string;
+    bonuses: { value: string }[];
+    featured?: string;
+    terms?: string;
+    startDate?: Date | string | null;
+};
 
 interface MobileOptimizedRaffleFormProps {
     raffle?: Partial<Raffle> | null;
@@ -33,127 +34,123 @@ interface MobileOptimizedRaffleFormProps {
     loading?: boolean;
 }
 
-type RaffleFormValues = Omit<Raffle, 'bonuses' | 'id'> & {
-    id?: string;
-    bonuses: { value: string }[];
-};
+const inputClasses =
+    'w-full mt-1 p-2.5 border border-gray-300 rounded-lg bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-base';
+const labelClasses = 'block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5';
 
 const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
     raffle,
     onClose,
     onSave,
-    loading = false
+    loading = false,
 }) => {
-    const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'images' | 'advanced'>('basic');
+    const [activeTab, setActiveTab] = useState<'form' | 'images'>('form');
     const [previewMode, setPreviewMode] = useState(false);
-    const [showMobileNav, setShowMobileNav] = useState(false);
 
-    const { register, handleSubmit, control, watch, formState: { errors, isSubmitting } } = useForm<RaffleFormValues>({
-        defaultValues: raffle 
-            ? { 
-                ...raffle, 
-                packs: Array.isArray(raffle.packs) ? raffle.packs : [], 
-                bonuses: raffle.bonuses?.map(b => ({ value: b })) || [],
-                gallery: raffle.gallery || []
-            }
-            : { 
-                status: 'draft', 
-                tickets: 1000, 
-                price: 50,
-                packs: [], 
-                bonuses: [], 
-                gallery: [], 
-            }
+    const defaultPacks = Array.isArray(raffle?.packs)
+        ? raffle!.packs!.map((pack) => ({
+              ...pack,
+              name: pack?.name || '',
+              tickets: pack?.tickets || pack?.q || 1,
+              q: pack?.q || pack?.tickets || 1,
+              price: pack?.price || 0,
+          }))
+        : [];
+
+    const defaultBonuses = raffle?.bonuses?.map((b) => ({ value: b })) || [];
+
+    const featuredDefault = (raffle as any)?.featured ?? 'false';
+    const termsDefault = (raffle as any)?.terms ?? '';
+    const startDateDefault = (raffle as any)?.startDate ?? null;
+
+    const {
+        register,
+        handleSubmit,
+        control,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<RaffleFormValues>({
+        defaultValues: {
+            ...(raffle as RaffleFormValues | undefined),
+            title: raffle?.title || '',
+            description: raffle?.description || '',
+            status: raffle?.status || 'draft',
+            drawDate: raffle?.drawDate || new Date(),
+            price: raffle?.price || 50,
+            tickets: raffle?.tickets || 1000,
+            boletosConOportunidades: raffle?.boletosConOportunidades ?? false,
+            numeroOportunidades: raffle?.numeroOportunidades ?? 1,
+            giftTickets: raffle?.giftTickets ?? 0,
+            packs: defaultPacks,
+            bonuses: defaultBonuses,
+            gallery: raffle?.gallery || [],
+            featured: featuredDefault,
+            terms: termsDefault,
+            startDate: startDateDefault,
+        },
     });
 
     const { fields: bonusFields, append: appendBonus, remove: removeBonus } = useFieldArray({
-        control, name: "bonuses"
+        control,
+        name: 'bonuses',
     });
 
     const { fields: packFields, append: appendPack, remove: removePack } = useFieldArray({
-        control, name: "packs"
+        control,
+        name: 'packs',
     });
 
-    const watchedData = watch();
+    const isMultiChance = watch('boletosConOportunidades');
 
     const onSubmit = async (data: RaffleFormValues) => {
         try {
-            console.log('📱 MOBILE FORM SUBMIT - INICIO');
-            console.log('📱 Form data:', JSON.stringify(data, null, 2));
-            console.log('📦 Form packs:', data.packs);
-            console.log('🎁 Form bonuses:', data.bonuses);
-            
-            // Asegurar que packs tenga la estructura correcta
-            const processedPacks = data.packs?.map(pack => ({
-                name: pack.name || '',
-                tickets: pack.tickets || pack.q || 1,
-                q: pack.q || pack.tickets || 1,
-                price: pack.price || 0
-            })).filter(pack => pack.price > 0) || null;
-            
+            const processedPacks = data.packs
+                ?.map((pack) => ({
+                    name: pack.name || '',
+                    tickets: pack.tickets || pack.q || 1,
+                    q: pack.tickets || pack.q || 1,
+                    price: pack.price || 0,
+                }))
+                .filter((pack) => pack.price > 0);
+
             const saveData = {
                 ...data,
-                bonuses: data.bonuses?.map(b => b.value).filter(b => b && b.trim() !== '') || [],
-                packs: processedPacks && processedPacks.length > 0 ? processedPacks : null
-            };
-            
-            console.log('💾 MOBILE SAVING DATA:', JSON.stringify(saveData, null, 2));
-            console.log('📦 SaveData packs:', saveData.packs);
-            console.log('🎁 SaveData bonuses:', saveData.bonuses);
-            
+                bonuses: data.bonuses?.map((b) => b.value).filter((value) => value && value.trim() !== '') || [],
+                packs: processedPacks && processedPacks.length > 0 ? processedPacks : null,
+                featured: data.featured ?? 'false',
+            } as Raffle;
+
             await onSave({ ...raffle, ...saveData } as Raffle);
-        } catch (error: any) {
+        } catch (error) {
             console.error('❌ Error in mobile form submit:', error);
             throw error;
         }
     };
 
     const tabs = [
-        { id: 'basic', label: 'Básica', icon: Info, shortLabel: 'Info' },
-        { id: 'pricing', label: 'Precios', icon: DollarSign, shortLabel: 'Precios' },
+        { id: 'form', label: 'Detalles', icon: Info, shortLabel: 'Detalles' },
         { id: 'images', label: 'Imágenes', icon: ImageIcon, shortLabel: 'Fotos' },
-        { id: 'advanced', label: 'Avanzada', icon: Settings, shortLabel: 'Más' }
     ];
-
-    const inputClasses = "w-full mt-1 p-3 border border-gray-300 rounded-xl bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-base"; // text-base para iOS
-    const labelClasses = "block text-sm font-semibold text-gray-700 mb-2";
-
-    const nextTab = () => {
-        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-        if (currentIndex < tabs.length - 1) {
-            setActiveTab(tabs[currentIndex + 1].id as any);
-        }
-    };
-
-    const prevTab = () => {
-        const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-        if (currentIndex > 0) {
-            setActiveTab(tabs[currentIndex - 1].id as any);
-        }
-    };
 
     return (
         <motion.div
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={onClose}
         >
             <motion.div
-                initial={{ y: '100%', scale: 1 }} 
-                animate={{ y: 0, scale: 1 }} 
+                initial={{ y: '100%', scale: 1 }}
+                animate={{ y: 0, scale: 1 }}
                 exit={{ y: '100%', scale: 0.95 }}
                 className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full h-[95vh] sm:h-auto sm:max-h-[95vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header optimizado para móvil */}
                 <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-lg sm:text-2xl font-bold truncate">
-                                {raffle ? 'Editar Rifa' : 'Nueva Rifa'}
-                            </h2>
+                            <h2 className="text-lg sm:text-2xl font-bold truncate">{raffle ? 'Editar Rifa' : 'Nueva Rifa'}</h2>
                             <p className="text-blue-100 text-sm mt-1 hidden sm:block">
                                 {raffle ? 'Modifica los detalles de tu rifa' : 'Configura todos los aspectos de tu nueva rifa'}
                             </p>
@@ -175,7 +172,6 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                         </div>
                     </div>
 
-                    {/* Navegación por pestañas optimizada para móvil */}
                     <div className="mt-4">
                         <div className="flex space-x-1 bg-white/10 backdrop-blur-sm rounded-xl p-1">
                             {tabs.map((tab) => {
@@ -184,11 +180,9 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                 return (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
+                                        onClick={() => setActiveTab(tab.id as typeof activeTab)}
                                         className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
-                                            isActive
-                                                ? 'bg-white text-blue-600 shadow-sm'
-                                                : 'text-white/80 hover:text-white hover:bg-white/10'
+                                            isActive ? 'bg-white text-blue-600 shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'
                                         }`}
                                     >
                                         <Icon className="w-4 h-4" />
@@ -201,43 +195,53 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                     </div>
                 </div>
 
-                {/* Contenido principal con scroll optimizado */}
                 <div className="flex-1 overflow-y-auto bg-gray-50">
                     <form id="mobile-raffle-form" onSubmit={handleSubmit(onSubmit)} className="p-4 sm:p-6">
                         <AnimatePresence mode="wait">
-                            {/* Tab: Información Básica */}
-                            {activeTab === 'basic' && (
+                            {activeTab === 'form' && (
                                 <motion.div
-                                    key="basic"
+                                    key="form"
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4 sm:space-y-6"
+                                    className="space-y-4"
                                 >
-                                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                            <Info className="w-5 h-5 mr-2 text-blue-600" />
-                                            Información Básica
-                                        </h3>
-                                        
-                                        <div className="space-y-4">
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                            <Info className="w-4 h-4 text-blue-600" />
+                                            <span>Datos generales</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
-                                                <label className={labelClasses}>
-                                                    Título de la Rifa
-                                                </label>
+                                                <label className={labelClasses}>Título de la rifa</label>
                                                 <input
                                                     {...register('title', { required: 'El título es requerido' })}
                                                     className={inputClasses}
                                                     placeholder="Ej: iPhone 15 Pro Max"
                                                 />
-                                                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                                                {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
                                             </div>
-
                                             <div>
-                                                <label className={labelClasses}>
-                                                    <Calendar className="w-4 h-4 inline mr-2" />
-                                                    Fecha del Sorteo
-                                                </label>
+                                                <label className={labelClasses}>Slug (opcional)</label>
+                                                <input
+                                                    {...register('slug')}
+                                                    className={inputClasses}
+                                                    placeholder="ej: iphone-15-pro-max"
+                                                />
+                                                <p className="text-[11px] text-gray-500 mt-1">Se genera automáticamente si lo dejas vacío.</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className={labelClasses}>Estado</label>
+                                                <select {...register('status')} className={inputClasses}>
+                                                    <option value="draft">Borrador</option>
+                                                    <option value="active">Activa</option>
+                                                    <option value="finished">Finalizada</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className={labelClasses}>Fecha del sorteo</label>
                                                 <Controller
                                                     name="drawDate"
                                                     control={control}
@@ -251,96 +255,108 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                                         />
                                                     )}
                                                 />
-                                                {errors.drawDate && <p className="text-red-500 text-sm mt-1">La fecha es requerida</p>}
-                                            </div>
-
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    <Gift className="w-4 h-4 inline mr-2" />
-                                                    Descripción
-                                                </label>
-                                                <textarea
-                                                    {...register('description')}
-                                                    rows={4}
-                                                    className={inputClasses}
-                                                    placeholder="Describe el premio y los detalles de la rifa..."
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={labelClasses}>
-                                                        <Users className="w-4 h-4 inline mr-2" />
-                                                        Total de Boletos
-                                                    </label>
-                                                    <input
-                                                        {...register('tickets', { 
-                                                            required: 'El número de boletos es requerido',
-                                                            min: { value: 1, message: 'Mínimo 1 boleto' }
-                                                        })}
-                                                        type="number"
-                                                        className={inputClasses}
-                                                        placeholder="1000"
-                                                    />
-                                                    {errors.tickets && <p className="text-red-500 text-sm mt-1">{errors.tickets.message}</p>}
-                                                </div>
-
-                                                <div>
-                                                    <label className={labelClasses}>
-                                                        <Star className="w-4 h-4 inline mr-2" />
-                                                        Estado
-                                                    </label>
-                                                    <select {...register('status')} className={inputClasses}>
-                                                        <option value="draft">Borrador</option>
-                                                        <option value="active">Activa</option>
-                                                        <option value="finished">Finalizada</option>
-                                                    </select>
-                                                </div>
+                                                {errors.drawDate && <p className="text-red-500 text-xs mt-1">La fecha es obligatoria.</p>}
                                             </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            )}
+                                        <div>
+                                            <label className={labelClasses}>Descripción</label>
+                                            <textarea
+                                                {...register('description')}
+                                                rows={3}
+                                                className={`${inputClasses} min-h-[96px] resize-vertical`}
+                                                placeholder="Describe el premio y los detalles más relevantes."
+                                            />
+                                        </div>
+                                    </section>
 
-                            {/* Tab: Precios y Paquetes */}
-                            {activeTab === 'pricing' && (
-                                <motion.div
-                                    key="pricing"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4 sm:space-y-6"
-                                >
-                                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                            <DollarSign className="w-5 h-5 mr-2 text-green-600" />
-                                            Precios y Paquetes
-                                        </h3>
-                                        
-                                        <div className="space-y-4">
-                                            {packFields.length === 0 && (
-                                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-700 text-sm">
-                                                    No hay paquetes configurados. Esta sección es opcional; agrégala solo si quieres ofrecer combos con precio especial.
-                                                </div>
-                                            )}
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                            <DollarSign className="w-4 h-4 text-green-600" />
+                                            <span>Precios y boletos</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className={labelClasses}>Precio por boleto (LPS)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    {...register('price', {
+                                                        required: 'El precio es requerido',
+                                                        min: { value: 0.01, message: 'Debe ser mayor a 0' },
+                                                        valueAsNumber: true,
+                                                    })}
+                                                    className={inputClasses}
+                                                    placeholder="50"
+                                                />
+                                                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+                                            </div>
+                                            <div>
+                                                <label className={labelClasses}>Cantidad total de boletos</label>
+                                                <input
+                                                    type="number"
+                                                    {...register('tickets', {
+                                                        required: 'El número de boletos es requerido',
+                                                        min: { value: 1, message: 'Mínimo 1 boleto' },
+                                                        valueAsNumber: true,
+                                                    })}
+                                                    className={inputClasses}
+                                                    placeholder="1000"
+                                                />
+                                                {errors.tickets && <p className="text-red-500 text-xs mt-1">{errors.tickets.message}</p>}
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                                <Gift className="w-4 h-4 text-violet-500" />
+                                                <span>Paquetes opcionales</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => appendPack({ name: '', tickets: 1, price: 50 })}
+                                                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Agregar
+                                            </button>
+                                        </div>
+                                        <p className="text-[12px] text-gray-500">
+                                            Úsalos solo si quieres ofrecer combos con precio especial. Si no agregas ninguno, la compra será por boletos individuales.
+                                        </p>
+                                        {packFields.length === 0 && (
+                                            <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/60 px-3 py-2 text-[12px] text-blue-700">
+                                                No hay paquetes configurados actualmente.
+                                            </div>
+                                        )}
+                                        <div className="space-y-3">
                                             {packFields.map((field, index) => (
-                                                <div key={field.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <h4 className="font-semibold text-gray-700">Paquete {index + 1}</h4>
+                                                <div key={field.id} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 space-y-3">
+                                                    <div className="flex items-start justify-between">
+                                                        <span className="text-sm font-semibold text-gray-700">Paquete {index + 1}</span>
                                                         <button
                                                             type="button"
                                                             onClick={() => removePack(index)}
-                                                            className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                                            className="text-xs text-red-500 hover:text-red-600"
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            Eliminar
                                                         </button>
                                                     </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                         <div>
-                                                            <label className={labelClasses}>Cantidad de Boletos</label>
+                                                            <label className={labelClasses}>Nombre</label>
                                                             <input
-                                                                {...register(`packs.${index}.q`, { required: true, min: 1 })}
+                                                                {...register(`packs.${index}.name`)}
+                                                                className={inputClasses}
+                                                                placeholder="Ej: Pack Básico"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelClasses}>Boletos</label>
+                                                            <input
                                                                 type="number"
+                                                                {...register(`packs.${index}.tickets`, { required: true, min: 1, valueAsNumber: true })}
                                                                 className={inputClasses}
                                                                 placeholder="1"
                                                             />
@@ -348,8 +364,9 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                                         <div>
                                                             <label className={labelClasses}>Precio (LPS)</label>
                                                             <input
-                                                                {...register(`packs.${index}.price`, { required: true, min: 0 })}
                                                                 type="number"
+                                                                step="0.01"
+                                                                {...register(`packs.${index}.price`, { required: true, min: 0, valueAsNumber: true })}
                                                                 className={inputClasses}
                                                                 placeholder="100"
                                                             />
@@ -357,73 +374,142 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                                     </div>
                                                 </div>
                                             ))}
-                                            
-                                            <button
-                                                type="button"
-                                                onClick={() => appendPack({ q: 1, price: 100 })}
-                                                className="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-all duration-200 flex items-center justify-center space-x-2"
-                                            >
-                                                <Plus className="w-5 h-5" />
-                                                <span>Agregar Paquete</span>
-                                            </button>
                                         </div>
-                                    </div>
+                                    </section>
 
-                                    {/* Bonificaciones */}
-                                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                            <Gift className="w-5 h-5 mr-2 text-purple-600" />
-                                            Bonificaciones
-                                        </h3>
-                                        
-                                        <div className="space-y-4">
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                            <Star className="w-4 h-4 text-amber-500" />
+                                            <span>Bonificaciones visibles</span>
+                                        </div>
+                                        {bonusFields.length === 0 && (
+                                            <p className="text-[12px] text-gray-500">Describe premios adicionales, descuentos o beneficios que verán tus clientes.</p>
+                                        )}
+                                        <div className="space-y-2">
                                             {bonusFields.map((field, index) => (
-                                                <div key={field.id} className="flex items-center space-x-3">
-                                                    <div className="flex-1">
-                                                        <input
-                                                            {...register(`bonuses.${index}.value`)}
-                                                            className={inputClasses}
-                                                            placeholder="Ej: 2 boletos gratis por cada 10 comprados"
-                                                        />
-                                                    </div>
+                                                <div key={field.id} className="flex items-center gap-2">
+                                                    <input
+                                                        {...register(`bonuses.${index}.value`)}
+                                                        className={`${inputClasses} flex-1`}
+                                                        placeholder="Ej: 2 boletos gratis por cada 10 comprados"
+                                                    />
                                                     <button
                                                         type="button"
                                                         onClick={() => removeBonus(index)}
-                                                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                                                        className="text-xs text-red-500 hover:text-red-600"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             ))}
-                                            
-                                            <button
-                                                type="button"
-                                                onClick={() => appendBonus({ value: '' })}
-                                                className="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-purple-500 hover:text-purple-500 transition-all duration-200 flex items-center justify-center space-x-2"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                                <span>Agregar Bonificación</span>
-                                            </button>
                                         </div>
-                                    </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => appendBonus({ value: '' })}
+                                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Añadir bonificación
+                                        </button>
+                                    </section>
+
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                            <Clock className="w-4 h-4 text-indigo-500" />
+                                            <span>Promociones y oportunidades extra</span>
+                                        </div>
+                                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                                            <input
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-gray-300"
+                                                {...register('boletosConOportunidades')}
+                                            />
+                                            Activar múltiples oportunidades por boleto
+                                        </label>
+                                        {isMultiChance && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className={labelClasses}>Número de oportunidades</label>
+                                                    <input
+                                                        type="number"
+                                                        {...register('numeroOportunidades', { min: 1, max: 10, valueAsNumber: true })}
+                                                        className={inputClasses}
+                                                        placeholder="2"
+                                                    />
+                                                    <p className="text-[11px] text-gray-500 mt-1">Cada boleto participará esta cantidad de veces en el sorteo.</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <label className={labelClasses}>Boletos de regalo automáticos</label>
+                                            <input
+                                                type="number"
+                                                {...register('giftTickets', { min: 0, valueAsNumber: true })}
+                                                className={inputClasses}
+                                                placeholder="0"
+                                            />
+                                            <p className="text-[11px] text-gray-500 mt-1">
+                                                Se sumarán al resumen de compra para mostrar cuántos boletos adicionales recibe cada cliente (opcional).
+                                            </p>
+                                        </div>
+                                    </section>
+
+                                    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                                        <details className="group">
+                                            <summary className="flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                                                <Settings className="w-4 h-4 text-gray-600 group-open:rotate-90 transition-transform" />
+                                                Configuración avanzada (opcional)
+                                            </summary>
+                                            <div className="mt-4 space-y-3 text-sm text-gray-700">
+                                                <div>
+                                                    <label className={labelClasses}>Fecha de inicio</label>
+                                                    <Controller
+                                                        name="startDate"
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <input
+                                                                type="datetime-local"
+                                                                value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ''}
+                                                                onChange={(e) => field.onChange(new Date(e.target.value))}
+                                                                className={inputClasses}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className={labelClasses}>Términos y condiciones</label>
+                                                    <textarea
+                                                        {...register('terms')}
+                                                        rows={3}
+                                                        className={`${inputClasses} min-h-[96px] resize-vertical`}
+                                                        placeholder="Añade condiciones especiales si las necesitas."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className={labelClasses}>Mostrar en la página principal</label>
+                                                    <select {...register('featured')} className={inputClasses}>
+                                                        <option value="true">Sí</option>
+                                                        <option value="false">No</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </details>
+                                    </section>
                                 </motion.div>
                             )}
 
-                            {/* Tab: Imágenes */}
                             {activeTab === 'images' && (
                                 <motion.div
                                     key="images"
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4 sm:space-y-6"
                                 >
-                                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                            <ImageIcon className="w-5 h-5 mr-2 text-pink-600" />
-                                            Imágenes del Premio
-                                        </h3>
-                                        
+                                    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                            <ImageIcon className="w-4 h-4 text-pink-500" />
+                                            <span>Galería del premio</span>
+                                        </div>
                                         <Controller
                                             name="gallery"
                                             control={control}
@@ -435,71 +521,9 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                                                 />
                                             )}
                                         />
-                                    </div>
-                                </motion.div>
-                            )}
-
-                            {/* Tab: Configuración Avanzada */}
-                            {activeTab === 'advanced' && (
-                                <motion.div
-                                    key="advanced"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    className="space-y-4 sm:space-y-6"
-                                >
-                                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-                                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                            <Settings className="w-5 h-5 mr-2 text-orange-600" />
-                                            Configuración Avanzada
-                                        </h3>
-                                        
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    <Clock className="w-4 h-4 inline mr-2" />
-                                                    Fecha de Inicio
-                                                </label>
-                                                <Controller
-                                                    name="startDate"
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input
-                                                            type="datetime-local"
-                                                            value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ''}
-                                                            onChange={(e) => field.onChange(new Date(e.target.value))}
-                                                            className={inputClasses}
-                                                        />
-                                                    )}
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    <AlertCircle className="w-4 h-4 inline mr-2" />
-                                                    Términos y Condiciones
-                                                </label>
-                                                <textarea
-                                                    {...register('terms')}
-                                                    rows={4}
-                                                    className={inputClasses}
-                                                    placeholder="Especifica los términos y condiciones de la rifa..."
-                                                />
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className={labelClasses}>
-                                                        <CheckCircle className="w-4 h-4 inline mr-2" />
-                                                        Mostrar en Página Principal
-                                                    </label>
-                                                    <select {...register('featured')} className={inputClasses}>
-                                                        <option value="true">Sí</option>
-                                                        <option value="false">No</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <p className="text-[11px] text-gray-500">
+                                            Sube hasta 10 imágenes. La primera se usa como portada en la página pública.
+                                        </p>
                                     </div>
                                 </motion.div>
                             )}
@@ -507,48 +531,12 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                     </form>
                 </div>
 
-                {/* Footer con navegación y botones optimizado para móvil */}
                 <div className="bg-white border-t border-gray-200 p-4 sm:p-6 flex-shrink-0">
-                    {/* Navegación entre pestañas en móvil */}
-                    <div className="flex items-center justify-between mb-4 sm:hidden">
-                        <button
-                            type="button"
-                            onClick={prevTab}
-                            disabled={activeTab === 'basic'}
-                            className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            <span>Anterior</span>
-                        </button>
-                        
-                        <div className="flex items-center space-x-1">
-                            {tabs.map((tab, index) => (
-                                <div
-                                    key={tab.id}
-                                    className={`w-2 h-2 rounded-full ${
-                                        activeTab === tab.id ? 'bg-blue-500' : 'bg-gray-300'
-                                    }`}
-                                />
-                            ))}
-                        </div>
-                        
-                        <button
-                            type="button"
-                            onClick={nextTab}
-                            disabled={activeTab === 'advanced'}
-                            className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <span>Siguiente</span>
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    {/* Botones de acción */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium"
+                            className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium"
                         >
                             Cancelar
                         </button>
@@ -556,7 +544,7 @@ const MobileOptimizedRaffleForm: React.FC<MobileOptimizedRaffleFormProps> = ({
                             type="submit"
                             form="mobile-raffle-form"
                             disabled={isSubmitting || loading}
-                            className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
                             {isSubmitting || loading ? (
                                 <>
