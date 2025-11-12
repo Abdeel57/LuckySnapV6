@@ -37,11 +37,11 @@ async function bootstrap() {
       });
 
       if (isAllowed) {
-        return callback(null, true);
+        return callback(null, origin);
       }
 
       console.warn(`CORS bloqueado para origen no permitido: ${origin}`);
-      return callback(new Error(`CORS origin not allowed: ${origin}`), false);
+      return callback(new Error(`CORS origin not allowed: ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
