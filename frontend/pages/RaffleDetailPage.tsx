@@ -53,7 +53,7 @@ const RaffleDetailPage = () => {
                     metaPixelService.trackViewContent(raffleData.id, raffleData);
                     
                     getOccupiedTickets(raffleData.id).then(occupiedData => {
-                        setOccupiedTickets(occupiedData);
+                        setOccupiedTickets(occupiedData.tickets || []);
                         setLoading(false);
                     });
                  } else {

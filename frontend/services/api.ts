@@ -186,20 +186,69 @@ export const getRaffleById = async (id: string): Promise<Raffle | undefined> => 
     return raffles.find(r => r.id === id);
 };
 
-export const getOccupiedTickets = async (raffleId: string): Promise<number[]> => {
+export interface OccupiedTicketsResponse {
+    tickets: number[];
+    total: number;
+    hasMore: boolean;
+    nextOffset: number | null;
+}
+
+type GetOccupiedTicketsOptions = {
+    offset?: number;
+    limit?: number;
+    sort?: 'asc' | 'desc';
+    signal?: AbortSignal;
+};
+
+export const getOccupiedTickets = async (
+    raffleId: string,
+    options: GetOccupiedTicketsOptions = {}
+): Promise<OccupiedTicketsResponse> => {
     try {
         console.log('🔍 Trying backend for occupied tickets:', raffleId);
-        const response = await fetch(`${API_URL}/public/raffles/${raffleId}/occupied-tickets`);
-        const tickets = await handleResponse(response);
-        console.log('✅ Backend occupied tickets loaded successfully:', tickets?.length || 0);
-        return tickets || [];
+        const params = new URLSearchParams();
+        if (typeof options.offset === 'number') params.set('offset', String(options.offset));
+        if (typeof options.limit === 'number') params.set('limit', String(options.limit));
+        if (options.sort) params.set('sort', options.sort);
+
+        const url = params.toString()
+            ? `${API_URL}/public/raffles/${raffleId}/occupied-tickets?${params}`
+            : `${API_URL}/public/raffles/${raffleId}/occupied-tickets`;
+
+        const response = await fetch(url, { signal: options.signal });
+        const payload = await handleResponse(response);
+
+        const normalized: OccupiedTicketsResponse = {
+            tickets: Array.isArray(payload?.tickets) ? payload.tickets : Array.isArray(payload) ? payload : [],
+            total: typeof payload?.total === 'number'
+                ? payload.total
+                : Array.isArray(payload?.tickets)
+                    ? payload.tickets.length
+                    : Array.isArray(payload)
+                        ? payload.length
+                        : 0,
+            hasMore: Boolean(payload?.hasMore) && Array.isArray(payload?.tickets)
+                ? payload.hasMore
+                : false,
+            nextOffset: typeof payload?.nextOffset === 'number'
+                ? payload.nextOffset
+                : null
+        };
+
+        console.log('✅ Backend occupied tickets loaded successfully:', normalized.tickets.length, 'total:', normalized.total);
+        return normalized;
     } catch (error) {
         console.error('❌ Backend error for occupied tickets:', error);
     }
     
     // Fallback to local data
     console.log('🔄 Using local data for occupied tickets');
-    return [];
+    return {
+        tickets: [],
+        total: 0,
+        hasMore: false,
+        nextOffset: null
+    };
 };
 
 export const getPastWinners = async (): Promise<Winner[]> => {

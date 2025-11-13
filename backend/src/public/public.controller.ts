@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Req, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Req, HttpException, HttpStatus, Query } from '@nestjs/common';
 import { PublicService } from './public.service';
 import { TrackingService } from '../tracking/tracking.service';
 // FIX: Using `import type` for the Prisma namespace to aid module resolution.
@@ -30,8 +30,20 @@ export class PublicController {
   }
 
   @Get('raffles/:id/occupied-tickets')
-  getOccupiedTickets(@Param('id') id: string) {
-    return this.publicService.getOccupiedTickets(id);
+  getOccupiedTickets(
+    @Param('id') id: string,
+    @Query('offset') offset?: string,
+    @Query('limit') limit?: string,
+    @Query('sort') sort?: 'asc' | 'desc',
+  ) {
+    const parsedOffset = Number(offset);
+    const parsedLimit = Number(limit);
+
+    return this.publicService.getOccupiedTickets(id, {
+      offset: Number.isFinite(parsedOffset) ? parsedOffset : 0,
+      limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+      sortDirection: sort,
+    });
   }
 
   @Get('winners')

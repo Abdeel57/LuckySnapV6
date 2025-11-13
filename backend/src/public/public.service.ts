@@ -21,7 +21,19 @@ export class PublicService {
     });
   }
 
-  async getOccupiedTickets(raffleId: string) {
+  async getOccupiedTickets(
+    raffleId: string,
+    options?: {
+      offset?: number;
+      limit?: number;
+      sortDirection?: 'asc' | 'desc';
+    },
+  ) {
+    const offset = Math.max(0, options?.offset ?? 0);
+    const rawLimit = options?.limit;
+    const limit = typeof rawLimit === 'number' && rawLimit > 0 ? Math.min(rawLimit, 2000) : undefined;
+    const sortDirection = options?.sortDirection === 'desc' ? 'desc' : 'asc';
+
     const orders = await this.prisma.order.findMany({
       where: {
         raffleId,
@@ -29,7 +41,35 @@ export class PublicService {
       },
       select: { tickets: true },
     });
-    return orders.flatMap(o => o.tickets);
+
+    const allTickets = orders.flatMap(o => o.tickets).filter((ticket): ticket is number => typeof ticket === 'number');
+
+    const sortedTickets = sortDirection === 'desc'
+      ? [...allTickets].sort((a, b) => b - a)
+      : [...allTickets].sort((a, b) => a - b);
+
+    const total = sortedTickets.length;
+
+    if (!limit) {
+      return {
+        tickets: sortedTickets,
+        total,
+        hasMore: false,
+        nextOffset: null,
+      };
+    }
+
+    const start = Math.min(offset, Math.max(total - 1, 0));
+    const end = Math.min(start + limit, total);
+    const pageTickets = sortedTickets.slice(start, end);
+    const nextOffset = end < total ? end : null;
+
+    return {
+      tickets: pageTickets,
+      total,
+      hasMore: end < total,
+      nextOffset,
+    };
   }
 
   async getPastWinners() {

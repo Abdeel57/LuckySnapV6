@@ -146,8 +146,8 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                 
                 // Cargar boletos ocupados para poder asignar los disponibles
                 if (raffleData?.id) {
-                    getOccupiedTickets(raffleData.id).then(occupied => {
-                        setOccupiedTickets(occupied || []);
+                    getOccupiedTickets(raffleData.id).then(occupiedResponse => {
+                        setOccupiedTickets(occupiedResponse.tickets || []);
                     }).catch(err => {
                         console.error('❌ Error loading occupied tickets:', err);
                         setOccupiedTickets([]);
