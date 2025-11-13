@@ -15,7 +15,7 @@ interface TicketSelectorProps {
 }
 
 type ScrollGridData = {
-    totalTickets: number;
+    tickets: number[];
     columns: number;
     cellWidth: number;
     cellGap: number;
@@ -30,11 +30,11 @@ const MIN_SCROLL_HEIGHT = 320;
 
 const VirtualTicketCell: React.FC<GridChildComponentProps<ScrollGridData>> = ({ columnIndex, rowIndex, style, data }) => {
     const index = rowIndex * data.columns + columnIndex;
-    if (index >= data.totalTickets) {
+    if (index >= data.tickets.length) {
         return <div style={style} />;
     }
 
-    const ticket = index + 1;
+    const ticket = data.tickets[index];
     if (data.hideOccupied && data.occupiedSet.has(ticket)) {
         return <div style={style} />;
     }
@@ -78,7 +78,25 @@ const VirtualTicketCell: React.FC<GridChildComponentProps<ScrollGridData>> = ({ 
 const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTicketClick, listingMode = 'paginado', hideOccupied = false }: TicketSelectorProps) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ticketsPerPage = 50;
-    const totalPages = Math.max(1, Math.ceil((totalTickets || 0) / ticketsPerPage));
+    const occupiedSet = useMemo(() => new Set(occupiedTickets), [occupiedTickets]);
+
+    const orderedTickets = useMemo(() => {
+        if (!totalTickets || totalTickets <= 0) return [];
+        const allTickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
+        const available = allTickets.filter(ticket => !occupiedSet.has(ticket));
+        if (hideOccupied) {
+            return available;
+        }
+        const occupiedOnly = allTickets.filter(ticket => occupiedSet.has(ticket));
+        return [...available, ...occupiedOnly];
+    }, [totalTickets, occupiedSet, hideOccupied]);
+
+    const totalDisplayTickets = orderedTickets.length;
+    const totalPages = Math.max(1, Math.ceil((totalDisplayTickets || 0) / ticketsPerPage));
+
+    useEffect(() => {
+        setCurrentPage(prev => Math.min(prev, totalPages));
+    }, [totalPages]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -133,7 +151,6 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
         }
     }, []);
 
-    const occupiedSet = useMemo(() => new Set(occupiedTickets), [occupiedTickets]);
     const selectedSet = useMemo(() => new Set(selectedTickets), [selectedTickets]);
 
     const createTicketNode = useCallback((ticket: number, isOccupied: boolean, isSelected: boolean) => {
@@ -188,16 +205,15 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     }, [mobile, onTicketClick, ticketPadding]);
 
     const paginatedTickets = useMemo(() => {
-        if (listingMode !== 'paginado' || !totalTickets || totalTickets <= 0) {
+        if (listingMode !== 'paginado' || totalDisplayTickets <= 0) {
             return [];
         }
 
         const start = (currentPage - 1) * ticketsPerPage;
         const end = start + ticketsPerPage;
 
-        return Array.from({ length: totalTickets }, (_, i) => i + 1)
+        return orderedTickets
             .slice(start, end)
-            .filter(ticket => (hideOccupied ? !occupiedSet.has(ticket) : true))
             .map(ticket => {
                 const isOccupied = occupiedSet.has(ticket);
                 const isSelected = selectedSet.has(ticket);
@@ -212,7 +228,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                 );
             })
             .filter(Boolean) as React.ReactNode[];
-    }, [listingMode, totalTickets, currentPage, ticketsPerPage, hideOccupied, occupiedSet, selectedSet, createTicketNode]);
+    }, [listingMode, orderedTickets, totalDisplayTickets, currentPage, ticketsPerPage, occupiedSet, selectedSet, createTicketNode]);
 
     const columns = useMemo(() => {
         if (containerWidth >= 900) return 10;
@@ -243,12 +259,12 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     }, [cellWidth, listingMode, viewportHeight]);
 
     const rowCount = useMemo(() => {
-        if (columns <= 0 || totalTickets <= 0) return 0;
-        return Math.ceil(totalTickets / columns);
-    }, [columns, totalTickets]);
+        if (columns <= 0 || totalDisplayTickets <= 0) return 0;
+        return Math.ceil(totalDisplayTickets / columns);
+    }, [columns, totalDisplayTickets]);
 
     const itemData = useMemo<ScrollGridData>(() => ({
-        totalTickets: totalTickets > 0 ? totalTickets : 0,
+        tickets: orderedTickets,
         columns,
         cellWidth,
         cellGap: CELL_GAP,
@@ -256,7 +272,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
         occupiedSet,
         selectedSet,
         createTicketNode,
-    }), [totalTickets, columns, cellWidth, hideOccupied, occupiedSet, selectedSet, createTicketNode]);
+    }), [orderedTickets, columns, cellWidth, hideOccupied, occupiedSet, selectedSet, createTicketNode]);
 
     const Legend = () => (
         <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mb-4 text-sm">
@@ -275,7 +291,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
         </div>
     );
 
-    const showScrollGrid = listingMode === 'scroll' && totalTickets > 0 && columns > 0 && rowCount > 0;
+    const showScrollGrid = listingMode === 'scroll' && totalDisplayTickets > 0 && columns > 0 && rowCount > 0;
 
     return (
         <div className="bg-background-secondary p-4 rounded-lg shadow-lg border border-slate-700/50">
@@ -297,7 +313,7 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                         </Grid>
                     ) : (
                         <div className="text-center text-sm text-slate-400 py-6">
-                            {totalTickets > 0
+                            {totalDisplayTickets > 0
                                 ? 'Cargando boletos...'
                                 : 'No hay boletos disponibles en este momento.'}
                         </div>
