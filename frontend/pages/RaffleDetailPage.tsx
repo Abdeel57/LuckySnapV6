@@ -10,6 +10,7 @@ import TicketSelector from '../components/TicketSelector';
 import RaffleGallery from '../components/RaffleGallery';
 import BonusesCard from '../components/BonusesCard';
 import PackSelector from '../components/PackSelector';
+import LuckyMachine from '../components/LuckyMachine';
 import { motion } from 'framer-motion';
 import metaPixelService from '../services/metaPixel';
 import { useToast } from '../hooks/useToast';
@@ -156,6 +157,15 @@ const RaffleDetailPage = () => {
         }
     }, []);
 
+    // Manejar selección de boletos desde la máquina de la suerte
+    const handleLuckyMachineTickets = useCallback((tickets: number[]) => {
+        // Limpiar paquete si hay uno seleccionado
+        setSelectedPack(null);
+        setPackQuantity(1);
+        // Establecer los boletos seleccionados
+        setSelectedTickets(tickets);
+    }, []);
+
     const boletosAdicionales = useMemo(() => {
         if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
         // Calcular boletos adicionales según si hay paquete o boletos individuales
@@ -284,6 +294,19 @@ const RaffleDetailPage = () => {
                                     )}
                                 </div>
                             </div>
+                            
+                            {/* Máquina de la Suerte - solo si no hay paquete seleccionado */}
+                            {!selectedPack && (
+                                <div className="mb-6">
+                                    <LuckyMachine
+                                        totalTickets={raffle.tickets}
+                                        occupiedTickets={occupiedTickets}
+                                        pricePerTicket={pricePerTicket}
+                                        onTicketsSelected={handleLuckyMachineTickets}
+                                        raffleSlug={raffle.slug}
+                                    />
+                                </div>
+                            )}
                             
                             {/* Selector de boletos individuales - solo si no hay paquete seleccionado */}
                             {!selectedPack && (
