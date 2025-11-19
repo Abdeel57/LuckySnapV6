@@ -11,7 +11,7 @@ interface LuckyMachineProps {
     raffleSlug: string;
 }
 
-const QUANTITY_OPTIONS = [1, 3, 5, 10, 100, 200, 300, 400, 500, 1000];
+const QUANTITY_OPTIONS = [1, 3, 5, 10, 25, 50, 100, 150, 200, 250];
 
 const LuckyMachine: React.FC<LuckyMachineProps> = ({
     totalTickets,
