@@ -295,19 +295,6 @@ const RaffleDetailPage = () => {
                                 </div>
                             </div>
                             
-                            {/* Máquina de la Suerte - solo si no hay paquete seleccionado */}
-                            {!selectedPack && (
-                                <div className="mb-6">
-                                    <LuckyMachine
-                                        totalTickets={raffle.tickets}
-                                        occupiedTickets={occupiedTickets}
-                                        pricePerTicket={pricePerTicket}
-                                        onTicketsSelected={handleLuckyMachineTickets}
-                                        raffleSlug={raffle.slug}
-                                    />
-                                </div>
-                            )}
-                            
                             {/* Selector de boletos individuales - solo si no hay paquete seleccionado */}
                             {!selectedPack && (
                                 <TicketSelector
@@ -427,6 +414,16 @@ const RaffleDetailPage = () => {
                     matchedPack={matchedPack}
                     savingsFromPack={savingsFromPack}
                 />
+                {/* Máquina de la Suerte flotante - solo si no hay paquete seleccionado */}
+                {!selectedPack && (
+                    <LuckyMachine
+                        totalTickets={raffle.tickets}
+                        occupiedTickets={occupiedTickets}
+                        pricePerTicket={pricePerTicket}
+                        onTicketsSelected={handleLuckyMachineTickets}
+                        raffleSlug={raffle.slug}
+                    />
+                )}
         </PageAnimator>
     );
 };

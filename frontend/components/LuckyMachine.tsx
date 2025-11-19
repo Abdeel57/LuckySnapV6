@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Gift, Zap } from 'lucide-react';
+import { Sparkles, Gift, Zap, Coins } from 'lucide-react';
 
 interface LuckyMachineProps {
     totalTickets: number;
@@ -26,6 +26,7 @@ const LuckyMachine: React.FC<LuckyMachineProps> = ({
     const [isSpinning, setIsSpinning] = useState(false);
     const [generatedTickets, setGeneratedTickets] = useState<number[]>([]);
     const [showResults, setShowResults] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(true);
 
     const occupiedSet = useMemo(() => new Set(occupiedTickets), [occupiedTickets]);
     
@@ -80,38 +81,70 @@ const LuckyMachine: React.FC<LuckyMachineProps> = ({
         return generatedTickets.length * pricePerTicket;
     }, [generatedTickets.length, pricePerTicket]);
 
+    // Ocultar tooltip después de 3 segundos
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowTooltip(false);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <>
-            {/* Botón de la máquina de la suerte */}
-            <motion.button
-                onClick={() => setIsOpen(true)}
-                className="relative w-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-6 rounded-xl shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 group overflow-hidden"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+            {/* Botón flotante de la máquina de la suerte */}
+            <motion.div
+                className="fixed bottom-6 right-6 z-40"
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 100, damping: 15 }}
             >
-                {/* Efecto de brillo animado */}
-                <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                    animate={{
-                        x: ['-100%', '200%'],
-                    }}
-                    transition={{
-                        repeat: Infinity,
-                        duration: 2,
-                        ease: 'linear'
-                    }}
-                />
-                
-                <div className="relative z-10 flex flex-col items-center justify-center space-y-3">
-                    <div className="flex items-center space-x-2">
-                        <Sparkles className="w-8 h-8 text-yellow-300 animate-pulse" />
-                        <Gift className="w-8 h-8 text-yellow-300 animate-pulse" />
-                        <Zap className="w-8 h-8 text-yellow-300 animate-pulse" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white">🎰 Máquina de la Suerte</h3>
-                    <p className="text-sm text-white/90">¡Deja que la suerte elija tus boletos!</p>
-                </div>
-            </motion.button>
+                {/* Mensaje explicativo con flecha */}
+                <AnimatePresence>
+                    {showTooltip && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="absolute right-full mr-3 bottom-1/2 transform translate-y-1/2 w-56 z-50"
+                        >
+                            <div className="bg-background-secondary border-2 border-purple-500/50 rounded-lg p-3 shadow-xl relative">
+                                <p className="text-sm text-white font-medium leading-tight">
+                                    ¡Máquina de la Suerte! Deja que el azar elija tus boletos
+                                </p>
+                                {/* Flecha apuntando al botón */}
+                                <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
+                                    <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[10px] border-l-purple-500/50 border-b-[10px] border-b-transparent"></div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Botón flotante circular */}
+                <motion.button
+                    onClick={() => setIsOpen(true)}
+                    className="relative w-16 h-16 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 group overflow-hidden flex items-center justify-center"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    aria-label="Abrir Máquina de la Suerte"
+                >
+                    {/* Efecto de brillo animado */}
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"
+                        animate={{
+                            x: ['-100%', '200%'],
+                        }}
+                        transition={{
+                            repeat: Infinity,
+                            duration: 2,
+                            ease: 'linear'
+                        }}
+                    />
+                    
+                    <Coins className="w-8 h-8 text-yellow-300 relative z-10" />
+                </motion.button>
+            </motion.div>
 
             {/* Modal */}
             <AnimatePresence>
