@@ -788,34 +788,61 @@ export class AdminService {
 
   async deleteRaffle(id: string) {
     try {
-      // Verificar que la rifa existe
+      // Verificar que la rifa existe y obtener todas sus relaciones
       const existingRaffle = await this.prisma.raffle.findUnique({ 
         where: { id },
-        include: { orders: true }
+        include: { 
+          orders: true,
+          ticketOrders: true
+        }
       });
       
       if (!existingRaffle) {
         throw new Error('Rifa no encontrada');
       }
 
-      // Verificar si tiene órdenes asociadas
+      // Verificar si tiene órdenes pagadas (no se pueden eliminar)
       if (existingRaffle.orders && existingRaffle.orders.length > 0) {
-        const hasPaidOrders = existingRaffle.orders.some(order => order.status === 'PAID');
-        if (hasPaidOrders) {
+        const paidOrders = existingRaffle.orders.filter(order => order.status === 'PAID');
+        if (paidOrders.length > 0) {
           throw new Error('No se puede eliminar una rifa con órdenes pagadas');
+        }
+
+        // Eliminar órdenes no pagadas primero (PENDING, CANCELLED, EXPIRED)
+        const unpaidOrderIds = existingRaffle.orders
+          .filter(order => order.status !== 'PAID')
+          .map(order => order.id);
+        
+        if (unpaidOrderIds.length > 0) {
+          console.log(`🗑️ Eliminando ${unpaidOrderIds.length} órdenes no pagadas...`);
+          await this.prisma.order.deleteMany({
+            where: { id: { in: unpaidOrderIds } }
+          });
         }
       }
 
-      console.log('🗑️ Deleting raffle:', id);
+      // Eliminar tickets asociados
+      if (existingRaffle.ticketOrders && existingRaffle.ticketOrders.length > 0) {
+        console.log(`🗑️ Eliminando ${existingRaffle.ticketOrders.length} tickets asociados...`);
+        await this.prisma.ticket.deleteMany({
+          where: { raffleId: id }
+        });
+      }
+
+      console.log('🗑️ Eliminando rifa:', id);
       
       // Eliminar la rifa
       await this.prisma.raffle.delete({ where: { id } });
       
-      console.log('✅ Raffle deleted successfully');
+      console.log('✅ Rifa eliminada exitosamente');
       return { message: 'Rifa eliminada exitosamente' };
     } catch (error) {
       console.error('❌ Error deleting raffle:', error);
       if (error instanceof Error) {
+        // Si el error ya contiene un mensaje personalizado, lanzarlo tal cual
+        if (error.message.includes('No se puede eliminar') || error.message.includes('no encontrada')) {
+          throw error;
+        }
         throw new Error(`Error al eliminar la rifa: ${error.message}`);
       }
       throw new Error('Error desconocido al eliminar la rifa');
