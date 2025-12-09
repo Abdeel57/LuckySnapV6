@@ -218,6 +218,17 @@ const AdminSettingsPage = () => {
     const { fields: paymentFields, append: appendPayment, remove: removePayment } = useFieldArray({ control, name: "paymentAccounts" });
     const { fields: faqFields, append: appendFaq, remove: removeFaq } = useFieldArray({ control, name: "faqs" });
 
+    // Asegurarse de que todas las cuentas de pago tengan un ID único
+    useEffect(() => {
+        if (settings?.paymentAccounts) {
+            const accountsWithIds = settings.paymentAccounts.map((acc, index) => ({
+                ...acc,
+                id: acc.id || `acc-${Date.now()}-${index}`
+            }));
+            setValue('paymentAccounts', accountsWithIds);
+        }
+    }, [settings?.paymentAccounts, setValue]);
+
     useEffect(() => {
         getSettings().then(data => {
             // Guardar settings en estado para usarlo en los placeholders
@@ -741,7 +752,12 @@ const AdminSettingsPage = () => {
                             ))}
                             <button
                                 type="button"
-                                onClick={() => appendPayment({ bank: '', accountNumber: '', accountHolder: '' })}
+                                onClick={() => appendPayment({ 
+                                    id: `acc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                    bank: '', 
+                                    accountNumber: '', 
+                                    accountHolder: '' 
+                                })}
                                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
                             >
                                 <Plus className="w-4 h-4" />
