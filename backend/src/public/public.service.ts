@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for Prisma namespace and a value import for the OrderStatus enum.
 import { type Prisma } from '@prisma/client';
@@ -226,6 +226,36 @@ export class PublicService {
       }
       
       console.log('✅ Raffle found:', raffle.title);
+
+      // VALIDACIÓN: Verificar si los boletos ya están ocupados
+      // Esto previene duplicados cuando dos personas intentan comprar los mismos boletos
+      // o cuando se refresca la página y se reenvía el formulario
+      if (orderData.tickets && orderData.tickets.length > 0) {
+        const conflictingOrders = await this.prisma.order.findMany({
+          where: {
+            raffleId: orderData.raffleId,
+            status: { in: ['PENDING', 'PAID'] },
+            tickets: { hasSome: orderData.tickets }
+          },
+          select: { tickets: true }
+        });
+
+        if (conflictingOrders.length > 0) {
+          // Aplanar array de tickets ocupados
+          const occupiedTickets = new Set<number>();
+          conflictingOrders.forEach(o => {
+            o.tickets.forEach(t => occupiedTickets.add(t));
+          });
+          
+          // Encontrar cuáles de los solicitados están ocupados
+          const duplicates = orderData.tickets.filter((t: number) => occupiedTickets.has(t));
+          
+          if (duplicates.length > 0) {
+            console.warn(`⚠️ Intento de compra de boletos ocupados: ${duplicates.join(', ')}`);
+            throw new BadRequestException(`Lo sentimos, los siguientes boletos ya han sido ganados por otra persona: ${duplicates.join(', ')}`);
+          }
+        }
+      }
       
       // Lógica de múltiples oportunidades
       let ticketsToSave = orderData.tickets;
