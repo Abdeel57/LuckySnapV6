@@ -178,12 +178,18 @@ const RaffleDetailPage = () => {
 
     const progress = useMemo(() => {
         if (!raffle || !raffle.tickets || raffle.tickets === 0) return 0;
-        // Validar que sold sea un número válido y no negativo
-        const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+        
+        // Calcular boletos realmente ocupados (pagados o apartados)
+        // Usar occupiedTickets.length si está disponible, sino usar raffle.sold
+        const occupiedCount = occupiedTickets.length > 0 ? occupiedTickets.length : (raffle.sold || 0);
+        
+        // Validar que sea un número válido y no negativo
+        const sold = typeof occupiedCount === 'number' && occupiedCount >= 0 ? occupiedCount : 0;
+        
         const percentage = (sold / raffle.tickets) * 100;
         // Asegurar que el porcentaje esté entre 0 y 100
         return Math.max(0, Math.min(100, percentage));
-    }, [raffle?.id, raffle?.sold, raffle?.tickets]);
+    }, [raffle?.id, raffle?.sold, raffle?.tickets, occupiedTickets.length]);
 
     // CRÍTICO: Memoizar imágenes de galería para evitar recalcular
     // Incluir TODAS las dependencias que se usan: imageUrl, heroImage, gallery.length
