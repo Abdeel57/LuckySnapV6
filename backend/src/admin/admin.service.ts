@@ -801,24 +801,13 @@ export class AdminService {
         throw new Error('Rifa no encontrada');
       }
 
-      // Verificar si tiene órdenes pagadas (no se pueden eliminar)
+      // Eliminar TODAS las órdenes asociadas (incluyendo órdenes pagadas)
       if (existingRaffle.orders && existingRaffle.orders.length > 0) {
-        const paidOrders = existingRaffle.orders.filter(order => order.status === 'PAID');
-        if (paidOrders.length > 0) {
-          throw new Error('No se puede eliminar una rifa con órdenes pagadas');
-        }
-
-        // Eliminar órdenes no pagadas primero (PENDING, CANCELLED, EXPIRED)
-        const unpaidOrderIds = existingRaffle.orders
-          .filter(order => order.status !== 'PAID')
-          .map(order => order.id);
-        
-        if (unpaidOrderIds.length > 0) {
-          console.log(`🗑️ Eliminando ${unpaidOrderIds.length} órdenes no pagadas...`);
-          await this.prisma.order.deleteMany({
-            where: { id: { in: unpaidOrderIds } }
-          });
-        }
+        console.log(`🗑️ Eliminando ${existingRaffle.orders.length} órdenes asociadas (incluyendo pagadas)...`);
+        const deletedOrders = await this.prisma.order.deleteMany({
+          where: { raffleId: id }
+        });
+        console.log(`✅ Eliminadas ${deletedOrders.count} órdenes.`);
       }
 
       // Eliminar tickets asociados
@@ -840,7 +829,7 @@ export class AdminService {
       console.error('❌ Error deleting raffle:', error);
       if (error instanceof Error) {
         // Si el error ya contiene un mensaje personalizado, lanzarlo tal cual
-        if (error.message.includes('No se puede eliminar') || error.message.includes('no encontrada')) {
+        if (error.message.includes('no encontrada')) {
           throw error;
         }
         throw new Error(`Error al eliminar la rifa: ${error.message}`);
