@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // Dashboard
   async getDashboardStats() {
@@ -43,7 +43,7 @@ export class AdminService {
       const where: any = {};
       if (status) where.status = status as any;
       if (raffleId) where.raffleId = raffleId;
-
+      
       const [orders, total] = await Promise.all([
         this.prisma.order.findMany({
           where,
@@ -72,7 +72,7 @@ export class AdminService {
         }),
         this.prisma.order.count({ where }),
       ]);
-
+      
       // Transformar los datos para que coincidan con el frontend
       const transformedOrders = orders.map(order => ({
         ...order,
@@ -86,7 +86,7 @@ export class AdminService {
         raffleTitle: order.raffle.title,
         total: order.total,
       }));
-
+      
       return {
         orders: transformedOrders,
         pagination: {
@@ -105,7 +105,7 @@ export class AdminService {
       };
     }
   }
-
+  
   async getOrderById(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
@@ -125,14 +125,14 @@ export class AdminService {
       total: order.total,
     };
   }
-
+  
   async updateOrderStatus(folio: string, status: string) {
-    const order = await this.prisma.order.findUnique({
+    const order = await this.prisma.order.findUnique({ 
       where: { folio },
       include: { raffle: true, user: true }
     });
     if (!order) {
-      throw new NotFoundException('Order not found');
+        throw new NotFoundException('Order not found');
     }
 
     if (order.status === status) {
@@ -152,16 +152,16 @@ export class AdminService {
 
     // Handle ticket count adjustment if order is cancelled
     if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
-      await this.prisma.raffle.update({
-        where: { id: order.raffleId },
-        data: { sold: { decrement: order.tickets.length } },
-      });
+        await this.prisma.raffle.update({
+            where: { id: order.raffleId },
+            data: { sold: { decrement: order.tickets.length } },
+        });
     }
 
     const updated = await this.prisma.order.update({
-      where: { folio },
-      data: { status: status as any },
-      include: { raffle: true, user: true },
+        where: { folio },
+        data: { status: status as any },
+        include: { raffle: true, user: true },
     });
 
     return {
@@ -226,9 +226,9 @@ export class AdminService {
     if (order.status === 'PAID') return order;
 
     // Preparar datos de actualización
-    const updateData: any = {
-      status: 'PAID' as any,
-      updatedAt: new Date()
+    const updateData: any = { 
+      status: 'PAID' as any, 
+      updatedAt: new Date() 
     };
 
     // Agregar método de pago si se proporcionó
@@ -314,18 +314,18 @@ export class AdminService {
   async releaseOrder(id: string) {
     try {
       console.log('📌 Iniciando releaseOrder para ID:', id);
-
+      
       // 1. Buscar la orden
-      const order = await this.prisma.order.findUnique({
-        where: { id },
-        include: { raffle: true, user: true }
+      const order = await this.prisma.order.findUnique({ 
+        where: { id }, 
+        include: { raffle: true, user: true } 
       });
-
+      
       console.log('📌 Orden encontrada:', order?.id);
       console.log('📌 Status actual:', order?.status);
       console.log('📌 Tickets:', order?.tickets);
       console.log('📌 RaffleId:', order?.raffleId);
-
+      
       if (!order) {
         throw new NotFoundException('Orden no encontrada');
       }
@@ -338,9 +338,9 @@ export class AdminService {
       // 3. Actualizar estado de la orden
       const updated = await this.prisma.order.update({
         where: { id },
-        data: {
+        data: { 
           status: 'CANCELLED' as any, // Usar CANCELLED en lugar de RELEASED
-          updatedAt: new Date()
+          updatedAt: new Date() 
         },
         include: { raffle: true, user: true },
       });
@@ -404,7 +404,7 @@ export class AdminService {
   async getAllRaffles(limit: number = 50) {
     try {
       console.log('📋 Getting all raffles, limit:', limit);
-      const raffles = await this.prisma.raffle.findMany({
+      const raffles = await this.prisma.raffle.findMany({ 
         orderBy: { createdAt: 'desc' },
         take: limit,
       });
@@ -423,13 +423,13 @@ export class AdminService {
               serializedPacks = null;
             }
           }
-
+          
           // Serializar bonuses de forma segura
           let serializedBonuses: string[] = [];
           if (Array.isArray(raffle.bonuses)) {
             serializedBonuses = raffle.bonuses.map(b => String(b || ''));
           }
-
+          
           const serialized = {
             id: raffle.id,
             title: raffle.title,
@@ -485,8 +485,8 @@ export class AdminService {
   async getFinishedRaffles() {
     const now = new Date();
     // Buscar rifas que estén finalizadas, activas, O que ya hayan pasado la fecha de sorteo
-    return this.prisma.raffle.findMany({
-      where: {
+    return this.prisma.raffle.findMany({ 
+      where: { 
         OR: [
           { status: 'finished' },
           { status: 'active' }, // Incluir rifas activas para poder hacer sorteos
@@ -496,7 +496,7 @@ export class AdminService {
       orderBy: { drawDate: 'desc' }
     });
   }
-
+  
   async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
     try {
       // Validar campos requeridos
@@ -520,10 +520,10 @@ export class AdminService {
         .replace(/[^a-z0-9]+/g, '-') // Reemplazar caracteres especiales con guiones
         .replace(/^-+|-+$/g, '') // Quitar guiones del inicio/final
         .substring(0, 50) + '-' + Date.now().toString().slice(-6); // Agregar timestamp para unicidad
-
+      
       // Imagen por defecto si no se proporciona
       const defaultImage = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop';
-
+      
       // Filtrar solo los campos que existen en el esquema de Prisma
       const raffleData = {
         title: data.title.trim(),
@@ -538,8 +538,8 @@ export class AdminService {
         slug: autoSlug,
         boletosConOportunidades: data.boletosConOportunidades || false,
         numeroOportunidades: data.numeroOportunidades || 1,
-        packs: data.packs && Array.isArray(data.packs) && data.packs.length > 0
-          ? JSON.parse(JSON.stringify(data.packs))
+        packs: data.packs && Array.isArray(data.packs) && data.packs.length > 0 
+          ? JSON.parse(JSON.stringify(data.packs)) 
           : null,
         bonuses: (() => {
           // Asegurar que bonuses sea siempre un array de strings
@@ -578,11 +578,11 @@ export class AdminService {
         packsIsArray: Array.isArray(raffleData.packs),
         bonusesIsArray: Array.isArray(raffleData.bonuses)
       });
-
-      const createdRaffle = await this.prisma.raffle.create({
-        data: raffleData
+      
+      const createdRaffle = await this.prisma.raffle.create({ 
+        data: raffleData 
       });
-
+      
       console.log('✅ Raffle created successfully:', createdRaffle.id);
       return createdRaffle;
     } catch (error) {
@@ -597,11 +597,11 @@ export class AdminService {
   async updateRaffle(id: string, data: Raffle) {
     try {
       // Verificar que la rifa existe
-      const existingRaffle = await this.prisma.raffle.findUnique({
+      const existingRaffle = await this.prisma.raffle.findUnique({ 
         where: { id },
         include: { orders: true }
       });
-
+      
       if (!existingRaffle) {
         throw new Error('Rifa no encontrada');
       }
@@ -614,7 +614,7 @@ export class AdminService {
 
       // Filtrar campos según reglas de negocio
       const raffleData: any = {};
-
+      
       // Campos siempre editables
       if (data.title !== undefined) {
         if (!data.title.trim()) {
@@ -622,27 +622,27 @@ export class AdminService {
         }
         raffleData.title = data.title.trim();
       }
-
+      
       if (data.description !== undefined) {
         raffleData.description = data.description;
       }
-
+      
       if (data.imageUrl !== undefined) {
         raffleData.imageUrl = data.imageUrl;
       }
-
+      
       if (data.gallery !== undefined) {
         raffleData.gallery = data.gallery;
       }
-
+      
       if (data.drawDate !== undefined) {
         raffleData.drawDate = new Date(data.drawDate);
       }
-
+      
       if (data.status !== undefined) {
         raffleData.status = data.status;
       }
-
+      
       if (data.slug !== undefined) {
         raffleData.slug = data.slug;
       }
@@ -667,7 +667,7 @@ export class AdminService {
           isArray: Array.isArray(data.packs),
           isNull: data.packs === null
         });
-
+        
         if (data.packs === null) {
           raffleData.packs = null;
         } else if (Array.isArray(data.packs) && data.packs.length > 0) {
@@ -695,7 +695,7 @@ export class AdminService {
           isArray: Array.isArray(data.bonuses),
           isNull: data.bonuses === null
         });
-
+        
         if (data.bonuses === null) {
           raffleData.bonuses = [];
         } else if (Array.isArray(data.bonuses)) {
@@ -706,7 +706,7 @@ export class AdminService {
                 const value = (b as any).value;
                 return value ? String(value).trim() : '';
               }
-              // Si ya es un string, usarlo directamente
+               // Si ya es un string, usarlo directamente
               if (typeof b === 'string') {
                 return b.trim();
               }
@@ -715,7 +715,7 @@ export class AdminService {
             })
             .filter(b => b !== '');
         } else {
-          // Si no es un array, tratarlo como un posible string
+           // Si no es un array, tratarlo como un posible string
           const bonusString = String(data.bonuses || '');
           const trimmed = bonusString.trim();
           raffleData.bonuses = trimmed !== '' ? [trimmed] : [];
@@ -726,18 +726,18 @@ export class AdminService {
       // Campos editables solo si NO tiene boletos vendidos/pagados
       if (hasSoldTickets || hasPaidOrders) {
         console.log('⚠️ Rifa tiene boletos vendidos/pagados - limitando edición');
-
+        
         // Solo rechazar cambios si el valor REALMENTE cambió
         if (data.price !== undefined && data.price !== existingRaffle.price) {
           console.log(`❌ Intento de cambiar precio: ${existingRaffle.price} -> ${data.price}`);
           throw new Error('No se puede cambiar el precio cuando ya hay boletos vendidos');
         }
-
+        
         if (data.tickets !== undefined && data.tickets !== existingRaffle.tickets) {
           console.log(`❌ Intento de cambiar boletos: ${existingRaffle.tickets} -> ${data.tickets}`);
           throw new Error('No se puede cambiar el número total de boletos cuando ya hay boletos vendidos');
         }
-
+        
         // Si los valores son iguales, simplemente no agregarlos al objeto de actualización
         if (data.price !== undefined && data.price === existingRaffle.price) {
           console.log('✅ Precio no cambió, omitiendo del update');
@@ -753,7 +753,7 @@ export class AdminService {
           }
           raffleData.price = Number(data.price);
         }
-
+        
         if (data.tickets !== undefined) {
           if (data.tickets < 1) {
             throw new Error('El número de boletos debe ser mayor a 0');
@@ -761,21 +761,21 @@ export class AdminService {
           raffleData.tickets = Number(data.tickets);
         }
       }
-
+      
       console.log('📝 Final update data:', raffleData);
       console.log('📦 Packs in update data:', raffleData.packs);
       console.log('🎁 Bonuses in update data:', raffleData.bonuses);
-
-      const updatedRaffle = await this.prisma.raffle.update({
-        where: { id },
-        data: raffleData
+      
+      const updatedRaffle = await this.prisma.raffle.update({ 
+        where: { id }, 
+        data: raffleData 
       });
-
+      
       console.log('✅ Raffle updated successfully');
       console.log('📦 Updated raffle packs:', updatedRaffle.packs);
       console.log('🎁 Updated raffle bonuses:', updatedRaffle.bonuses);
       console.log('📊 Updated raffle full data:', JSON.stringify(updatedRaffle, null, 2));
-
+      
       return updatedRaffle;
     } catch (error) {
       console.error('❌ Error updating raffle:', error);
@@ -788,37 +788,61 @@ export class AdminService {
 
   async deleteRaffle(id: string) {
     try {
-      // Verificar que la rifa existe
-      const existingRaffle = await this.prisma.raffle.findUnique({
-        where: { id }
+      // Verificar que la rifa existe y obtener todas sus relaciones
+      const existingRaffle = await this.prisma.raffle.findUnique({ 
+        where: { id },
+        include: { 
+          orders: true,
+          ticketOrders: true
+        }
       });
-
+      
       if (!existingRaffle) {
         throw new Error('Rifa no encontrada');
       }
 
-      console.log('🗑️ Eliminando rifa y todos sus datos asociados (incluyendo órdenes pagadas):', id);
+      // Verificar si tiene órdenes pagadas (no se pueden eliminar)
+      if (existingRaffle.orders && existingRaffle.orders.length > 0) {
+        const paidOrders = existingRaffle.orders.filter(order => order.status === 'PAID');
+        if (paidOrders.length > 0) {
+          throw new Error('No se puede eliminar una rifa con órdenes pagadas');
+        }
 
-      // Eliminar TODAS las órdenes asociadas
-      const deletedOrders = await this.prisma.order.deleteMany({
-        where: { raffleId: id }
-      });
-      console.log(`🗑️ Eliminadas ${deletedOrders.count} órdenes.`);
+        // Eliminar órdenes no pagadas primero (PENDING, CANCELLED, EXPIRED)
+        const unpaidOrderIds = existingRaffle.orders
+          .filter(order => order.status !== 'PAID')
+          .map(order => order.id);
+        
+        if (unpaidOrderIds.length > 0) {
+          console.log(`🗑️ Eliminando ${unpaidOrderIds.length} órdenes no pagadas...`);
+          await this.prisma.order.deleteMany({
+            where: { id: { in: unpaidOrderIds } }
+          });
+        }
+      }
 
       // Eliminar tickets asociados
-      const deletedTickets = await this.prisma.ticket.deleteMany({
-        where: { raffleId: id }
-      });
-      console.log(`🗑️ Eliminados ${deletedTickets.count} tickets.`);
+      if (existingRaffle.ticketOrders && existingRaffle.ticketOrders.length > 0) {
+        console.log(`🗑️ Eliminando ${existingRaffle.ticketOrders.length} tickets asociados...`);
+        await this.prisma.ticket.deleteMany({
+          where: { raffleId: id }
+        });
+      }
 
+      console.log('🗑️ Eliminando rifa:', id);
+      
       // Eliminar la rifa
       await this.prisma.raffle.delete({ where: { id } });
-
+      
       console.log('✅ Rifa eliminada exitosamente');
       return { message: 'Rifa eliminada exitosamente' };
     } catch (error) {
       console.error('❌ Error deleting raffle:', error);
       if (error instanceof Error) {
+        // Si el error ya contiene un mensaje personalizado, lanzarlo tal cual
+        if (error.message.includes('No se puede eliminar') || error.message.includes('no encontrada')) {
+          throw error;
+        }
         throw new Error(`Error al eliminar la rifa: ${error.message}`);
       }
       throw new Error('Error desconocido al eliminar la rifa');
@@ -830,11 +854,11 @@ export class AdminService {
       console.log('📥 Downloading tickets:', { raffleId, tipo, formato });
 
       // Verificar que la rifa existe
-      const raffle = await this.prisma.raffle.findUnique({
+      const raffle = await this.prisma.raffle.findUnique({ 
         where: { id: raffleId },
         select: { id: true, title: true }
       });
-
+      
       if (!raffle) {
         throw new Error('Rifa no encontrada');
       }
@@ -842,7 +866,7 @@ export class AdminService {
       // Obtener órdenes según el tipo
       const statusFilter = tipo === 'apartados' ? 'PENDING' : 'PAID';
       const orders = await this.prisma.order.findMany({
-        where: {
+        where: { 
           raffleId,
           status: statusFilter
         },
@@ -860,7 +884,7 @@ export class AdminService {
       for (const order of orders) {
         const totalBoletos = order.tickets.length;
         const montoPorBoleto = order.total / totalBoletos;
-
+        
         for (const ticketNumber of order.tickets) {
           exportData.push({
             numero_boleto: ticketNumber,
@@ -912,7 +936,7 @@ export class AdminService {
     const BOM = '\uFEFF';
     const headers = [
       'Número Boleto',
-      'Cliente',
+      'Cliente', 
       'Teléfono',
       'Distrito',
       'Fecha Apartado',
@@ -946,7 +970,7 @@ export class AdminService {
     ].join('\n');
 
     const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
-
+    
     return {
       filename,
       content: csvContent,
@@ -956,10 +980,10 @@ export class AdminService {
 
   private generateExcel(data: any[], raffleTitle: string, tipo: string) {
     const XLSX = require('xlsx');
-
+    
     // Crear workbook
     const wb = XLSX.utils.book_new();
-
+    
     // Preparar datos para Excel
     const excelData = data.map(row => ({
       'Número Boleto': row.numero_boleto,
@@ -979,7 +1003,7 @@ export class AdminService {
 
     // Crear worksheet
     const ws = XLSX.utils.json_to_sheet(excelData);
-
+    
     // Ajustar ancho de columnas
     const colWidths = [
       { wch: 15 }, // Número Boleto
@@ -1000,12 +1024,12 @@ export class AdminService {
 
     // Agregar worksheet al workbook
     XLSX.utils.book_append_sheet(wb, ws, `Boletos ${tipo}`);
-
+    
     // Generar buffer
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-
+    
     const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
-
+    
     return {
       filename,
       content: buffer.toString('base64'),
@@ -1017,39 +1041,39 @@ export class AdminService {
   async getAllWinners() {
     return this.prisma.winner.findMany({ orderBy: { createdAt: 'desc' } });
   }
-
+  
   async drawWinner(raffleId: string) {
     const paidOrders = await this.prisma.order.findMany({
-      where: { raffleId, status: 'PAID' },
-      include: { user: true }
+        where: { raffleId, status: 'PAID' },
+        include: { user: true }
     });
-
+    
     if (paidOrders.length === 0) {
-      throw new BadRequestException("No hay boletos pagados para este sorteo.");
+        throw new BadRequestException("No hay boletos pagados para este sorteo.");
     }
-
+    
     const allPaidTickets = paidOrders.flatMap(o => o.tickets);
-    if (allPaidTickets.length === 0) {
-      throw new BadRequestException("No hay boletos pagados para este sorteo.");
+    if(allPaidTickets.length === 0) {
+        throw new BadRequestException("No hay boletos pagados para este sorteo.");
     }
 
     const winningTicket = allPaidTickets[Math.floor(Math.random() * allPaidTickets.length)];
     const winningOrder = paidOrders.find(o => o.tickets.includes(winningTicket));
 
     if (!winningOrder) {
-      throw new Error("Error interno al encontrar al ganador.");
+         throw new Error("Error interno al encontrar al ganador.");
     }
 
     // Formatear la orden con los datos del usuario como customer
     const formattedOrder = {
-      ...winningOrder,
-      customer: winningOrder.user ? {
-        id: winningOrder.user.id,
-        name: winningOrder.user.name || 'Sin nombre',
-        phone: winningOrder.user.phone || 'Sin teléfono',
-        email: winningOrder.user.email || '',
-        district: winningOrder.user.district || 'Sin distrito'
-      } : null
+        ...winningOrder,
+        customer: winningOrder.user ? {
+            id: winningOrder.user.id,
+            name: winningOrder.user.name || 'Sin nombre',
+            phone: winningOrder.user.phone || 'Sin teléfono',
+            email: winningOrder.user.email || '',
+            district: winningOrder.user.district || 'Sin distrito'
+        } : null
     };
 
     return { ticket: winningTicket, order: formattedOrder };
@@ -1057,12 +1081,12 @@ export class AdminService {
 
   async saveWinner(data: Omit<Winner, 'id' | 'createdAt' | 'updatedAt'>) {
     console.log('💾 Saving winner with data:', data);
-
+    
     // Validar que el campo 'name' existe y no está vacío
     if (!data.name || data.name.trim() === '') {
       throw new BadRequestException('El campo "name" es requerido para guardar un ganador');
     }
-
+    
     const winnerData = {
       name: data.name.trim(),
       prize: data.prize,
@@ -1074,9 +1098,9 @@ export class AdminService {
       phone: data.phone || null,
       city: data.city || null,
     };
-
+    
     console.log('💾 Winner data to create:', winnerData);
-
+    
     try {
       const result = await this.prisma.winner.create({ data: winnerData });
       console.log('✅ Winner created successfully:', result);
@@ -1105,7 +1129,7 @@ export class AdminService {
 
       // Comparar contraseña con bcrypt
       const isPasswordValid = await bcrypt.compare(password, user.password);
-
+      
       if (!isPasswordValid) {
         throw new BadRequestException('Credenciales incorrectas');
       }
@@ -1146,18 +1170,18 @@ export class AdminService {
       if (!data.username || !data.name || !data.password) {
         throw new BadRequestException('Username, name, and password are required');
       }
-
+      
       // ✅ Validar que el password tenga mínimo 6 caracteres
       if (typeof data.password === 'string' && data.password.length < 6) {
         throw new BadRequestException('Password must be at least 6 characters long');
       }
-
+      
       // ✅ Validar que el rol sea válido
       const validRoles = ['admin', 'ventas', 'superadmin'];
       if (data.role && !validRoles.includes(data.role)) {
         throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
       }
-
+      
       // ✅ Validar que el username sea único
       const existingUser = await this.prisma.adminUser.findUnique({
         where: { username: data.username as string }
@@ -1165,10 +1189,10 @@ export class AdminService {
       if (existingUser) {
         throw new BadRequestException('Username already exists');
       }
-
+      
       // ✅ Hash de contraseña antes de guardar
       const hashedPassword = await bcrypt.hash(data.password as string, 10);
-
+      
       // ✅ Crear usuario con password hasheada
       const newUser = await this.prisma.adminUser.create({
         data: {
@@ -1187,7 +1211,7 @@ export class AdminService {
           updatedAt: true
         }
       });
-
+      
       console.log('✅ Usuario creado exitosamente:', newUser.id);
       return newUser;
     } catch (error) {
@@ -1214,7 +1238,7 @@ export class AdminService {
       if (!existingUser) {
         throw new NotFoundException('User not found');
       }
-
+      
       // ✅ Validar username único si se está actualizando
       if (data.username) {
         const usernameTaken = await this.prisma.adminUser.findFirst({
@@ -1227,20 +1251,20 @@ export class AdminService {
           throw new BadRequestException('Username already exists');
         }
       }
-
+      
       // ✅ Validar rol si se está actualizando
       const validRoles = ['admin', 'ventas', 'superadmin'];
       if (data.role && !validRoles.includes(data.role as string)) {
         throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
       }
-
+      
       // ✅ Validar longitud de password si se proporciona
       if (data.password && typeof data.password === 'string') {
         if (data.password.length < 6) {
           throw new BadRequestException('Password must be at least 6 characters long');
         }
       }
-
+      
       // ✅ Hash de contraseña solo si se proporciona una nueva
       const updateData: any = { ...data };
       if (data.password && typeof data.password === 'string' && data.password.trim() !== '') {
@@ -1250,7 +1274,7 @@ export class AdminService {
         // Si no se proporciona password, no actualizarla
         delete updateData.password;
       }
-
+      
       // ✅ Actualizar usuario
       const updated = await this.prisma.adminUser.update({
         where: { id },
@@ -1266,7 +1290,7 @@ export class AdminService {
           updatedAt: true
         }
       });
-
+      
       console.log('✅ Usuario actualizado exitosamente:', updated.id);
       return updated;
     } catch (error) {
@@ -1292,16 +1316,16 @@ export class AdminService {
       const user = await this.prisma.adminUser.findUnique({
         where: { id }
       });
-
+      
       if (!user) {
         throw new NotFoundException('User not found');
       }
-
+      
       // ✅ No permitir eliminar superadmin (protección crítica)
       if (user.role === 'superadmin') {
         throw new BadRequestException('Cannot delete superadmin user');
       }
-
+      
       // ✅ Eliminar usuario
       await this.prisma.adminUser.delete({ where: { id } });
       console.log('✅ Usuario eliminado exitosamente:', id);
@@ -1324,28 +1348,28 @@ export class AdminService {
   async updateSettings(data: any) {
     try {
       console.log('🔧 Updating settings with data:', data);
-
-      const {
-        appearance,
-        contactInfo,
-        socialLinks,
-        paymentAccounts,
+      
+      const { 
+        appearance, 
+        contactInfo, 
+        socialLinks, 
+        paymentAccounts, 
         faqs,
         displayPreferences,
       } = data;
-
+      
       // Extract appearance data
       const appearanceData = appearance || {};
       const contactData = contactInfo || {};
       const socialData = socialLinks || {};
-
+      
       // Usar logo como favicon automáticamente si no hay favicon específico
       const logoUrl = appearanceData.logo || null;
       const faviconUrl = appearanceData.favicon || logoUrl;
-
+      
       const settingsData = {
         siteName: appearanceData.siteName || 'Lucky Snap',
-
+        
         // Appearance settings
         logo: logoUrl,
         favicon: faviconUrl, // Usar logo como favicon automáticamente
@@ -1354,27 +1378,27 @@ export class AdminService {
         secondaryColor: appearanceData.colors?.backgroundSecondary || '#1f2937',
         accentColor: appearanceData.colors?.accent || '#ec4899',
         actionColor: appearanceData.colors?.action || '#0ea5e9',
-
+        
         // Contact info
         whatsapp: contactData.whatsapp || null,
         email: contactData.email || null,
         emailFromName: contactData.emailFromName || null,
         emailReplyTo: contactData.emailReplyTo || null,
         emailSubject: contactData.emailSubject || null,
-
+        
         // Social links
         facebookUrl: socialData.facebookUrl || null,
         instagramUrl: socialData.instagramUrl || null,
         tiktokUrl: socialData.tiktokUrl || null,
-
+        
         // Other settings - Ensure proper serialization
         paymentAccounts: this.safeStringify(paymentAccounts),
         faqs: this.safeStringify(faqs),
         displayPreferences: this.safeStringify(displayPreferences),
       };
-
+      
       console.log('🔧 Settings data to save:', settingsData);
-
+      
       const result = await this.prisma.settings.upsert({
         where: { id: 'main_settings' },
         update: settingsData,
@@ -1383,9 +1407,9 @@ export class AdminService {
           ...settingsData,
         },
       });
-
+      
       console.log('✅ Settings updated successfully:', result);
-
+      
       // Formatear la respuesta igual que en publicService
       return this.formatSettingsResponse(result);
     } catch (error) {
@@ -1397,7 +1421,7 @@ export class AdminService {
   private safeStringify(data: any): string {
     try {
       if (!data) return JSON.stringify([]);
-
+      
       // If it's already a string, check if it's valid JSON
       if (typeof data === 'string') {
         try {
@@ -1407,7 +1431,7 @@ export class AdminService {
           return JSON.stringify([]); // Invalid JSON string, return empty array
         }
       }
-
+      
       // If it's an object/array, stringify it
       return JSON.stringify(data);
     } catch (error) {
@@ -1455,20 +1479,20 @@ export class AdminService {
   private parseJsonField(field: any) {
     try {
       if (!field) return null;
-
+      
       // Handle double serialization
       if (typeof field === 'string') {
         // Try to parse as JSON
         const parsed = JSON.parse(field);
-
+        
         // If it's still a string, parse again
         if (typeof parsed === 'string') {
           return JSON.parse(parsed);
         }
-
+        
         return parsed;
       }
-
+      
       return field;
     } catch (error) {
       console.error('❌ Error parsing JSON field:', error);
