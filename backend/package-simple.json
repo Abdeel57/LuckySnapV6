@@ -1,0 +1,20 @@
+{
+  "name": "lucky-snap-backend-simple",
+  "version": "1.0.0",
+  "description": "Backend simple para Lucky Snap",
+  "main": "src/simple-backend.js",
+  "scripts": {
+    "start": "node src/simple-backend.js",
+    "dev": "nodemon src/simple-backend.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

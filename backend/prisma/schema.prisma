@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  district  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tickets Ticket[]
+  orders  Order[]
+
+  @@map("users")
+}
+
+model Raffle {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  gallery     Json?    // Array de imágenes
+  price       Float    @default(50.0)
+  tickets     Int
+  sold        Int      @default(0)
+  drawDate    DateTime
+  status      String   @default("draft")
+  slug        String?  @unique
+  boletosConOportunidades Boolean  @default(false)
+  numeroOportunidades    Int      @default(1)
+  giftTickets            Int?     @default(0)
+  packs       Json?    // Array de paquetes [{name, tickets/q, price}]
+  bonuses     String[] // Array de bonos/premios adicionales
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ticketOrders Ticket[]
+  orders  Order[]
+
+  @@map("raffles")
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  raffleId  String
+  userId    String
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  raffle Raffle @relation(fields: [raffleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("tickets")
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  folio        String      @unique
+  raffleId     String
+  userId       String
+  tickets      Int[]
+  total        Float
+  status       OrderStatus @default(PENDING)
+  paymentMethod String?
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  expiresAt    DateTime
+
+  raffle Raffle @relation(fields: [raffleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model Winner {
+  id          String   @id @default(cuid())
+  name        String
+  prize       String
+  imageUrl    String
+  raffleTitle String
+  drawDate    DateTime
+  ticketNumber Int?
+  testimonial String?
+  phone       String?
+  city        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("winners")
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  name      String
+  username  String   @unique
+  email     String?
+  password  String
+  role      String   @default("ventas")  // superadmin, admin, ventas
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admin_users")
+}
+
+model Settings {
+  id              String   @id @default(cuid())
+  siteName        String   @default("Lucky Snap")
+  
+  // Appearance settings
+  logo            String?
+  favicon         String?
+  logoAnimation   String   @default("rotate")
+  primaryColor    String   @default("#111827")
+  secondaryColor  String   @default("#1f2937")
+  accentColor     String   @default("#ec4899")
+  actionColor     String   @default("#0ea5e9")
+  
+  // Contact info
+  whatsapp        String?
+  email           String?
+  
+  // Email customization
+  emailFromName   String?   // Nombre del remitente en emails
+  emailReplyTo    String?   // Email de respuesta
+  emailSubject    String?   // Asunto por defecto para emails
+  
+  // Social links
+  facebookUrl     String?
+  instagramUrl    String?
+  tiktokUrl       String?
+  
+  // Other settings
+  paymentAccounts Json?
+  faqs            Json?
+  displayPreferences Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
+  RELEASED
+}

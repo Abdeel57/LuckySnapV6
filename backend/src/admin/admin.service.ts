@@ -1,0 +1,1478 @@
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+// FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
+import { type Prisma, type Raffle, type Winner } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class AdminService {
+  constructor(private prisma: PrismaService) { }
+
+  // Dashboard
+  async getDashboardStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todaySales = await this.prisma.order.aggregate({
+      _sum: { total: true },
+      where: {
+        status: 'PAID',
+        createdAt: { gte: today },
+      },
+    });
+
+    const pendingOrders = await this.prisma.order.count({
+      where: { status: 'PENDING' },
+    });
+
+    const activeRaffles = await this.prisma.raffle.count({
+      where: { status: 'active' },
+    });
+
+    return {
+      todaySales: todaySales._sum.total || 0,
+      pendingOrders,
+      activeRaffles,
+    };
+  }
+
+  // Orders
+  async getAllOrders(page: number = 1, limit: number = 50, status?: string, raffleId?: string) {
+    try {
+      const skip = (page - 1) * limit;
+      const where: any = {};
+      if (status) where.status = status as any;
+      if (raffleId) where.raffleId = raffleId;
+
+      const [orders, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          include: {
+            raffle: {
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                status: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                district: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.order.count({ where }),
+      ]);
+
+      // Transformar los datos para que coincidan con el frontend
+      const transformedOrders = orders.map(order => ({
+        ...order,
+        customer: {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || 'Sin teléfono',
+          email: order.user.email || '',
+          district: order.user.district || 'Sin distrito',
+        },
+        raffleTitle: order.raffle.title,
+        total: order.total,
+      }));
+
+      return {
+        orders: transformedOrders,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      console.error('Error getting orders:', error);
+      // Fallback para evitar crashes
+      return {
+        orders: [],
+        pagination: { page: 1, limit, total: 0, pages: 0 },
+      };
+    }
+  }
+
+  async getOrderById(id: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { raffle: true, user: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return {
+      ...order,
+      customer: {
+        id: order.user.id,
+        name: order.user.name || 'Sin nombre',
+        phone: order.user.phone || 'Sin teléfono',
+        email: order.user.email || '',
+        district: order.user.district || 'Sin distrito',
+      },
+      raffleTitle: order.raffle.title,
+      total: order.total,
+    };
+  }
+
+  async updateOrderStatus(folio: string, status: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { folio },
+      include: { raffle: true, user: true }
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status === status) {
+      return {
+        ...order,
+        customer: {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || 'Sin teléfono',
+          email: order.user.email || '',
+          district: order.user.district || 'Sin distrito',
+        },
+        raffleTitle: order.raffle.title,
+        total: order.total,
+      };
+    }
+
+    // Handle ticket count adjustment if order is cancelled
+    if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
+      await this.prisma.raffle.update({
+        where: { id: order.raffleId },
+        data: { sold: { decrement: order.tickets.length } },
+      });
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { folio },
+      data: { status: status as any },
+      include: { raffle: true, user: true },
+    });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
+  }
+
+  async updateOrder(id: string, orderData: any) {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id } });
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Filtrar solo los campos que se pueden actualizar directamente
+      const { id: _, raffle, user, customer, raffleTitle, createdAt, ...updateData } = orderData;
+
+      // Actualizar la orden
+      const updatedOrder = await this.prisma.order.update({
+        where: { id },
+        data: {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+        include: {
+          raffle: true,
+          user: true,
+        },
+      });
+
+      // Transformar los datos para el frontend
+      return {
+        ...updatedOrder,
+        customer: {
+          id: updatedOrder.user.id,
+          name: updatedOrder.user.name || 'Sin nombre',
+          phone: updatedOrder.user.phone || 'Sin teléfono',
+          email: updatedOrder.user.email || '',
+          district: updatedOrder.user.district || 'Sin distrito',
+        },
+        raffleTitle: updatedOrder.raffle.title,
+        total: updatedOrder.total,
+      };
+    } catch (error) {
+      console.error('Error updating order:', error);
+      throw error;
+    }
+  }
+
+  async markOrderPaid(id: string, paymentMethod?: string, notes?: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status === 'PAID') return order;
+
+    // Preparar datos de actualización
+    const updateData: any = {
+      status: 'PAID' as any,
+      updatedAt: new Date()
+    };
+
+    // Agregar método de pago si se proporcionó
+    if (paymentMethod) {
+      updateData.paymentMethod = paymentMethod;
+    }
+
+    // Agregar notas si se proporcionaron
+    if (notes) {
+      updateData.notes = notes;
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id },
+      data: updateData,
+      include: { raffle: true, user: true },
+    });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
+  }
+
+  async editOrder(id: string, body: { customer?: any; tickets?: number[]; notes?: string }) {
+    const order = await this.prisma.order.findUnique({ where: { id }, include: { user: true } });
+    if (!order) throw new NotFoundException('Order not found');
+
+    const dataToUpdate: any = { updatedAt: new Date() };
+
+    // Validar y actualizar tickets
+    if (body.tickets) {
+      // Validación básica: no duplicados en la misma orden
+      const uniqueTickets = Array.from(new Set(body.tickets));
+      if (uniqueTickets.length !== body.tickets.length) {
+        throw new BadRequestException('Boletos duplicados en la misma orden');
+      }
+      dataToUpdate.tickets = uniqueTickets;
+    }
+
+    // Notas
+    if (body.notes !== undefined) {
+      dataToUpdate.notes = body.notes;
+    }
+
+    // Actualizar datos del cliente (en tabla user)
+    if (body.customer && Object.keys(body.customer).length > 0) {
+      await this.prisma.user.update({
+        where: { id: order.userId },
+        data: {
+          name: body.customer.name ?? order.user.name,
+          phone: body.customer.phone ?? order.user.phone,
+          email: body.customer.email ?? order.user.email,
+          district: body.customer.district ?? order.user.district,
+        },
+      });
+    }
+
+    const updated = await this.prisma.order.update({ where: { id }, data: dataToUpdate, include: { raffle: true, user: true } });
+
+    return {
+      ...updated,
+      customer: {
+        id: updated.user.id,
+        name: updated.user.name || 'Sin nombre',
+        phone: updated.user.phone || 'Sin teléfono',
+        email: updated.user.email || '',
+        district: updated.user.district || 'Sin distrito',
+      },
+      raffleTitle: updated.raffle.title,
+      total: updated.total,
+    };
+  }
+
+  async releaseOrder(id: string) {
+    try {
+      console.log('📌 Iniciando releaseOrder para ID:', id);
+
+      // 1. Buscar la orden
+      const order = await this.prisma.order.findUnique({
+        where: { id },
+        include: { raffle: true, user: true }
+      });
+
+      console.log('📌 Orden encontrada:', order?.id);
+      console.log('📌 Status actual:', order?.status);
+      console.log('📌 Tickets:', order?.tickets);
+      console.log('📌 RaffleId:', order?.raffleId);
+
+      if (!order) {
+        throw new NotFoundException('Orden no encontrada');
+      }
+
+      // 2. Validar que existan los datos necesarios
+      if (!order.raffleId || !Array.isArray(order.tickets)) {
+        throw new BadRequestException('Datos de orden inválidos');
+      }
+
+      // 3. Actualizar estado de la orden
+      const updated = await this.prisma.order.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED' as any, // Usar CANCELLED en lugar de RELEASED
+          updatedAt: new Date()
+        },
+        include: { raffle: true, user: true },
+      });
+
+      // 4. Si estaba PAID, devolver boletos al inventario
+      if (order.status === 'PAID') {
+        await this.prisma.raffle.update({
+          where: { id: order.raffleId },
+          data: { sold: { decrement: order.tickets.length } },
+        });
+      }
+
+      console.log('✅ Orden liberada exitosamente');
+
+      // 5. Retornar con formato correcto
+      return {
+        ...updated,
+        customer: {
+          id: updated.user.id,
+          name: updated.user.name || 'Sin nombre',
+          phone: updated.user.phone || 'Sin teléfono',
+          email: updated.user.email || '',
+          district: updated.user.district || 'Sin distrito',
+        },
+        raffleTitle: updated.raffle.title,
+        total: updated.total,
+      };
+    } catch (error) {
+      console.error('❌ Error en releaseOrder:', error);
+      throw new HttpException(
+        error.message || 'Error al liberar la orden',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteOrder(id: string) {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id } });
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      // Si la orden está completada, ajustar el conteo de boletos vendidos
+      if (order.status === 'PAID') {
+        await this.prisma.raffle.update({
+          where: { id: order.raffleId },
+          data: { sold: { decrement: order.tickets.length } },
+        });
+      }
+
+      await this.prisma.order.delete({ where: { id } });
+      return { message: 'Orden eliminada exitosamente' };
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
+  }
+
+  // Raffles
+  async getAllRaffles(limit: number = 50) {
+    try {
+      console.log('📋 Getting all raffles, limit:', limit);
+      const raffles = await this.prisma.raffle.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+      console.log('✅ Found', raffles.length, 'raffles');
+      // Asegurar que packs y bonuses se serialicen correctamente
+      // Convertir a JSON plano para evitar problemas de serialización
+      return raffles.map(raffle => {
+        try {
+          // Serializar packs de forma segura
+          let serializedPacks = null;
+          if (raffle.packs) {
+            try {
+              serializedPacks = JSON.parse(JSON.stringify(raffle.packs));
+            } catch (e) {
+              console.warn('⚠️ Error serializing packs for raffle:', raffle.id, e);
+              serializedPacks = null;
+            }
+          }
+
+          // Serializar bonuses de forma segura
+          let serializedBonuses: string[] = [];
+          if (Array.isArray(raffle.bonuses)) {
+            serializedBonuses = raffle.bonuses.map(b => String(b || ''));
+          }
+
+          const serialized = {
+            id: raffle.id,
+            title: raffle.title,
+            description: raffle.description,
+            imageUrl: raffle.imageUrl,
+            gallery: raffle.gallery,
+            price: Number(raffle.price),
+            tickets: Number(raffle.tickets),
+            sold: Number(raffle.sold),
+            drawDate: raffle.drawDate,
+            status: raffle.status,
+            slug: raffle.slug,
+            boletosConOportunidades: Boolean(raffle.boletosConOportunidades),
+            numeroOportunidades: Number(raffle.numeroOportunidades),
+            giftTickets: raffle.giftTickets ? Number(raffle.giftTickets) : null,
+            packs: serializedPacks,
+            bonuses: serializedBonuses,
+            createdAt: raffle.createdAt,
+            updatedAt: raffle.updatedAt,
+          };
+          return serialized;
+        } catch (err) {
+          console.error('❌ Error serializing raffle:', raffle.id, err);
+          // Retornar un objeto básico si hay error de serialización
+          return {
+            id: raffle.id,
+            title: raffle.title || 'Error',
+            description: raffle.description,
+            imageUrl: raffle.imageUrl,
+            gallery: null,
+            price: Number(raffle.price) || 0,
+            tickets: Number(raffle.tickets) || 0,
+            sold: Number(raffle.sold) || 0,
+            drawDate: raffle.drawDate,
+            status: raffle.status || 'draft',
+            slug: raffle.slug,
+            boletosConOportunidades: Boolean(raffle.boletosConOportunidades),
+            numeroOportunidades: Number(raffle.numeroOportunidades) || 1,
+            giftTickets: null,
+            packs: null,
+            bonuses: [],
+            createdAt: raffle.createdAt,
+            updatedAt: raffle.updatedAt,
+          };
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error in getAllRaffles:', error);
+      throw new Error(`Error al obtener las rifas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  }
+
+  async getFinishedRaffles() {
+    const now = new Date();
+    // Buscar rifas que estén finalizadas, activas, O que ya hayan pasado la fecha de sorteo
+    return this.prisma.raffle.findMany({
+      where: {
+        OR: [
+          { status: 'finished' },
+          { status: 'active' }, // Incluir rifas activas para poder hacer sorteos
+          { drawDate: { lte: now }, status: { not: 'draft' } }
+        ]
+      },
+      orderBy: { drawDate: 'desc' }
+    });
+  }
+
+  async createRaffle(data: Omit<Raffle, 'id' | 'sold' | 'createdAt' | 'updatedAt'>) {
+    try {
+      // Validar campos requeridos
+      if (!data.title || data.title.trim() === '') {
+        throw new Error('El título es requerido');
+      }
+      if (!data.tickets || data.tickets < 1) {
+        throw new Error('El número de boletos debe ser mayor a 0');
+      }
+      if (!data.price || data.price <= 0) {
+        throw new Error('El precio debe ser mayor a 0');
+      }
+      if (!data.drawDate) {
+        throw new Error('La fecha del sorteo es requerida');
+      }
+
+      // Generar slug automático si no existe
+      const autoSlug = data.slug || data.title
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+        .replace(/[^a-z0-9]+/g, '-') // Reemplazar caracteres especiales con guiones
+        .replace(/^-+|-+$/g, '') // Quitar guiones del inicio/final
+        .substring(0, 50) + '-' + Date.now().toString().slice(-6); // Agregar timestamp para unicidad
+
+      // Imagen por defecto si no se proporciona
+      const defaultImage = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop';
+
+      // Filtrar solo los campos que existen en el esquema de Prisma
+      const raffleData = {
+        title: data.title.trim(),
+        description: data.description || null,
+        imageUrl: data.imageUrl || defaultImage,
+        gallery: data.gallery || null,
+        price: Number(data.price),
+        tickets: Number(data.tickets),
+        sold: 0,
+        drawDate: new Date(data.drawDate),
+        status: data.status || 'draft',
+        slug: autoSlug,
+        boletosConOportunidades: data.boletosConOportunidades || false,
+        numeroOportunidades: data.numeroOportunidades || 1,
+        packs: data.packs && Array.isArray(data.packs) && data.packs.length > 0
+          ? JSON.parse(JSON.stringify(data.packs))
+          : null,
+        bonuses: (() => {
+          // Asegurar que bonuses sea siempre un array de strings
+          // Force rebuild v2: Using hasOwnProperty for robust type checking
+          if (!data.bonuses) return [];
+          if (Array.isArray(data.bonuses)) {
+            return data.bonuses
+              .map(b => {
+                // Si es null o undefined, o no es un objeto, no se puede acceder a 'value'
+                if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'value')) {
+                  const value = (b as any).value;
+                  return value ? String(value).trim() : '';
+                }
+                // Si ya es un string, usarlo directamente
+                if (typeof b === 'string') {
+                  return b.trim();
+                }
+                // Para cualquier otro caso (null, undefined, etc.), se filtrará
+                return '';
+              })
+              .filter(b => b !== '');
+          }
+          // Si no es un array, tratarlo como un posible string
+          const bonusString = String(data.bonuses || '');
+          const trimmed = bonusString.trim();
+          return trimmed !== '' ? [trimmed] : [];
+        })(),
+      };
+
+      console.log('📝 Creating raffle with data:', {
+        ...raffleData,
+        packs: raffleData.packs,
+        bonuses: raffleData.bonuses,
+        packsType: typeof raffleData.packs,
+        bonusesType: typeof raffleData.bonuses,
+        packsIsArray: Array.isArray(raffleData.packs),
+        bonusesIsArray: Array.isArray(raffleData.bonuses)
+      });
+
+      const createdRaffle = await this.prisma.raffle.create({
+        data: raffleData
+      });
+
+      console.log('✅ Raffle created successfully:', createdRaffle.id);
+      return createdRaffle;
+    } catch (error) {
+      console.error('❌ Error creating raffle:', error);
+      if (error instanceof Error) {
+        throw new Error(`Error al crear la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al crear la rifa');
+    }
+  }
+
+  async updateRaffle(id: string, data: Raffle) {
+    try {
+      // Verificar que la rifa existe
+      const existingRaffle = await this.prisma.raffle.findUnique({
+        where: { id },
+        include: { orders: true }
+      });
+
+      if (!existingRaffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Verificar si tiene boletos vendidos
+      const hasSoldTickets = existingRaffle.sold > 0;
+      const hasPaidOrders = existingRaffle.orders.some(order => order.status === 'PAID');
+
+      console.log('📝 Updating raffle:', id, 'hasSoldTickets:', hasSoldTickets, 'hasPaidOrders:', hasPaidOrders);
+
+      // Filtrar campos según reglas de negocio
+      const raffleData: any = {};
+
+      // Campos siempre editables
+      if (data.title !== undefined) {
+        if (!data.title.trim()) {
+          throw new Error('El título es requerido');
+        }
+        raffleData.title = data.title.trim();
+      }
+
+      if (data.description !== undefined) {
+        raffleData.description = data.description;
+      }
+
+      if (data.imageUrl !== undefined) {
+        raffleData.imageUrl = data.imageUrl;
+      }
+
+      if (data.gallery !== undefined) {
+        raffleData.gallery = data.gallery;
+      }
+
+      if (data.drawDate !== undefined) {
+        raffleData.drawDate = new Date(data.drawDate);
+      }
+
+      if (data.status !== undefined) {
+        raffleData.status = data.status;
+      }
+
+      if (data.slug !== undefined) {
+        raffleData.slug = data.slug;
+      }
+
+      if (data.boletosConOportunidades !== undefined) {
+        raffleData.boletosConOportunidades = data.boletosConOportunidades;
+      }
+
+      if (data.numeroOportunidades !== undefined) {
+        if (data.numeroOportunidades < 1 || data.numeroOportunidades > 10) {
+          throw new Error('El número de oportunidades debe estar entre 1 y 10');
+        }
+        raffleData.numeroOportunidades = Number(data.numeroOportunidades);
+      }
+
+      // Campos packs y bonuses siempre editables
+      // IMPORTANTE: Aceptar tanto undefined como null explícito
+      if (data.packs !== undefined) {
+        console.log('📦 Processing packs:', {
+          packs: data.packs,
+          type: typeof data.packs,
+          isArray: Array.isArray(data.packs),
+          isNull: data.packs === null
+        });
+
+        if (data.packs === null) {
+          raffleData.packs = null;
+        } else if (Array.isArray(data.packs) && data.packs.length > 0) {
+          // Si es un array válido, guardarlo
+          raffleData.packs = JSON.parse(JSON.stringify(data.packs));
+        } else if (typeof data.packs === 'string') {
+          // Si viene como string, parsearlo
+          try {
+            const parsed = JSON.parse(data.packs);
+            raffleData.packs = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+          } catch (e) {
+            console.warn('Error parsing packs string:', e);
+            raffleData.packs = null;
+          }
+        } else {
+          raffleData.packs = null;
+        }
+        console.log('✅ Final packs value:', raffleData.packs);
+      }
+
+      if (data.bonuses !== undefined) {
+        console.log('🎁 Processing bonuses:', {
+          bonuses: data.bonuses,
+          type: typeof data.bonuses,
+          isArray: Array.isArray(data.bonuses),
+          isNull: data.bonuses === null
+        });
+
+        if (data.bonuses === null) {
+          raffleData.bonuses = [];
+        } else if (Array.isArray(data.bonuses)) {
+          raffleData.bonuses = data.bonuses
+            .map(b => {
+              // Si es null, undefined, o no es un objeto, no se puede acceder a 'value'
+              if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'value')) {
+                const value = (b as any).value;
+                return value ? String(value).trim() : '';
+              }
+              // Si ya es un string, usarlo directamente
+              if (typeof b === 'string') {
+                return b.trim();
+              }
+              // Para cualquier otro caso, se filtrará
+              return '';
+            })
+            .filter(b => b !== '');
+        } else {
+          // Si no es un array, tratarlo como un posible string
+          const bonusString = String(data.bonuses || '');
+          const trimmed = bonusString.trim();
+          raffleData.bonuses = trimmed !== '' ? [trimmed] : [];
+        }
+        console.log('✅ Final bonuses value:', raffleData.bonuses);
+      }
+
+      // Campos editables solo si NO tiene boletos vendidos/pagados
+      if (hasSoldTickets || hasPaidOrders) {
+        console.log('⚠️ Rifa tiene boletos vendidos/pagados - limitando edición');
+
+        // Solo rechazar cambios si el valor REALMENTE cambió
+        if (data.price !== undefined && data.price !== existingRaffle.price) {
+          console.log(`❌ Intento de cambiar precio: ${existingRaffle.price} -> ${data.price}`);
+          throw new Error('No se puede cambiar el precio cuando ya hay boletos vendidos');
+        }
+
+        if (data.tickets !== undefined && data.tickets !== existingRaffle.tickets) {
+          console.log(`❌ Intento de cambiar boletos: ${existingRaffle.tickets} -> ${data.tickets}`);
+          throw new Error('No se puede cambiar el número total de boletos cuando ya hay boletos vendidos');
+        }
+
+        // Si los valores son iguales, simplemente no agregarlos al objeto de actualización
+        if (data.price !== undefined && data.price === existingRaffle.price) {
+          console.log('✅ Precio no cambió, omitiendo del update');
+        }
+        if (data.tickets !== undefined && data.tickets === existingRaffle.tickets) {
+          console.log('✅ Número de boletos no cambió, omitiendo del update');
+        }
+      } else {
+        // Sin boletos vendidos - permitir editar todo
+        if (data.price !== undefined) {
+          if (data.price <= 0) {
+            throw new Error('El precio debe ser mayor a 0');
+          }
+          raffleData.price = Number(data.price);
+        }
+
+        if (data.tickets !== undefined) {
+          if (data.tickets < 1) {
+            throw new Error('El número de boletos debe ser mayor a 0');
+          }
+          raffleData.tickets = Number(data.tickets);
+        }
+      }
+
+      console.log('📝 Final update data:', raffleData);
+      console.log('📦 Packs in update data:', raffleData.packs);
+      console.log('🎁 Bonuses in update data:', raffleData.bonuses);
+
+      const updatedRaffle = await this.prisma.raffle.update({
+        where: { id },
+        data: raffleData
+      });
+
+      console.log('✅ Raffle updated successfully');
+      console.log('📦 Updated raffle packs:', updatedRaffle.packs);
+      console.log('🎁 Updated raffle bonuses:', updatedRaffle.bonuses);
+      console.log('📊 Updated raffle full data:', JSON.stringify(updatedRaffle, null, 2));
+
+      return updatedRaffle;
+    } catch (error) {
+      console.error('❌ Error updating raffle:', error);
+      if (error instanceof Error) {
+        throw new Error(`Error al actualizar la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al actualizar la rifa');
+    }
+  }
+
+  async deleteRaffle(id: string) {
+    try {
+      // Verificar que la rifa existe
+      const existingRaffle = await this.prisma.raffle.findUnique({
+        where: { id }
+      });
+
+      if (!existingRaffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      console.log('🗑️ Eliminando rifa y todos sus datos asociados (incluyendo órdenes pagadas):', id);
+
+      // Eliminar TODAS las órdenes asociadas
+      const deletedOrders = await this.prisma.order.deleteMany({
+        where: { raffleId: id }
+      });
+      console.log(`🗑️ Eliminadas ${deletedOrders.count} órdenes.`);
+
+      // Eliminar tickets asociados
+      const deletedTickets = await this.prisma.ticket.deleteMany({
+        where: { raffleId: id }
+      });
+      console.log(`🗑️ Eliminados ${deletedTickets.count} tickets.`);
+
+      // Eliminar la rifa
+      await this.prisma.raffle.delete({ where: { id } });
+
+      console.log('✅ Rifa eliminada exitosamente');
+      return { message: 'Rifa eliminada exitosamente' };
+    } catch (error) {
+      console.error('❌ Error deleting raffle:', error);
+      if (error instanceof Error) {
+        throw new Error(`Error al eliminar la rifa: ${error.message}`);
+      }
+      throw new Error('Error desconocido al eliminar la rifa');
+    }
+  }
+
+  async downloadTickets(raffleId: string, tipo: 'apartados' | 'pagados', formato: 'csv' | 'excel'): Promise<{ filename: string; content: string; contentType: string }> {
+    try {
+      console.log('📥 Downloading tickets:', { raffleId, tipo, formato });
+
+      // Verificar que la rifa existe
+      const raffle = await this.prisma.raffle.findUnique({
+        where: { id: raffleId },
+        select: { id: true, title: true }
+      });
+
+      if (!raffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Obtener órdenes según el tipo
+      const statusFilter = tipo === 'apartados' ? 'PENDING' : 'PAID';
+      const orders = await this.prisma.order.findMany({
+        where: {
+          raffleId,
+          status: statusFilter
+        },
+        include: {
+          user: true,
+          raffle: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      console.log(`📊 Found ${orders.length} orders with status ${statusFilter}`);
+
+      // Preparar datos para exportación con información completa
+      const exportData = [];
+      for (const order of orders) {
+        const totalBoletos = order.tickets.length;
+        const montoPorBoleto = order.total / totalBoletos;
+
+        for (const ticketNumber of order.tickets) {
+          exportData.push({
+            numero_boleto: ticketNumber,
+            cliente: order.user.name || 'Sin nombre',
+            telefono: order.user.phone || 'Sin teléfono',
+            distrito: order.user.district || 'No especificado',
+            fecha_apartado: this.formatDate(order.createdAt),
+            fecha_pago: tipo === 'pagados' ? this.formatDate(order.updatedAt) : 'Pendiente',
+            metodo_pago: order.paymentMethod || 'No especificado',
+            monto_total: order.total,
+            monto_boleto: montoPorBoleto,
+            folio: order.folio,
+            expira: this.formatDate(order.expiresAt),
+            notas: order.notes || 'Sin notas',
+            estado: order.status
+          });
+        }
+      }
+
+      if (exportData.length === 0) {
+        throw new Error(`No hay boletos ${tipo} para esta rifa`);
+      }
+
+      // Generar archivo según formato
+      if (formato === 'csv') {
+        return this.generateCSV(exportData, raffle.title, tipo);
+      } else {
+        return this.generateExcel(exportData, raffle.title, tipo);
+      }
+
+    } catch (error) {
+      console.error('❌ Error downloading tickets:', error);
+      throw error;
+    }
+  }
+
+  private formatDate(date: Date): string {
+    return date.toLocaleString('es-HN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private generateCSV(data: any[], raffleTitle: string, tipo: string) {
+    // UTF-8 BOM para mejor compatibilidad con Excel
+    const BOM = '\uFEFF';
+    const headers = [
+      'Número Boleto',
+      'Cliente',
+      'Teléfono',
+      'Distrito',
+      'Fecha Apartado',
+      'Fecha Pago',
+      'Método Pago',
+      'Monto Total',
+      'Monto por Boleto',
+      'Folio',
+      'Fecha Expira',
+      'Notas',
+      'Estado'
+    ];
+
+    const csvContent = BOM + [
+      headers.join(','),
+      ...data.map(row => [
+        row.numero_boleto,
+        `"${(row.cliente || '').replace(/"/g, '""')}"`,
+        `"${(row.telefono || '').replace(/"/g, '""')}"`,
+        `"${(row.distrito || '').replace(/"/g, '""')}"`,
+        `"${row.fecha_apartado}"`,
+        `"${row.fecha_pago}"`,
+        `"${(row.metodo_pago || '').replace(/"/g, '""')}"`,
+        row.monto_total,
+        row.monto_boleto,
+        `"${row.folio}"`,
+        `"${row.expira}"`,
+        `"${(row.notas || '').replace(/"/g, '""')}"`,
+        `"${row.estado}"`
+      ].join(','))
+    ].join('\n');
+
+    const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.csv`;
+
+    return {
+      filename,
+      content: csvContent,
+      contentType: 'text/csv'
+    };
+  }
+
+  private generateExcel(data: any[], raffleTitle: string, tipo: string) {
+    const XLSX = require('xlsx');
+
+    // Crear workbook
+    const wb = XLSX.utils.book_new();
+
+    // Preparar datos para Excel
+    const excelData = data.map(row => ({
+      'Número Boleto': row.numero_boleto,
+      'Cliente': row.cliente,
+      'Teléfono': row.telefono,
+      'Distrito': row.distrito,
+      'Fecha Apartado': row.fecha_apartado,
+      'Fecha Pago': row.fecha_pago,
+      'Método Pago': row.metodo_pago,
+      'Monto Total': row.monto_total,
+      'Monto por Boleto': row.monto_boleto,
+      'Folio': row.folio,
+      'Fecha Expira': row.expira,
+      'Notas': row.notas,
+      'Estado': row.estado
+    }));
+
+    // Crear worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Ajustar ancho de columnas
+    const colWidths = [
+      { wch: 15 }, // Número Boleto
+      { wch: 25 }, // Cliente
+      { wch: 15 }, // Teléfono
+      { wch: 20 }, // Distrito
+      { wch: 18 }, // Fecha Apartado
+      { wch: 18 }, // Fecha Pago
+      { wch: 18 }, // Método Pago
+      { wch: 14 }, // Monto Total
+      { wch: 14 }, // Monto por Boleto
+      { wch: 22 }, // Folio
+      { wch: 18 }, // Fecha Expira
+      { wch: 30 }, // Notas
+      { wch: 12 }  // Estado
+    ];
+    ws['!cols'] = colWidths;
+
+    // Agregar worksheet al workbook
+    XLSX.utils.book_append_sheet(wb, ws, `Boletos ${tipo}`);
+
+    // Generar buffer
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    const filename = `boletos-${tipo}-${raffleTitle.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    return {
+      filename,
+      content: buffer.toString('base64'),
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    };
+  }
+
+  // Winners
+  async getAllWinners() {
+    return this.prisma.winner.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  async drawWinner(raffleId: string) {
+    const paidOrders = await this.prisma.order.findMany({
+      where: { raffleId, status: 'PAID' },
+      include: { user: true }
+    });
+
+    if (paidOrders.length === 0) {
+      throw new BadRequestException("No hay boletos pagados para este sorteo.");
+    }
+
+    const allPaidTickets = paidOrders.flatMap(o => o.tickets);
+    if (allPaidTickets.length === 0) {
+      throw new BadRequestException("No hay boletos pagados para este sorteo.");
+    }
+
+    const winningTicket = allPaidTickets[Math.floor(Math.random() * allPaidTickets.length)];
+    const winningOrder = paidOrders.find(o => o.tickets.includes(winningTicket));
+
+    if (!winningOrder) {
+      throw new Error("Error interno al encontrar al ganador.");
+    }
+
+    // Formatear la orden con los datos del usuario como customer
+    const formattedOrder = {
+      ...winningOrder,
+      customer: winningOrder.user ? {
+        id: winningOrder.user.id,
+        name: winningOrder.user.name || 'Sin nombre',
+        phone: winningOrder.user.phone || 'Sin teléfono',
+        email: winningOrder.user.email || '',
+        district: winningOrder.user.district || 'Sin distrito'
+      } : null
+    };
+
+    return { ticket: winningTicket, order: formattedOrder };
+  }
+
+  async saveWinner(data: Omit<Winner, 'id' | 'createdAt' | 'updatedAt'>) {
+    console.log('💾 Saving winner with data:', data);
+
+    // Validar que el campo 'name' existe y no está vacío
+    if (!data.name || data.name.trim() === '') {
+      throw new BadRequestException('El campo "name" es requerido para guardar un ganador');
+    }
+
+    const winnerData = {
+      name: data.name.trim(),
+      prize: data.prize,
+      imageUrl: data.imageUrl,
+      raffleTitle: data.raffleTitle,
+      drawDate: data.drawDate,
+      ticketNumber: data.ticketNumber || null,
+      testimonial: data.testimonial || null,
+      phone: data.phone || null,
+      city: data.city || null,
+    };
+
+    console.log('💾 Winner data to create:', winnerData);
+
+    try {
+      const result = await this.prisma.winner.create({ data: winnerData });
+      console.log('✅ Winner created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error creating winner:', error);
+      throw error;
+    }
+  }
+
+  async deleteWinner(id: string) {
+    return this.prisma.winner.delete({ where: { id } });
+  }
+
+  // Users
+  async login(username: string, password: string) {
+    try {
+      // Buscar usuario por username
+      const user = await this.prisma.adminUser.findUnique({
+        where: { username }
+      });
+
+      if (!user) {
+        throw new BadRequestException('Credenciales incorrectas');
+      }
+
+      // Comparar contraseña con bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        throw new BadRequestException('Credenciales incorrectas');
+      }
+
+      // Retornar usuario sin contraseña
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al autenticar usuario');
+    }
+  }
+
+  async getUsers() {
+    // ✅ NUNCA devolver passwords en las respuestas por seguridad
+    const users = await this.prisma.adminUser.findMany({
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        // password: false - NO incluir nunca
+        role: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    return users;
+  }
+
+  async createUser(data: Prisma.AdminUserCreateInput) {
+    try {
+      // ✅ Validar campos requeridos
+      if (!data.username || !data.name || !data.password) {
+        throw new BadRequestException('Username, name, and password are required');
+      }
+
+      // ✅ Validar que el password tenga mínimo 6 caracteres
+      if (typeof data.password === 'string' && data.password.length < 6) {
+        throw new BadRequestException('Password must be at least 6 characters long');
+      }
+
+      // ✅ Validar que el rol sea válido
+      const validRoles = ['admin', 'ventas', 'superadmin'];
+      if (data.role && !validRoles.includes(data.role)) {
+        throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
+      }
+
+      // ✅ Validar que el username sea único
+      const existingUser = await this.prisma.adminUser.findUnique({
+        where: { username: data.username as string }
+      });
+      if (existingUser) {
+        throw new BadRequestException('Username already exists');
+      }
+
+      // ✅ Hash de contraseña antes de guardar
+      const hashedPassword = await bcrypt.hash(data.password as string, 10);
+
+      // ✅ Crear usuario con password hasheada
+      const newUser = await this.prisma.adminUser.create({
+        data: {
+          ...data,
+          password: hashedPassword,
+          role: (data.role as string) || 'ventas' // Default role
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          // password: false - NO incluir en respuesta
+          role: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      console.log('✅ Usuario creado exitosamente:', newUser.id);
+      return newUser;
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma (ej: constraint violation), convertirlo
+      if (error instanceof Error && error.message.includes('Unique constraint')) {
+        throw new BadRequestException('Username already exists');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al crear usuario');
+    }
+  }
+
+  async updateUser(id: string, data: Prisma.AdminUserUpdateInput) {
+    console.log('🔧 Actualizando usuario:', id, 'con datos:', JSON.stringify(data, null, 2));
+    try {
+      // ✅ Verificar que el usuario existe
+      const existingUser = await this.prisma.adminUser.findUnique({
+        where: { id }
+      });
+      if (!existingUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      // ✅ Validar username único si se está actualizando
+      if (data.username) {
+        const usernameTaken = await this.prisma.adminUser.findFirst({
+          where: {
+            username: data.username as string,
+            NOT: { id }
+          }
+        });
+        if (usernameTaken) {
+          throw new BadRequestException('Username already exists');
+        }
+      }
+
+      // ✅ Validar rol si se está actualizando
+      const validRoles = ['admin', 'ventas', 'superadmin'];
+      if (data.role && !validRoles.includes(data.role as string)) {
+        throw new BadRequestException(`Role must be one of: ${validRoles.join(', ')}`);
+      }
+
+      // ✅ Validar longitud de password si se proporciona
+      if (data.password && typeof data.password === 'string') {
+        if (data.password.length < 6) {
+          throw new BadRequestException('Password must be at least 6 characters long');
+        }
+      }
+
+      // ✅ Hash de contraseña solo si se proporciona una nueva
+      const updateData: any = { ...data };
+      if (data.password && typeof data.password === 'string' && data.password.trim() !== '') {
+        updateData.password = await bcrypt.hash(data.password, 10);
+        console.log('🔑 Password será actualizada (hasheada)');
+      } else {
+        // Si no se proporciona password, no actualizarla
+        delete updateData.password;
+      }
+
+      // ✅ Actualizar usuario
+      const updated = await this.prisma.adminUser.update({
+        where: { id },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          // password: false - NO incluir en respuesta
+          role: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      console.log('✅ Usuario actualizado exitosamente:', updated.id);
+      return updated;
+    } catch (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma, convertirlo
+      if (error instanceof Error && error.message.includes('Unique constraint')) {
+        throw new BadRequestException('Username already exists');
+      }
+      if (error instanceof Error && error.message.includes('Record to update not found')) {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al actualizar usuario');
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      // ✅ Verificar que el usuario existe
+      const user = await this.prisma.adminUser.findUnique({
+        where: { id }
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // ✅ No permitir eliminar superadmin (protección crítica)
+      if (user.role === 'superadmin') {
+        throw new BadRequestException('Cannot delete superadmin user');
+      }
+
+      // ✅ Eliminar usuario
+      await this.prisma.adminUser.delete({ where: { id } });
+      console.log('✅ Usuario eliminado exitosamente:', id);
+      return { message: 'Usuario eliminado exitosamente' };
+    } catch (error) {
+      console.error('❌ Error al eliminar usuario:', error);
+      // Si ya es una excepción de NestJS, re-lanzarla
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Si es un error de Prisma, convertirlo
+      if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException(error instanceof Error ? error.message : 'Error al eliminar usuario');
+    }
+  }
+
+  // Settings
+  async updateSettings(data: any) {
+    try {
+      console.log('🔧 Updating settings with data:', data);
+
+      const {
+        appearance,
+        contactInfo,
+        socialLinks,
+        paymentAccounts,
+        faqs,
+        displayPreferences,
+      } = data;
+
+      // Extract appearance data
+      const appearanceData = appearance || {};
+      const contactData = contactInfo || {};
+      const socialData = socialLinks || {};
+
+      // Usar logo como favicon automáticamente si no hay favicon específico
+      const logoUrl = appearanceData.logo || null;
+      const faviconUrl = appearanceData.favicon || logoUrl;
+
+      const settingsData = {
+        siteName: appearanceData.siteName || 'Lucky Snap',
+
+        // Appearance settings
+        logo: logoUrl,
+        favicon: faviconUrl, // Usar logo como favicon automáticamente
+        logoAnimation: appearanceData.logoAnimation || 'rotate',
+        primaryColor: appearanceData.colors?.backgroundPrimary || '#111827',
+        secondaryColor: appearanceData.colors?.backgroundSecondary || '#1f2937',
+        accentColor: appearanceData.colors?.accent || '#ec4899',
+        actionColor: appearanceData.colors?.action || '#0ea5e9',
+
+        // Contact info
+        whatsapp: contactData.whatsapp || null,
+        email: contactData.email || null,
+        emailFromName: contactData.emailFromName || null,
+        emailReplyTo: contactData.emailReplyTo || null,
+        emailSubject: contactData.emailSubject || null,
+
+        // Social links
+        facebookUrl: socialData.facebookUrl || null,
+        instagramUrl: socialData.instagramUrl || null,
+        tiktokUrl: socialData.tiktokUrl || null,
+
+        // Other settings - Ensure proper serialization
+        paymentAccounts: this.safeStringify(paymentAccounts),
+        faqs: this.safeStringify(faqs),
+        displayPreferences: this.safeStringify(displayPreferences),
+      };
+
+      console.log('🔧 Settings data to save:', settingsData);
+
+      const result = await this.prisma.settings.upsert({
+        where: { id: 'main_settings' },
+        update: settingsData,
+        create: {
+          id: 'main_settings',
+          ...settingsData,
+        },
+      });
+
+      console.log('✅ Settings updated successfully:', result);
+
+      // Formatear la respuesta igual que en publicService
+      return this.formatSettingsResponse(result);
+    } catch (error) {
+      console.error('❌ Error updating settings:', error);
+      throw new Error('Failed to update settings');
+    }
+  }
+
+  private safeStringify(data: any): string {
+    try {
+      if (!data) return JSON.stringify([]);
+
+      // If it's already a string, check if it's valid JSON
+      if (typeof data === 'string') {
+        try {
+          JSON.parse(data);
+          return data; // It's already valid JSON string
+        } catch {
+          return JSON.stringify([]); // Invalid JSON string, return empty array
+        }
+      }
+
+      // If it's an object/array, stringify it
+      return JSON.stringify(data);
+    } catch (error) {
+      console.error('❌ Error in safeStringify:', error);
+      return JSON.stringify([]);
+    }
+  }
+
+  private formatSettingsResponse(settings: any) {
+    return {
+      id: settings.id,
+      siteName: settings.siteName,
+      appearance: {
+        siteName: settings.siteName,
+        logo: settings.logo,
+        favicon: settings.favicon,
+        logoAnimation: settings.logoAnimation || 'rotate',
+        colors: {
+          backgroundPrimary: settings.primaryColor || '#111827',
+          backgroundSecondary: settings.secondaryColor || '#1f2937',
+          accent: settings.accentColor || '#ec4899',
+          action: settings.actionColor || '#0ea5e9',
+        }
+      },
+      contactInfo: {
+        whatsapp: settings.whatsapp || '',
+        email: settings.email || '',
+        emailFromName: settings.emailFromName || '',
+        emailReplyTo: settings.emailReplyTo || '',
+        emailSubject: settings.emailSubject || '',
+      },
+      socialLinks: {
+        facebookUrl: settings.facebookUrl || '',
+        instagramUrl: settings.instagramUrl || '',
+        tiktokUrl: settings.tiktokUrl || '',
+      },
+      paymentAccounts: this.parseJsonField(settings.paymentAccounts),
+      faqs: this.parseJsonField(settings.faqs),
+      displayPreferences: this.parseJsonField(settings.displayPreferences),
+      createdAt: settings.createdAt,
+      updatedAt: settings.updatedAt,
+    };
+  }
+
+  private parseJsonField(field: any) {
+    try {
+      if (!field) return null;
+
+      // Handle double serialization
+      if (typeof field === 'string') {
+        // Try to parse as JSON
+        const parsed = JSON.parse(field);
+
+        // If it's still a string, parse again
+        if (typeof parsed === 'string') {
+          return JSON.parse(parsed);
+        }
+
+        return parsed;
+      }
+
+      return field;
+    } catch (error) {
+      console.error('❌ Error parsing JSON field:', error);
+      return null;
+    }
+  }
+}

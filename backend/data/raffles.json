@@ -1,0 +1,41 @@
+[
+  {
+    "id": "1",
+    "title": "iPhone 15 Pro Max",
+    "description": "El último iPhone con todas las características premium",
+    "heroImage": "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop",
+    "gallery": ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop"],
+    "tickets": 100,
+    "sold": 25,
+    "drawDate": "2024-12-31T23:59:59.000Z",
+    "packs": [
+      { "name": "Pack Básico", "tickets": 1, "price": 50 },
+      { "name": "Pack Premium", "tickets": 5, "price": 200 },
+      { "name": "Pack VIP", "tickets": 10, "price": 350 }
+    ],
+    "bonuses": ["Descuento 10%", "Boletos extra"],
+    "status": "active",
+    "slug": "iphone-15-pro-max",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "title": "PlayStation 5",
+    "description": "La consola de videojuegos más avanzada",
+    "heroImage": "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400&h=300&fit=crop",
+    "gallery": ["https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400&h=300&fit=crop"],
+    "tickets": 50,
+    "sold": 15,
+    "drawDate": "2024-11-30T23:59:59.000Z",
+    "packs": [
+      { "name": "Pack Básico", "tickets": 1, "price": 100 },
+      { "name": "Pack Premium", "tickets": 3, "price": 250 }
+    ],
+    "bonuses": ["Juego gratis"],
+    "status": "active",
+    "slug": "playstation-5",
+    "createdAt": "2024-01-15T00:00:00.000Z",
+    "updatedAt": "2024-01-15T00:00:00.000Z"
+  }
+]

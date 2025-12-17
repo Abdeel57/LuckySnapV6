@@ -1,0 +1,59 @@
+[
+  {
+    "id": "1",
+    "folio": "ORD-1704067200000",
+    "raffleId": "1",
+    "customer": {
+      "name": "Juan Pérez",
+      "phone": "5551234567",
+      "email": "juan@email.com",
+      "district": "Centro"
+    },
+    "tickets": [5, 10, 15],
+    "totalAmount": 150,
+    "status": "PENDING",
+    "paymentMethod": "transfer",
+    "notes": "Cliente frecuente",
+    "createdAt": "2024-01-01T10:00:00.000Z",
+    "updatedAt": "2024-01-01T10:00:00.000Z",
+    "expiresAt": "2024-01-02T10:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "folio": "ORD-1704067200001",
+    "raffleId": "1",
+    "customer": {
+      "name": "María García",
+      "phone": "5557654321",
+      "email": "maria@email.com",
+      "district": "Norte"
+    },
+    "tickets": [25, 30],
+    "totalAmount": 100,
+    "status": "PAID",
+    "paymentMethod": "transfer",
+    "notes": "",
+    "createdAt": "2024-01-01T11:00:00.000Z",
+    "updatedAt": "2024-01-01T11:00:00.000Z",
+    "expiresAt": "2024-01-02T11:00:00.000Z"
+  },
+  {
+    "id": "3",
+    "folio": "ORD-1704067200002",
+    "raffleId": "2",
+    "customer": {
+      "name": "Carlos López",
+      "phone": "5559876543",
+      "email": "carlos@email.com",
+      "district": "Sur"
+    },
+    "tickets": [1, 2, 3],
+    "totalAmount": 300,
+    "status": "PENDING",
+    "paymentMethod": "transfer",
+    "notes": "Primera compra",
+    "createdAt": "2024-01-01T12:00:00.000Z",
+    "updatedAt": "2024-01-01T12:00:00.000Z",
+    "expiresAt": "2024-01-02T12:00:00.000Z"
+  }
+]

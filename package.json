@@ -1,0 +1,66 @@
+{
+  "name": "lucky-snap",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Lucky Snap - Sistema de Rifas Completo",
+  "type": "module",
+  "scripts": {
+    "start": "node start-app.js",
+    "dev": "node start-app.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run start:prisma",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "clean": "rm -rf node_modules frontend/node_modules backend/node_modules frontend/dist backend/dist",
+    "setup": "npm run install:all && cd backend && npm run migrate:deploy",
+    "migrate:status": "cd backend && npm run migrate:status",
+    "migrate:deploy": "cd backend && npm run migrate:deploy",
+    "migrate:dev": "cd backend && npm run migrate:dev",
+    "backup": "cd backend && npm run backup",
+    "test:db": "cd backend && npm run test:db",
+    "typecheck": "cd backend && npm run typecheck",
+    "verify": "node verify-setup.js",
+    "check": "node verify-setup.js",
+    "deploy:frontend": "node scripts/deploy.js frontend",
+    "deploy:backend": "node scripts/deploy.js backend",
+    "deploy:all": "node scripts/deploy.js all",
+    "deploy:verify": "node scripts/deploy.js verify"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.544.0",
+    "framer-motion": "^12.23.15",
+    "react-hook-form": "^7.62.0",
+    "@prisma/client": "^6.16.2",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "terser": "^5.36.0",
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "rifas",
+    "lottery",
+    "react",
+    "nestjs",
+    "prisma",
+    "postgresql"
+  ],
+  "author": "Lucky Snap Team",
+  "license": "MIT"
+}

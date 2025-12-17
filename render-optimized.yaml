@@ -1,0 +1,55 @@
+services:
+  # Backend Service - Optimizado
+  - type: web
+    name: lucky-snap-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm run start:optimized
+    envVars:
+      - key: NODE_VERSION
+        value: 22.19.0
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        value: lucky_snap_jwt_secret_2024_production
+      - key: CORS_ORIGINS
+        value: https://jocular-brioche-6fbeda.netlify.app,https://lucky-snap-frontend.onrender.com
+      - key: API_PREFIX
+        value: api
+      - key: MAX_REQUEST_SIZE
+        value: 50mb
+      - key: LOG_LEVEL
+        value: info
+
+  # Frontend Service - Optimizado
+  - type: static
+    name: lucky-snap-frontend
+    env: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://lucky-snap-backend.onrender.com/api
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
