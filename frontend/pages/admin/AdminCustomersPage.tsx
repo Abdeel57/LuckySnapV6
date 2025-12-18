@@ -74,15 +74,20 @@ const AdminCustomersPage: React.FC = () => {
         return base.filter(o => {
             switch (searchType) {
                 case 'nombre':
+                    // Nombre permite búsqueda parcial
                     return o.customer?.name?.toLowerCase?.().includes(term);
                 case 'telefono':
-                    return o.customer?.phone?.includes(searchTerm);
+                    // Teléfono debe ser búsqueda exacta (sin espacios, guiones, etc.)
+                    const cleanPhone = searchTerm.replace(/[\s\-\(\)]/g, '');
+                    const orderPhone = o.customer?.phone?.replace(/[\s\-\(\)]/g, '');
+                    return orderPhone?.includes(cleanPhone);
                 case 'folio':
-                    return o.folio?.toLowerCase().includes(term);
+                    // Folio debe ser búsqueda exacta
+                    return o.folio?.toLowerCase() === searchTerm.toLowerCase();
                 case 'boleto':
-                    return o.tickets?.some(ticket =>
-                        ticket.toString().includes(searchTerm)
-                    );
+                    // Boleto debe ser búsqueda exacta
+                    const boletoNum = parseInt(searchTerm);
+                    return !isNaN(boletoNum) && o.tickets?.includes(boletoNum);
                 default:
                     return true;
             }
@@ -259,12 +264,14 @@ const AdminCustomersPage: React.FC = () => {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
-                                    type={searchType === 'boleto' ? 'number' : 'text'}
+                                    type={searchType === 'nombre' ? 'text' :
+                                          searchType === 'telefono' ? 'tel' :
+                                          searchType === 'folio' ? 'text' : 'number'}
                                     placeholder={
                                         searchType === 'nombre' ? 'Ingresa el nombre...' :
-                                        searchType === 'telefono' ? 'Ingresa el teléfono...' :
-                                        searchType === 'folio' ? 'Ingresa el folio...' :
-                                        'Ingresa el número de boleto...'
+                                        searchType === 'telefono' ? 'Ingresa el teléfono (ej: 9999-9999)' :
+                                        searchType === 'folio' ? 'Ingresa el folio exacto (ej: LKSNP-XXXXX)' :
+                                        'Ingresa el número de boleto exacto'
                                     }
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}

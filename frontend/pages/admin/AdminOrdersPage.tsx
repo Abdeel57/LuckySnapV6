@@ -107,19 +107,20 @@ const AdminOrdersPage: React.FC = () => {
         const matchesSearch = (() => {
             if (!searchTerm) return true;
 
-            const term = searchTerm.toLowerCase();
-
             switch (searchType) {
                 case 'folio':
-                    return order.folio?.toLowerCase().includes(term);
+                    // Folio debe ser búsqueda exacta (no parcial)
+                    return order.folio?.toLowerCase() === searchTerm.toLowerCase();
                 case 'cliente':
+                    // Cliente permite búsqueda parcial (nombre, teléfono, distrito)
+                    const term = searchTerm.toLowerCase();
                     return order.customer.name?.toLowerCase().includes(term) ||
                            order.customer.phone?.includes(searchTerm) ||
                            order.customer.district?.toLowerCase().includes(term);
                 case 'boleto':
-                    return order.tickets?.some(ticket =>
-                        ticket.toString().includes(searchTerm)
-                    );
+                    // Boleto debe ser búsqueda exacta (número específico)
+                    const boletoNum = parseInt(searchTerm);
+                    return !isNaN(boletoNum) && order.tickets?.includes(boletoNum);
                 default:
                     return true;
             }
