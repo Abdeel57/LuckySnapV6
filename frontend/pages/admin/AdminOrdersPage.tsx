@@ -24,6 +24,7 @@ const AdminOrdersPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchType, setSearchType] = useState<'folio' | 'cliente' | 'boleto'>('folio');
     const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -102,12 +103,27 @@ const AdminOrdersPage: React.FC = () => {
         // Filtrar por rifa si está seleccionada
         if (selectedRaffleId && order.raffleId !== selectedRaffleId) return;
         
-        const matchesSearch = 
-            !searchTerm ||
-            order.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.customer.phone?.includes(searchTerm) ||
-            order.customer.district?.toLowerCase().includes(searchTerm.toLowerCase());
+        // Filtrar por búsqueda según tipo seleccionado
+        const matchesSearch = (() => {
+            if (!searchTerm) return true;
+
+            const term = searchTerm.toLowerCase();
+
+            switch (searchType) {
+                case 'folio':
+                    return order.folio?.toLowerCase().includes(term);
+                case 'cliente':
+                    return order.customer.name?.toLowerCase().includes(term) ||
+                           order.customer.phone?.includes(searchTerm) ||
+                           order.customer.district?.toLowerCase().includes(term);
+                case 'boleto':
+                    return order.tickets?.some(ticket =>
+                        ticket.toString().includes(searchTerm)
+                    );
+                default:
+                    return true;
+            }
+        })();
 
         if (!matchesSearch) return;
         
@@ -335,11 +351,11 @@ const AdminOrdersPage: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
                     <div className="flex flex-col md:flex-row gap-4">
                         {/* Filtro por rifa */}
-                        <div className="w-full md:w-auto md:min-w-[250px]">
+                        <div className="w-full md:w-auto md:min-w-[200px]">
                             <select
                                 value={selectedRaffleId}
                                 onChange={(e) => setSelectedRaffleId(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                             >
                                 <option value="">Todas las rifas</option>
                                 {raffles.map((raffle) => (
@@ -349,21 +365,38 @@ const AdminOrdersPage: React.FC = () => {
                                 ))}
                             </select>
                         </div>
-                        
+
+                        {/* Tipo de búsqueda */}
+                        <div className="w-full md:w-auto md:min-w-[150px]">
+                            <select
+                                value={searchType}
+                                onChange={(e) => setSearchType(e.target.value as 'folio' | 'cliente' | 'boleto')}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                                <option value="folio">Buscar por folio</option>
+                                <option value="cliente">Buscar por cliente</option>
+                                <option value="boleto">Buscar por boleto</option>
+                            </select>
+                        </div>
+
                         {/* Búsqueda */}
                         <div className="flex-1">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
-                                    type="text"
-                                    placeholder="Buscar por folio, cliente, teléfono o email..."
+                                    type={searchType === 'boleto' ? 'number' : 'text'}
+                                    placeholder={
+                                        searchType === 'folio' ? 'Ingresa el folio...' :
+                                        searchType === 'cliente' ? 'Ingresa nombre, teléfono o distrito...' :
+                                        'Ingresa el número de boleto...'
+                                    }
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                         </div>
-                        
+
                     </div>
                 </div>
 

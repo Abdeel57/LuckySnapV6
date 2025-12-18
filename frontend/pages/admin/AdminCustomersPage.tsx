@@ -18,6 +18,7 @@ const AdminCustomersPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchType, setSearchType] = useState<'nombre' | 'telefono' | 'folio' | 'boleto'>('nombre');
     const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -71,21 +72,20 @@ const AdminCustomersPage: React.FC = () => {
         if (!searchTerm) return base;
         const term = searchTerm.toLowerCase();
         return base.filter(o => {
-            const name = o.customer?.name?.toLowerCase?.() || '';
-            const phone = o.customer?.phone || '';
-            const district = o.customer?.district?.toLowerCase?.() || '';
-            const folio = o.folio?.toLowerCase() || '';
-            // Buscar en los números de boleto
-            const ticketsMatch = o.tickets?.some(ticket => 
-                ticket.toString().includes(searchTerm)
-            ) || false;
-            return (
-                name.includes(term) ||
-                phone.includes(searchTerm) ||
-                district.includes(term) ||
-                folio.includes(term) ||
-                ticketsMatch
-            );
+            switch (searchType) {
+                case 'nombre':
+                    return o.customer?.name?.toLowerCase?.().includes(term);
+                case 'telefono':
+                    return o.customer?.phone?.includes(searchTerm);
+                case 'folio':
+                    return o.folio?.toLowerCase().includes(term);
+                case 'boleto':
+                    return o.tickets?.some(ticket =>
+                        ticket.toString().includes(searchTerm)
+                    );
+                default:
+                    return true;
+            }
         });
     }, [orders, searchTerm, selectedRaffleId]);
 
@@ -225,11 +225,11 @@ const AdminCustomersPage: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
                     <div className="flex flex-col md:flex-row gap-4">
                         {/* Filtro por rifa */}
-                        <div className="w-full md:w-auto md:min-w-[250px]">
+                        <div className="w-full md:w-auto md:min-w-[200px]">
                             <select
                                 value={selectedRaffleId}
                                 onChange={(e) => setSelectedRaffleId(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                             >
                                 <option value="">Todas las rifas</option>
                                 {raffles.map((raffle) => (
@@ -240,13 +240,32 @@ const AdminCustomersPage: React.FC = () => {
                             </select>
                         </div>
 
+                        {/* Tipo de búsqueda */}
+                        <div className="w-full md:w-auto md:min-w-[150px]">
+                            <select
+                                value={searchType}
+                                onChange={(e) => setSearchType(e.target.value as 'nombre' | 'telefono' | 'folio' | 'boleto')}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                                <option value="nombre">Buscar por nombre</option>
+                                <option value="telefono">Buscar por teléfono</option>
+                                <option value="folio">Buscar por folio</option>
+                                <option value="boleto">Buscar por boleto</option>
+                            </select>
+                        </div>
+
                         {/* Búsqueda */}
                         <div className="flex-1">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <input
-                                    type="text"
-                                    placeholder="Buscar por nombre, teléfono, distrito, folio o número de boleto..."
+                                    type={searchType === 'boleto' ? 'number' : 'text'}
+                                    placeholder={
+                                        searchType === 'nombre' ? 'Ingresa el nombre...' :
+                                        searchType === 'telefono' ? 'Ingresa el teléfono...' :
+                                        searchType === 'folio' ? 'Ingresa el folio...' :
+                                        'Ingresa el número de boleto...'
+                                    }
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
