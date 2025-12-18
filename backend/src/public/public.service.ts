@@ -491,10 +491,14 @@ export class PublicService {
       };
       
       // Construir condiciones dinámicas
-      if (criteria.numero_boleto) {
-        where.tickets = {
-          has: criteria.numero_boleto
-        };
+      if (criteria.numero_boleto !== undefined && criteria.numero_boleto !== null) {
+        // Convertir explícitamente a número para asegurar que funcione con boletos de baja denominación
+        const numeroBoleto = Number(criteria.numero_boleto);
+        if (!isNaN(numeroBoleto)) {
+          where.tickets = {
+            has: numeroBoleto
+          };
+        }
       }
       
       // Construir condiciones de usuario
@@ -524,13 +528,15 @@ export class PublicService {
         };
       }
       
-      // Buscar órdenes solo de sorteos activos
+      // Buscar órdenes de sorteos activos o terminados (los boletos pagados deben ser verificables incluso si la rifa terminó)
       const orders = await this.prisma.order.findMany({
         where: {
           ...where,
-          // Solo mostrar órdenes de rifas activas
+          // Incluir rifas activas y terminadas para poder verificar boletos de rifas que ya terminaron
           raffle: {
-            status: 'active'
+            status: {
+              in: ['active', 'finished']
+            }
           }
         },
         include: {
