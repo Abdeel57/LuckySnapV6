@@ -474,6 +474,7 @@ export class PublicService {
     nombre_cliente?: string;
     telefono?: string;
     folio?: string;
+    raffleId?: string;
   }) {
     try {
       console.log('🔍 Searching tickets with criteria:', criteria);
@@ -490,13 +491,20 @@ export class PublicService {
         }
       };
       
-      // Construir condiciones dinámicas
+      // Filtro por rifa (opcional)
+      if (criteria.raffleId) {
+        where.raffleId = criteria.raffleId;
+      }
+      
+      // Construir condiciones dinámicas para búsqueda por número de boleto
       if (criteria.numero_boleto !== undefined && criteria.numero_boleto !== null) {
-        // Convertir explícitamente a número para asegurar que funcione con boletos de baja denominación
-        const numeroBoleto = Number(criteria.numero_boleto);
-        if (!isNaN(numeroBoleto)) {
+        // Convertir explícitamente a número entero
+        const numeroBoleto = Math.floor(Number(criteria.numero_boleto));
+        if (!isNaN(numeroBoleto) && numeroBoleto >= 0) {
+          // Usar hasSome con un array de un solo elemento (más compatible que 'has')
+          // Esto asegura que funcione con boletos de cualquier denominación
           where.tickets = {
-            has: numeroBoleto
+            hasSome: [numeroBoleto]
           };
         }
       }
@@ -529,16 +537,19 @@ export class PublicService {
       }
       
       // Buscar órdenes de sorteos activos o terminados (los boletos pagados deben ser verificables incluso si la rifa terminó)
-      const orders = await this.prisma.order.findMany({
-        where: {
-          ...where,
-          // Incluir rifas activas y terminadas para poder verificar boletos de rifas que ya terminaron
-          raffle: {
-            status: {
-              in: ['active', 'finished']
-            }
+      // Si ya se filtró por raffleId, no aplicar el filtro de status de rifa
+      const whereFinal: any = { ...where };
+      if (!criteria.raffleId) {
+        // Solo aplicar filtro de status de rifa si no se especificó una rifa específica
+        whereFinal.raffle = {
+          status: {
+            in: ['active', 'finished']
           }
-        },
+        };
+      }
+      
+      const orders = await this.prisma.order.findMany({
+        where: whereFinal,
         include: {
           user: {
             select: {

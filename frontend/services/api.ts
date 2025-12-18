@@ -465,6 +465,7 @@ export const searchTickets = async (criteria: {
     nombre_cliente?: string;
     telefono?: string;
     folio?: string;
+    raffleId?: string;
 }): Promise<any> => {
     try {
         console.log('🔍 Buscando boletos con criterios:', criteria);

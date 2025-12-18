@@ -216,6 +216,7 @@ export class PublicController {
     nombre_cliente?: string;
     telefono?: string;
     folio?: string;
+    raffleId?: string;
   }) {
     try {
       const result = await this.publicService.searchTickets(body);

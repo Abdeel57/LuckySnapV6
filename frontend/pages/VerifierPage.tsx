@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { searchTickets } from '../services/api';
+import { searchTickets, getRaffles } from '../services/api';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
 import OrdenCard from '../components/OrdenCard';
@@ -8,6 +8,7 @@ import QRScanner from '../components/QRScanner';
 import { QrCode, Search } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import ToastContainer from '../components/ToastContainer';
+import { Raffle } from '../types';
 
 type SearchType = 'numero_boleto' | 'folio';
 
@@ -15,11 +16,30 @@ const VerifierPage = () => {
     const [searchParams] = useSearchParams();
     const [searchType, setSearchType] = useState<SearchType>('folio');
     const [searchValue, setSearchValue] = useState('');
+    const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
+    const [raffles, setRaffles] = useState<Raffle[]>([]);
+    const [loadingRaffles, setLoadingRaffles] = useState(false);
     const [resultados, setResultados] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedOrdenes, setExpandedOrdenes] = useState<Set<string>>(new Set());
     const [showQRScanner, setShowQRScanner] = useState(false);
     const toast = useToast();
+
+    // Cargar rifas al montar el componente
+    useEffect(() => {
+        const loadRaffles = async () => {
+            setLoadingRaffles(true);
+            try {
+                const rafflesData = await getRaffles();
+                setRaffles(rafflesData);
+            } catch (error) {
+                console.error('Error loading raffles:', error);
+            } finally {
+                setLoadingRaffles(false);
+            }
+        };
+        loadRaffles();
+    }, []);
 
     // Función para búsqueda automática desde URL
     const handleAutoSearch = async (folio: string) => {
@@ -28,7 +48,11 @@ const VerifierPage = () => {
         setExpandedOrdenes(new Set());
         
         try {
-            const result = await searchTickets({ folio });
+            const criteria: any = { folio };
+            if (selectedRaffleId) {
+                criteria.raffleId = selectedRaffleId;
+            }
+            const result = await searchTickets(criteria);
             setResultados(result);
             
             if (!result.clientes || result.clientes.length === 0) {
@@ -97,6 +121,11 @@ const VerifierPage = () => {
                 criteria.folio = searchValue.trim();
             }
             
+            // Agregar filtro por rifa si está seleccionada
+            if (selectedRaffleId) {
+                criteria.raffleId = selectedRaffleId;
+            }
+            
             const result = await searchTickets(criteria);
             setResultados(result);
             
@@ -157,7 +186,11 @@ const VerifierPage = () => {
             }
             
             // Buscar por folio
-            const result = await searchTickets({ folio });
+            const criteria: any = { folio };
+            if (selectedRaffleId) {
+                criteria.raffleId = selectedRaffleId;
+            }
+            const result = await searchTickets(criteria);
             setResultados(result);
             
             if (!result.clientes || result.clientes.length === 0) {
@@ -197,6 +230,27 @@ const VerifierPage = () => {
                 {/* Formulario de búsqueda */}
                 <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg mb-8">
                     <form onSubmit={handleSearch} className="flex flex-col gap-4">
+                        {/* Filtro por rifa (opcional) */}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm text-slate-300">Filtrar por rifa (opcional)</label>
+                            <select
+                                value={selectedRaffleId}
+                                onChange={(e) => setSelectedRaffleId(e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 px-4 text-white focus:ring-accent focus:border-accent text-sm"
+                            >
+                                <option value="">Todas las rifas</option>
+                                {loadingRaffles ? (
+                                    <option disabled>Cargando rifas...</option>
+                                ) : (
+                                    raffles.map((raffle) => (
+                                        <option key={raffle.id} value={raffle.id}>
+                                            {raffle.title} {raffle.status === 'finished' ? '(Terminada)' : ''}
+                                        </option>
+                                    ))
+                                )}
+                            </select>
+                        </div>
+                        
                         {/* Métodos de búsqueda manual */}
                         <div className="flex flex-col sm:flex-row gap-3">
                             <div className="flex-shrink-0 w-full sm:w-auto">
