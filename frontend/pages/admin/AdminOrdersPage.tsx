@@ -24,6 +24,7 @@ const AdminOrdersPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -98,13 +99,16 @@ const AdminOrdersPage: React.FC = () => {
         if (!order.customer) return;
         
         // Validar búsqueda
+        // Filtrar por rifa si está seleccionada
+        if (selectedRaffleId && order.raffleId !== selectedRaffleId) return;
+        
         const matchesSearch = 
             !searchTerm ||
             order.folio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customer.phone?.includes(searchTerm) ||
             order.customer.district?.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         if (!matchesSearch) return;
         
         // Usar folio como clave única (o ID como fallback)
@@ -330,6 +334,23 @@ const AdminOrdersPage: React.FC = () => {
                 {/* Filtros */}
                 <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
                     <div className="flex flex-col md:flex-row gap-4">
+                        {/* Filtro por rifa */}
+                        <div className="w-full md:w-auto md:min-w-[250px]">
+                            <select
+                                value={selectedRaffleId}
+                                onChange={(e) => setSelectedRaffleId(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Todas las rifas</option>
+                                {raffles.map((raffle) => (
+                                    <option key={raffle.id} value={raffle.id}>
+                                        {raffle.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        {/* Búsqueda */}
                         <div className="flex-1">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />

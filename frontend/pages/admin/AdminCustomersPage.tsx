@@ -8,15 +8,17 @@ import {
     Clock,
     RefreshCw,
 } from 'lucide-react';
-import { Order } from '../../types';
-import { getOrders, updateOrder, releaseOrder } from '../../services/api';
+import { Order, Raffle } from '../../types';
+import { getOrders, updateOrder, releaseOrder, getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 
 const AdminCustomersPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -30,12 +32,17 @@ const AdminCustomersPage: React.FC = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const data = await getOrders(1, 200);
-            setOrders(Array.isArray(data) ? data : []);
+            const [ordersData, rafflesData] = await Promise.all([
+                getOrders(1, 200),
+                getRaffles()
+            ]);
+            setOrders(Array.isArray(ordersData) ? ordersData : []);
+            setRaffles(Array.isArray(rafflesData) ? rafflesData : []);
         } catch (e) {
-            console.error('Error cargando órdenes:', e);
+            console.error('Error cargando datos:', e);
             alert('Error al cargar datos. Verifica el servidor.');
             setOrders([]);
+            setRaffles([]);
         } finally {
             setLoading(false);
         }
@@ -55,7 +62,12 @@ const AdminCustomersPage: React.FC = () => {
     };
 
     const paidCustomers = useMemo(() => {
-        const base = orders.filter(o => isPaid(String(o.status)));
+        // Filtrar por rifa primero
+        let base = orders.filter(o => isPaid(String(o.status)));
+        if (selectedRaffleId) {
+            base = base.filter(o => o.raffleId === selectedRaffleId);
+        }
+        
         if (!searchTerm) return base;
         const term = searchTerm.toLowerCase();
         return base.filter(o => {
@@ -75,7 +87,7 @@ const AdminCustomersPage: React.FC = () => {
                 ticketsMatch
             );
         });
-    }, [orders, searchTerm]);
+    }, [orders, searchTerm, selectedRaffleId]);
 
     const handleView = (order: Order) => {
         setSelectedOrder(order);
