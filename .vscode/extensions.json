@@ -1,0 +1,18 @@
+{
+    "recommendations": [
+        "ms-vscode.vscode-typescript-next",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-json",
+        "formulahendry.auto-rename-tag",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-eslint",
+        "usernamehw.errorlens",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.vscode-git-graph",
+        "gruntfuggly.todo-tree",
+        "christian-kohler.path-intellisense",
+        "ms-vscode.vscode-css-peek",
+        "zignd.html-css-class-completion",
+        "ms-playwright.playwright"
+    ]
+}
