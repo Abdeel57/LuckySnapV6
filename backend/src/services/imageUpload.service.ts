@@ -8,11 +8,10 @@ export class ImageUploadService {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   };
   private uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'lucky_snap_preset';
-  // En unsigned uploads, Cloudinary puede aplicar defaults del preset.
-  // Si en Cloudinary se configuró "asset folder" con un slash (p.ej. "a/b"),
-  // Cloudinary devuelve 400: "Display name cannot contain slashes".
-  // Forzamos un asset_folder válido (sin '/') para evitar ese error.
-  private assetFolder = (process.env.CLOUDINARY_ASSET_FOLDER || 'luckysnap').replace(/\//g, '_');
+  // Cloudinary UNSIGNED: el parámetro `asset_folder` usa "display name" y puede fallar con
+  // "Display name cannot contain slashes". Para organizar, es más robusto usar `folder`,
+  // que sí soporta rutas (con `/`) y es compatible con unsigned uploads.
+  private folder = process.env.CLOUDINARY_FOLDER || 'luckysnap';
 
   private createUniquePublicId(): string {
     // Evita colisiones sin depender de APIs de Node que requieran typings extra en el editor.
@@ -55,7 +54,7 @@ export class ImageUploadService {
         upload_preset: this.uploadPreset, // Debe existir en Cloudinary (Unsigned upload preset)
         // Evitar colisiones: asignar un public_id único (permitido en unsigned).
         public_id: this.createUniquePublicId(),
-        asset_folder: this.assetFolder,
+        folder: this.folder,
       };
       
       const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${this.cloudinaryConfig.cloudName}/image/upload`;
