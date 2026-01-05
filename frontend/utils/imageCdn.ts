@@ -32,33 +32,33 @@ function extractCloudinaryBaseUrl(url: string): string | null {
         // O: /upload/v[version]/[public_id].[ext]
         // O: /upload/[public_id].[ext]
         
+        // Detectar versión (v123) y eliminar cualquier transformación existente.
+        // IMPORTANTE: preservar carpetas/public_id completos; no solo el filename.
         let versionIndex = -1;
         for (let i = uploadIndex + 1; i < pathParts.length; i++) {
             const part = pathParts[i];
-            // Detectar versión: "v" seguido de números
             if (/^v\d+$/.test(part)) {
                 versionIndex = i;
                 break;
             }
-            // Si encontramos un punto (extensión), ya no hay versión
-            if (part.includes('.')) {
-                break;
-            }
         }
-        
-        // Construir URL base
-        const baseParts = ['', ...pathParts.slice(0, uploadIndex + 1)];
-        
+
+        // Si existe versión, lo más robusto es: /.../upload/v123/<resto...>
+        // (saltamos todo lo que haya entre upload y v123: transformaciones)
+        let remainderStart = uploadIndex + 1;
         if (versionIndex !== -1) {
-            // Con versión: incluir versión y archivo
-            const version = pathParts[versionIndex];
-            const filename = pathParts[pathParts.length - 1];
-            baseParts.push(version, filename);
+            remainderStart = versionIndex;
         } else {
-            // Sin versión: solo archivo
-            const filename = pathParts[pathParts.length - 1];
-            baseParts.push(filename);
+            // Sin versión: intentar saltar un primer segmento de transformaciones si parece Cloudinary
+            // (p.ej. "w_1200,q_auto,f_auto"). Si no, asumir que el resto es public_id.
+            const firstAfterUpload = pathParts[uploadIndex + 1];
+            const looksLikeTransform =
+                typeof firstAfterUpload === 'string' &&
+                (firstAfterUpload.includes(',') || /^(w|h|c|q|f|g|dpr|ar|e|t|b|bo|co|l|o|r|u|x|y|z|a|fl|pg)_/.test(firstAfterUpload));
+            remainderStart = looksLikeTransform ? uploadIndex + 2 : uploadIndex + 1;
         }
+
+        const baseParts = ['', ...pathParts.slice(0, uploadIndex + 1), ...pathParts.slice(remainderStart)];
         
         urlObj.pathname = baseParts.join('/');
         // Mantener query params si existen

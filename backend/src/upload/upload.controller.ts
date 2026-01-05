@@ -1,4 +1,4 @@
-import { Controller, Post, Body, BadRequestException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { ImageUploadService } from '../services/imageUpload.service';
 
 interface UploadImageDto {
@@ -34,6 +34,10 @@ export class UploadController {
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // Preservar excepciones HTTP (p.ej. 503 Cloudinary no configurado)
+      if (error instanceof HttpException) {
         throw error;
       }
       

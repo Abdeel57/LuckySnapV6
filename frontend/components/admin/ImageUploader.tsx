@@ -42,7 +42,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
             });
 
             if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
+                const payload = await response.json().catch(() => null);
+                const msg =
+                    payload?.message ||
+                    payload?.error ||
+                    `Error ${response.status}: ${response.statusText}`;
+                throw new Error(msg);
             }
 
             const result = await response.json();
@@ -55,11 +60,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
             }
         } catch (err) {
             console.error('❌ Error subiendo imagen:', err);
-            setError('Error al subir la imagen. Usando imagen placeholder.');
-            
-            // Fallback a placeholder
-            const placeholderUrl = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop';
-            onChange(placeholderUrl);
+            // No reemplazar la imagen del usuario con un placeholder (causa confusión: "subí A y veo B").
+            // Mostrar el error y mantener el valor actual sin cambios.
+            const msg = err instanceof Error ? err.message : 'Error al subir la imagen';
+            setError(msg);
         } finally {
             setUploading(false);
         }
@@ -128,7 +132,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
                                 </span>
                                 <p className="pl-1">o arrástralo aquí</p>
                             </div>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF (máx. 2MB)</p>
+                            <p className="text-xs text-gray-500">PNG, JPG, GIF (máx. 10MB)</p>
                         </>
                     )}
                      <input id="file-upload" name="file-upload" type="file" className="sr-only" accept="image/*" onChange={handleFileChange} />

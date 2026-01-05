@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 
 @Injectable()
 export class ImageUploadService {
@@ -7,6 +7,7 @@ export class ImageUploadService {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   };
+  private uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'lucky_snap_preset';
 
   /**
    * Sube una imagen a Cloudinary
@@ -18,8 +19,11 @@ export class ImageUploadService {
     if (!this.cloudinaryConfig.cloudName || 
         !this.cloudinaryConfig.apiKey || 
         !this.cloudinaryConfig.apiSecret) {
-      console.warn('⚠️ Cloudinary no configurado, usando imagen placeholder');
-      return this.getPlaceholderImage();
+      // No devolver placeholders aleatorios: eso causa que el admin vea "otra imagen"
+      // y además oculta el problema real de configuración.
+      throw new ServiceUnavailableException(
+        'Cloudinary no configurado. Configura CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET.'
+      );
     }
 
     try {
@@ -36,7 +40,10 @@ export class ImageUploadService {
       // Cloudinary acepta base64 en el campo 'file'
       const uploadData = {
         file: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
-        upload_preset: 'lucky_snap_preset', // Crear en Cloudinary Dashboard
+        upload_preset: this.uploadPreset, // Debe existir en Cloudinary (Unsigned upload preset)
+        // Evitar sobrescrituras accidentales si el preset usa filename.
+        overwrite: false,
+        unique_filename: true,
       };
       
       const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${this.cloudinaryConfig.cloudName}/image/upload`;
@@ -49,19 +56,30 @@ export class ImageUploadService {
         body: JSON.stringify(uploadData),
       });
 
+      const result = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error(`Cloudinary error: ${response.status} ${response.statusText}`);
+        const msg =
+          result?.error?.message ||
+          result?.message ||
+          `Cloudinary error: ${response.status} ${response.statusText}`;
+        throw new BadRequestException(msg);
       }
 
-      const result = await response.json();
-      console.log('✅ Imagen subida a Cloudinary:', result.secure_url);
-      
-      return result.secure_url;
+      const secureUrl = result?.secure_url as string | undefined;
+      if (!secureUrl) {
+        throw new BadRequestException('Cloudinary no devolvió secure_url. Revisa el upload preset/configuración.');
+      }
+
+      console.log('✅ Imagen subida a Cloudinary:', secureUrl);
+      return secureUrl;
     } catch (error) {
+      // No ocultar el error con placeholders: propagar para que el frontend informe correctamente.
       console.error('❌ Error subiendo imagen a Cloudinary:', error);
-      // Fallback a imagen placeholder
-      console.log('🔄 Usando imagen placeholder como fallback');
-      return this.getPlaceholderImage();
+      if (error instanceof BadRequestException || error instanceof ServiceUnavailableException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al subir la imagen a Cloudinary');
     }
   }
 
@@ -92,22 +110,6 @@ export class ImageUploadService {
     // y el padding '=' reduce el tamaño
     const padding = (base64Data.match(/=/g) || []).length;
     return (base64Data.length * 3) / 4 - padding;
-  }
-
-  /**
-   * Devuelve una URL de imagen placeholder
-   * @returns URL de Unsplash
-   */
-  private getPlaceholderImage(): string {
-    // Usar Unsplash como servicio de placeholder
-    const placeholders = [
-      'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=800&h=600&fit=crop',
-    ];
-    
-    // Seleccionar aleatoriamente
-    return placeholders[Math.floor(Math.random() * placeholders.length)];
   }
 
   /**
