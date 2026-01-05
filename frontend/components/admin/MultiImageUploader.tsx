@@ -15,6 +15,8 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
     images = [],
     onChange,
     maxImages = 10,
+    // Estos valores se mantienen por compatibilidad, pero ya no se recomprime en canvas
+    // (ahora se sube el archivo original al backend/Cloudinary)
     maxWidth = 800,
     maxHeight = 600,
     quality = 0.8
@@ -22,42 +24,44 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
     const [isProcessing, setIsProcessing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Función para redimensionar imagen
-    const resizeImage = (file: File): Promise<string> => {
+    // Nota: ya no se redimensiona ni se recomprime en el navegador.
+    // Se sube el archivo original al backend (que lo envía a Cloudinary) y guardamos la URL.
+    const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+
+    const fileToBase64 = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                // Calcular nuevas dimensiones manteniendo proporción
-                let { width, height } = img;
-                
-                if (width > maxWidth || height > maxHeight) {
-                    const ratio = Math.min(maxWidth / width, maxHeight / height);
-                    width = width * ratio;
-                    height = height * ratio;
-                }
-
-                // Configurar canvas
-                canvas.width = width;
-                canvas.height = height;
-
-                // Dibujar imagen redimensionada
-                ctx?.drawImage(img, 0, 0, width, height);
-
-                // Convertir a base64 con calidad optimizada
-                const base64 = canvas.toDataURL('image/jpeg', quality);
-                resolve(base64);
-            };
-
-            img.onerror = () => reject(new Error('Error al cargar la imagen'));
-            img.src = URL.createObjectURL(file);
+            const reader = new FileReader();
+            reader.readAsDataURL(file); // base64 ORIGINAL (sin recomprimir)
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
         });
     };
 
+    const uploadToBackend = async (file: File): Promise<string> => {
+        const base64 = await fileToBase64(file);
+
+        const response = await fetch(`${API_URL}/upload/image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageData: base64 }),
+        });
+
+        const result = await response.json().catch(() => null);
+
+        if (!response.ok || !result?.success || !result?.url) {
+            const msg = result?.message || `Error subiendo imagen (${response.status})`;
+            throw new Error(msg);
+        }
+
+        return result.url as string;
+    };
+
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(event.target.files || []);
+        // Tipado defensivo para evitar inferencias `unknown` cuando faltan typings en el entorno
+        const input = event.target as HTMLInputElement;
+        const files: File[] = input.files ? Array.from(input.files) : [];
         if (files.length === 0) return;
 
         // Validar número máximo de imágenes
@@ -74,7 +78,9 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
         }
 
         // Validar tamaño (máximo 10MB por imagen)
-        const oversizedFiles = files.filter(file => file.size > 10 * 1024 * 1024);
+        // Nota: este límite debe coincidir con el backend para evitar errores.
+        const maxSize = 10 * 1024 * 1024;
+        const oversizedFiles = files.filter(file => file.size > maxSize);
         if (oversizedFiles.length > 0) {
             alert('Algunas imágenes son demasiado grandes. Máximo 10MB por imagen');
             return;
@@ -85,28 +91,28 @@ const MultiImageUploader: React.FC<MultiImageUploaderProps> = ({
         try {
             console.log('📁 Procesando imágenes:', {
                 cantidad: files.length,
-                tamañoTotal: Math.round(files.reduce((sum, file) => sum + file.size, 0) / 1024) + 'KB'
+                tamañoTotal: Math.round(files.reduce((sum: number, file: File) => sum + file.size, 0) / 1024) + 'KB'
             });
 
-            const processedImages: string[] = [];
-            
+            const uploadedUrls: string[] = [];
+
+            // Subida secuencial para no saturar la red/Cloudinary
             for (const file of files) {
-                const optimizedBase64 = await resizeImage(file);
-                processedImages.push(optimizedBase64);
+                const url = await uploadToBackend(file);
+                uploadedUrls.push(url);
             }
 
-            console.log('✅ Imágenes procesadas:', {
-                cantidad: processedImages.length,
-                tamañoPromedio: Math.round(processedImages.reduce((sum, img) => sum + img.length, 0) / processedImages.length * 0.75 / 1024) + 'KB'
+            console.log('✅ Imágenes subidas:', {
+                cantidad: uploadedUrls.length,
             });
 
-            // Agregar las nuevas imágenes
-            const newImages = [...images, ...processedImages];
+            // Agregar las nuevas URLs
+            const newImages = [...images, ...uploadedUrls];
             onChange(newImages);
 
         } catch (error) {
             console.error('❌ Error procesando imágenes:', error);
-            alert('Error al procesar las imágenes');
+            alert('Error al subir las imágenes');
         } finally {
             setIsProcessing(false);
             // Limpiar el input

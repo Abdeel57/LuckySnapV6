@@ -16,10 +16,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ value, onChange }) => {
 
         console.log('📁 Archivo seleccionado:', file.name, 'Tamaño:', file.size, 'bytes');
         
-        // Validar tamaño (2MB)
-        const maxSize = 2 * 1024 * 1024;
+        // Validar tamaño (10MB)
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
-            setError('La imagen excede el tamaño máximo de 2MB');
+            setError('La imagen excede el tamaño máximo de 10MB');
             console.error('❌ Imagen muy grande:', file.size, 'bytes');
             return;
         }

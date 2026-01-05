@@ -26,8 +26,9 @@ export class ImageUploadService {
       // Si es base64, verificar tamaño
       if (typeof imageData === 'string') {
         const base64Size = this.getBase64Size(imageData);
-        if (base64Size > 2 * 1024 * 1024) { // 2MB
-          throw new BadRequestException('La imagen excede el tamaño máximo de 2MB');
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (base64Size > maxSize) {
+          throw new BadRequestException('La imagen excede el tamaño máximo de 10MB');
         }
       }
 
@@ -74,7 +75,7 @@ export class ImageUploadService {
       ? this.getBase64Size(imageData)
       : imageData.length;
     
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 10 * 1024 * 1024; // 10MB
     return sizeInBytes <= maxSize;
   }
 

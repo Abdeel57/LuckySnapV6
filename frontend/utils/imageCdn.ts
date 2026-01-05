@@ -144,9 +144,9 @@ export function buildVariantUrl(sourceUrl: string, width: number, format: Output
     if (isCloudinaryUrl(sourceUrl)) {
         const baseUrl = extractCloudinaryBaseUrl(sourceUrl);
         if (baseUrl) {
-            // Usar calidad 'auto' para optimización automática de Cloudinary
+            // Usar calidad 'auto:best' para priorizar calidad visual (HD) manteniendo optimización
             // f_auto permite que Cloudinary elija el mejor formato (WebP/AVIF según navegador)
-            const quality = 'auto'; // Cloudinary optimiza automáticamente
+            const quality = 'auto:best';
             const formatStr = format === 'auto' ? 'auto' : format;
             const transformedUrl = buildCloudinaryUrl(baseUrl, width, quality, formatStr);
             return transformedUrl;

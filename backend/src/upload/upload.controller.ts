@@ -20,7 +20,7 @@ export class UploadController {
       if (!this.imageUploadService.validateImageSize(uploadDto.imageData)) {
         throw new BadRequestException({
           statusCode: HttpStatus.PAYLOAD_TOO_LARGE,
-          message: 'La imagen excede el tamaño máximo permitido de 2MB',
+          message: 'La imagen excede el tamaño máximo permitido de 10MB',
           error: 'Payload Too Large',
         });
       }
