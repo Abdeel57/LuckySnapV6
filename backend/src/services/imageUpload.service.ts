@@ -9,6 +9,11 @@ export class ImageUploadService {
   };
   private uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'lucky_snap_preset';
 
+  private createUniquePublicId(): string {
+    // Evita colisiones sin depender de APIs de Node que requieran typings extra en el editor.
+    return `luckysnap_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
   /**
    * Sube una imagen a Cloudinary
    * @param imageData - Datos de la imagen en formato base64 o FormData
@@ -38,12 +43,13 @@ export class ImageUploadService {
 
       // Construir datos para Cloudinary
       // Cloudinary acepta base64 en el campo 'file'
+      // Nota: estamos usando UNSIGNED upload preset, así que Cloudinary restringe los parámetros permitidos.
+      // Por eso NO mandamos overwrite/unique_filename aquí (Cloudinary los rechaza en unsigned).
       const uploadData = {
         file: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
         upload_preset: this.uploadPreset, // Debe existir en Cloudinary (Unsigned upload preset)
-        // Evitar sobrescrituras accidentales si el preset usa filename.
-        overwrite: false,
-        unique_filename: true,
+        // Evitar colisiones: asignar un public_id único (permitido en unsigned).
+        public_id: this.createUniquePublicId(),
       };
       
       const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${this.cloudinaryConfig.cloudName}/image/upload`;
