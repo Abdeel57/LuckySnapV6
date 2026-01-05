@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import crypto from 'crypto';
 
 @Injectable()
 export class ImageUploadService {
@@ -7,15 +8,27 @@ export class ImageUploadService {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   };
-  private uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'lucky_snap_preset';
-  // Cloudinary UNSIGNED: el parámetro `asset_folder` usa "display name" y puede fallar con
-  // "Display name cannot contain slashes". Para organizar, es más robusto usar `folder`,
-  // que sí soporta rutas (con `/`) y es compatible con unsigned uploads.
+  // Usamos SIGNED uploads desde el backend para evitar problemas de presets/unsigned restrictions.
+  // (El preset puede seguir existiendo, pero ya no es requisito).
   private folder = process.env.CLOUDINARY_FOLDER || 'luckysnap';
 
   private createUniquePublicId(): string {
     // Evita colisiones sin depender de APIs de Node que requieran typings extra en el editor.
     return `luckysnap_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  private signCloudinaryParams(params: Record<string, string | number>): { timestamp: number; signature: string } {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const toSign: Record<string, string | number> = { ...params, timestamp };
+    const paramString = Object.keys(toSign)
+      .sort()
+      .map((k) => `${k}=${toSign[k]}`)
+      .join('&');
+    const signature = crypto
+      .createHash('sha1')
+      .update(paramString + this.cloudinaryConfig.apiSecret)
+      .digest('hex');
+    return { timestamp, signature };
   }
 
   /**
@@ -45,26 +58,26 @@ export class ImageUploadService {
         }
       }
 
-      // Construir datos para Cloudinary
-      // Cloudinary acepta base64 en el campo 'file'
-      // Nota: estamos usando UNSIGNED upload preset, así que Cloudinary restringe los parámetros permitidos.
-      // Por eso NO mandamos overwrite/unique_filename aquí (Cloudinary los rechaza en unsigned).
-      const uploadData = {
-        file: typeof imageData === 'string' ? imageData : imageData.toString('base64'),
-        upload_preset: this.uploadPreset, // Debe existir en Cloudinary (Unsigned upload preset)
-        // Evitar colisiones: asignar un public_id único (permitido en unsigned).
-        public_id: this.createUniquePublicId(),
-        folder: this.folder,
-      };
-      
       const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${this.cloudinaryConfig.cloudName}/image/upload`;
-      
+
+      const publicId = this.createUniquePublicId();
+      const { timestamp, signature } = this.signCloudinaryParams({
+        folder: this.folder,
+        public_id: publicId,
+      });
+
+      const form = new FormData();
+      // Cloudinary acepta Data URI base64 en `file`
+      form.append('file', typeof imageData === 'string' ? imageData : imageData.toString('base64'));
+      form.append('api_key', this.cloudinaryConfig.apiKey);
+      form.append('timestamp', String(timestamp));
+      form.append('signature', signature);
+      form.append('folder', this.folder);
+      form.append('public_id', publicId);
+
       const response = await fetch(cloudinaryUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(uploadData),
+        body: form as any,
       });
 
       const result = await response.json().catch(() => null);
