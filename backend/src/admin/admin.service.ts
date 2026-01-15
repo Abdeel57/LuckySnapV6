@@ -8,6 +8,38 @@ import * as bcrypt from 'bcrypt';
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Recalcula el conteo "sold" de una rifa basado SOLO en órdenes pagadas (PAID).
+   * IMPORTANTE: las rifas con "múltiples oportunidades" generan boletos extra > raffle.tickets.
+   * Para el progreso usamos únicamente los boletos del rango base 1..raffle.tickets.
+   */
+  private async recomputeAndPersistSold(raffleId: string): Promise<number> {
+    const raffle = await this.prisma.raffle.findUnique({
+      where: { id: raffleId },
+      select: { id: true, tickets: true },
+    });
+    if (!raffle) return 0;
+
+    const paidOrders = await this.prisma.order.findMany({
+      where: { raffleId, status: 'PAID' as any },
+      select: { tickets: true },
+    });
+
+    const sold = paidOrders.reduce((sum, order) => {
+      const purchasedCount = Array.isArray(order.tickets)
+        ? order.tickets.filter((t) => typeof t === 'number' && t >= 1 && t <= raffle.tickets).length
+        : 0;
+      return sum + purchasedCount;
+    }, 0);
+
+    await this.prisma.raffle.update({
+      where: { id: raffleId },
+      data: { sold },
+    });
+
+    return sold;
+  }
+
   // Dashboard
   async getDashboardStats() {
     const today = new Date();
@@ -150,19 +182,14 @@ export class AdminService {
       };
     }
 
-    // Handle ticket count adjustment if order is cancelled
-    if (status === 'CANCELLED' && order.status !== 'CANCELLED') {
-        await this.prisma.raffle.update({
-            where: { id: order.raffleId },
-            data: { sold: { decrement: order.tickets.length } },
-        });
-    }
-
     const updated = await this.prisma.order.update({
         where: { folio },
         data: { status: status as any },
         include: { raffle: true, user: true },
     });
+
+    // Mantener sold consistente con órdenes PAID
+    await this.recomputeAndPersistSold(order.raffleId);
 
     return {
       ...updated,
@@ -200,6 +227,9 @@ export class AdminService {
           user: true,
         },
       });
+
+      // Mantener sold consistente con órdenes PAID (por si aquí se cambia status/tickets)
+      await this.recomputeAndPersistSold(updatedOrder.raffleId);
 
       // Transformar los datos para el frontend
       return {
@@ -246,6 +276,9 @@ export class AdminService {
       data: updateData,
       include: { raffle: true, user: true },
     });
+
+    // Ahora que pasó a PAID, recalcular sold
+    await this.recomputeAndPersistSold(updated.raffleId);
 
     return {
       ...updated,
@@ -297,6 +330,9 @@ export class AdminService {
 
     const updated = await this.prisma.order.update({ where: { id }, data: dataToUpdate, include: { raffle: true, user: true } });
 
+    // Si se editaron tickets/estado, asegurar sold consistente (especialmente si está PAID)
+    await this.recomputeAndPersistSold(updated.raffleId);
+
     return {
       ...updated,
       customer: {
@@ -345,13 +381,8 @@ export class AdminService {
         include: { raffle: true, user: true },
       });
 
-      // 4. Si estaba PAID, devolver boletos al inventario
-      if (order.status === 'PAID') {
-        await this.prisma.raffle.update({
-          where: { id: order.raffleId },
-          data: { sold: { decrement: order.tickets.length } },
-        });
-      }
+      // Mantener sold consistente con órdenes PAID
+      await this.recomputeAndPersistSold(order.raffleId);
 
       console.log('✅ Orden liberada exitosamente');
 
@@ -384,15 +415,8 @@ export class AdminService {
         throw new NotFoundException('Order not found');
       }
 
-      // Si la orden está completada, ajustar el conteo de boletos vendidos
-      if (order.status === 'PAID') {
-        await this.prisma.raffle.update({
-          where: { id: order.raffleId },
-          data: { sold: { decrement: order.tickets.length } },
-        });
-      }
-
       await this.prisma.order.delete({ where: { id } });
+      await this.recomputeAndPersistSold(order.raffleId);
       return { message: 'Orden eliminada exitosamente' };
     } catch (error) {
       console.error('Error deleting order:', error);

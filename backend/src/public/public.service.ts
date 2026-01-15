@@ -362,14 +362,6 @@ export class PublicService {
       console.log('✅ Order created:', newOrder.folio);
       console.log('📦 Tickets en la orden:', ticketsToSave.length, 'total');
 
-      // Actualizar boletos vendidos (solo los comprados, no los de regalo)
-      await this.prisma.raffle.update({
-        where: { id: orderData.raffleId },
-        data: { sold: { increment: Array.isArray(orderData.tickets) ? orderData.tickets.length : 0 } },
-      });
-
-      console.log('✅ Raffle updated with sold tickets');
-
       return newOrder;
     } catch (error) {
       console.error('❌ Error creating order:', error);
