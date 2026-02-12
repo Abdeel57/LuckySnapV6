@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { getRaffleBySlug, createOrder, getSettings, getOccupiedTickets } from '../services/api';
@@ -27,6 +27,7 @@ const PurchasePage = () => {
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer'>('paypal');
+    const formRef = useRef<HTMLFormElement | null>(null);
     const [assignedPackTickets, setAssignedPackTickets] = useState<number[]>([]);
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     
@@ -159,6 +160,14 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
             .finally(() => setLoading(false));
         }
     }, [slug]);
+
+    useEffect(() => {
+        if (loading || createdOrder) return;
+        const rafId = requestAnimationFrame(() => {
+            formRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        });
+        return () => cancelAnimationFrame(rafId);
+    }, [loading, createdOrder, slug]);
 
     // Determinar si se está usando un paquete o boletos individuales
     const selectedPack = useMemo(() => {
@@ -546,7 +555,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
                         <h3 className="text-xl font-bold text-white mb-5">Datos del cliente</h3>
 
