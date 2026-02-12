@@ -230,6 +230,44 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
     );
   };
 
+  if (isCardVariant && (!clientToken || isTokenLoading)) {
+    return (
+      <div className="w-full">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="w-5 h-5" />
+              <p className="font-semibold">Error</p>
+            </div>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        )}
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="mb-4 text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Completa tu pago con tarjeta
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
+              {' '}
+              <span className="text-gray-500">
+                (${amountUSD.toFixed(2)} USD aprox.)
+              </span>
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <p className="font-semibold">Preparando pago con tarjeta...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {error && (
@@ -264,15 +302,6 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
             </span>
           </p>
         </div>
-
-        {isCardVariant && isTokenLoading && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-blue-800">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <p className="font-semibold">Preparando pago con tarjeta...</p>
-            </div>
-          </div>
-        )}
 
         <PayPalScriptProvider options={scriptOptions}>
           {isCardVariant ? (
