@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
 import { getRaffleBySlug, createOrder, getSettings, getOccupiedTickets } from '../services/api';
 import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
-import BonusesCard from '../components/BonusesCard';
-import { Link } from 'react-router-dom';
 import metaPixelService from '../services/metaPixel';
 import PayPalCheckout from '../components/PayPalCheckout';
 
@@ -29,6 +26,7 @@ const PurchasePage = () => {
     const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>([]);
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer'>('paypal');
     const [assignedPackTickets, setAssignedPackTickets] = useState<number[]>([]);
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     
@@ -258,13 +256,6 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         return initialTickets.length * pricePerTicket;
     }, [selectedPack, packQuantity, initialTickets.length, pricePerTicket, matchedPack]);
     
-    // Calcular ahorro si se aplicó un paquete automáticamente
-    const savingsFromPack = useMemo(() => {
-        if (!matchedPack || selectedPack) return 0;
-        const individualPrice = initialTickets.length * pricePerTicket;
-        return individualPrice - matchedPack.price;
-    }, [matchedPack, initialTickets.length, pricePerTicket, selectedPack]);
-    
     // Calcular boletos de regalo si tiene oportunidades
     const boletosAdicionales = useMemo(() => {
         if (!raffle?.boletosConOportunidades || raffle.numeroOportunidades <= 1) return 0;
@@ -274,6 +265,13 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         }
         return initialTickets.length * (raffle.numeroOportunidades - 1);
     }, [raffle?.boletosConOportunidades, raffle?.numeroOportunidades, initialTickets.length, selectedPack, packQuantity]);
+
+    const baseTicketsCount = useMemo(() => {
+        if (selectedPack) {
+            return (selectedPack.tickets || selectedPack.q || 1) * packQuantity;
+        }
+        return initialTickets.length;
+    }, [selectedPack, packQuantity, initialTickets.length]);
 
     const onSubmit = async (data: FormData) => {
         if (!raffle || (initialTickets.length === 0 && !selectedPack)) return;
@@ -312,7 +310,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                 raffleId: raffle.id,
                 tickets: ticketsToOrder,
                 total: total,
-                paymentMethod: 'transfer',
+                paymentMethod: selectedPaymentMethod,
                 notes: orderNotes,
                 // Datos del usuario para crear en el backend
                 userData: userData
@@ -334,7 +332,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         } catch (err) {
             console.error('❌ Error creating order:', err);
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-            alert(`Hubo un error al crear tu apartado: ${errorMessage}`);
+            alert(`Hubo un error al crear tu compra: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -344,115 +342,175 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
     if (!raffle) return <PageAnimator><div className="text-center py-20"><h2 className="text-2xl text-white">Sorteo no encontrado.</h2></div></PageAnimator>;
 
     if (createdOrder) {
+        const orderPaymentMethod = (createdOrder as any).paymentMethod || selectedPaymentMethod;
+        const isPaypalPayment = orderPaymentMethod === 'paypal';
+        const orderTicketsCount = createdOrder.tickets?.length || baseTicketsCount;
+        const orderTotal = createdOrder.total || total;
+
         return (
             <PageAnimator>
-                <div className="container mx-auto px-4 py-12 max-w-4xl">
-                    {/* Header de éxito */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-6">
-                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div className="container mx-auto px-4 py-8 max-w-3xl">
+                    <div className="text-center mb-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-accent to-action rounded-full mb-4">
+                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                             </svg>
                         </div>
-                        <h1 className="text-4xl font-bold text-white mb-4">¡Orden Creada Exitosamente!</h1>
-                        <p className="text-slate-300 text-lg">Completa tu pago de forma segura con PayPal.</p>
+                        <h1 className="text-3xl font-bold text-white mb-2">
+                            {createdOrder.status === 'PAID' ? '¡Pago completado!' : 'Completa tu pago'}
+                        </h1>
+                        <p className="text-slate-300 text-sm sm:text-base">
+                            {isPaypalPayment
+                                ? 'Paga con tarjeta de forma segura.'
+                                : 'Realiza la transferencia y envía tu comprobante.'}
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* Columna izquierda - Información del folio */}
-                        <div className="space-y-6">
-                            {/* Folio destacado */}
-                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-8 rounded-2xl border border-slate-700/50 shadow-xl text-center">
-                                <h2 className="text-xl font-bold text-white mb-4">Tu Folio de Pago</h2>
-                                <div className="bg-background-primary p-6 rounded-xl border border-slate-700/50 mb-4">
-                                    <p className="text-slate-400 text-sm mb-2">Concepto de Pago</p>
-                                    <p className="text-5xl font-mono text-accent tracking-widest font-bold">{createdOrder.folio}</p>
+                    <div className="space-y-6">
+                        <div className="bg-background-secondary p-5 rounded-2xl border border-slate-700/50">
+                            <div className="flex items-center justify-between gap-4 mb-4">
+                                <div>
+                                    <p className="text-slate-400 text-xs">Folio</p>
+                                    <p className="text-white font-mono text-lg">{createdOrder.folio}</p>
                                 </div>
-                                <p className="text-slate-300 text-sm">Usa este folio como concepto al realizar tu transferencia</p>
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    createdOrder.status === 'PAID' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                    {createdOrder.status === 'PAID' ? 'Pagado' : 'Pendiente'}
+                                </span>
                             </div>
-
-                            {/* Información del pedido */}
-                            <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
-                                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                    <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                    Detalles del Pedido
-                                </h3>
-                                
-                                <div className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-300">Sorteo:</span>
-                                        <span className="text-white font-semibold">{raffle.title}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-300">Boletos:</span>
-                                        <span className="text-white font-semibold">{initialTickets.length}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-300">Total:</span>
-                                        <span className="text-accent font-bold text-lg">LPS {total.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-300">Estado:</span>
-                                        <span className={`font-semibold ${
-                                            createdOrder.status === 'PAID' 
-                                                ? 'text-green-400' 
-                                                : 'text-yellow-400'
-                                        }`}>
-                                            {createdOrder.status === 'PAID' ? 'Pagado' : 'Pendiente de Pago'}
-                                        </span>
-                                    </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-slate-400">Boletos</p>
+                                    <p className="text-white font-semibold">
+                                        {orderTicketsCount}
+                                        {boletosAdicionales > 0 ? ` + ${boletosAdicionales} regalo` : ''}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-slate-400">Total</p>
+                                    <p className="text-accent font-bold text-lg">LPS {orderTotal.toFixed(2)}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Columna derecha - Formulario de pago PayPal */}
-                        <div className="space-y-6">
-                            {createdOrder.status === 'PAID' ? (
-                                // Si ya está pagado, mostrar mensaje de éxito y redirigir
-                                <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-6 rounded-2xl border border-green-500/50 shadow-xl text-center">
-                                    <div className="mb-4">
-                                        <svg className="w-16 h-16 text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-white mb-2">¡Pago Completado!</h3>
-                                    <p className="text-slate-300 mb-6">Tu compra ha sido confirmada exitosamente.</p>
-                                    <button
-                                        onClick={() => navigate(`/#/comprobante/${createdOrder.folio}`)}
-                                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
-                                    >
-                                        Ver Comprobante
-                                    </button>
-                                </div>
-                            ) : (
-                                // Si está pendiente, mostrar formulario de PayPal
-                                <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                                        <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                        </svg>
-                                        Completa tu Pago
-                                    </h3>
-                                    
-                                    <PayPalCheckout
-                                        orderId={createdOrder.id}
-                                        amount={total}
-                                        onSuccess={() => {
-                                            // Actualizar estado local y redirigir
-                                            setCreatedOrder({ ...createdOrder, status: 'PAID' });
-                                            setTimeout(() => {
-                                                navigate(`/#/comprobante/${createdOrder.folio}`);
-                                            }, 1500);
-                                        }}
-                                        onError={(error) => {
-                                            console.error('Error en PayPal:', error);
-                                        }}
-                                    />
-                                </div>
+                            {orderPaymentMethod === 'transfer' && (
+                                <p className="text-slate-300 text-xs mt-3">
+                                    Usa el folio como concepto de pago en tu transferencia.
+                                </p>
                             )}
                         </div>
+
+                        {createdOrder.status === 'PAID' ? (
+                            <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-6 rounded-2xl border border-green-500/50 shadow-xl text-center">
+                                <div className="mb-4">
+                                    <svg className="w-16 h-16 text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">¡Pago Completado!</h3>
+                                <p className="text-slate-300 mb-6">Tu compra ha sido confirmada exitosamente.</p>
+                                <button
+                                    onClick={() => navigate(`/#/comprobante/${createdOrder.folio}`)}
+                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                >
+                                    Ver Comprobante
+                                </button>
+                            </div>
+                        ) : isPaypalPayment ? (
+                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                                <h3 className="text-xl font-bold text-white mb-4">Pago con tarjeta</h3>
+                                <PayPalCheckout
+                                    orderId={createdOrder.id}
+                                    amount={orderTotal}
+                                    onSuccess={() => {
+                                        setCreatedOrder({ ...createdOrder, status: 'PAID' });
+                                        setTimeout(() => {
+                                            navigate(`/#/comprobante/${createdOrder.folio}`);
+                                        }, 1500);
+                                    }}
+                                    onError={(error) => {
+                                        console.error('Error en PayPal:', error);
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                                <h3 className="text-xl font-bold text-white mb-3">Transferencia bancaria</h3>
+                                <p className="text-slate-300 text-sm mb-5">
+                                    Realiza la transferencia por <span className="text-accent font-semibold">LPS {orderTotal.toFixed(2)}</span> y envía tu comprobante.
+                                </p>
+
+                                {paymentAccounts.length > 0 ? (
+                                    <div className="space-y-3 mb-6">
+                                        {paymentAccounts.map((acc) => {
+                                            const copyAccountNumber = () => {
+                                                if (acc.accountNumber) {
+                                                    navigator.clipboard.writeText(acc.accountNumber).then(() => {
+                                                        alert('Número de cuenta copiado al portapapeles');
+                                                    });
+                                                }
+                                            };
+
+                                            return (
+                                                <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="font-bold text-white">{acc.bank}</h4>
+                                                    </div>
+                                                    <div className="space-y-2 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-400">Titular:</span>
+                                                            <span className="text-white font-semibold">{acc.accountHolder}</span>
+                                                        </div>
+                                                        {acc.accountNumber && (
+                                                            <div 
+                                                                className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
+                                                                onClick={copyAccountNumber}
+                                                                title="Click para copiar"
+                                                            >
+                                                                <span className="text-slate-400">No. Cuenta:</span>
+                                                                <span className="text-white font-mono hover:text-accent transition-colors">
+                                                                    {acc.accountNumber} 📋
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-slate-400 text-sm mb-6">No hay cuentas configuradas para transferencia.</p>
+                                )}
+
+                                {(() => {
+                                    const customerName = customerData?.name || (createdOrder as any)?.customer?.name || 'Cliente';
+                                    const customerPhone = customerData?.phone || (createdOrder as any)?.customer?.phone || '';
+                                    const orderTickets = createdOrder?.tickets || [];
+                                    const whatsappMessage = formatWhatsAppMessage(
+                                        customerName,
+                                        customerPhone,
+                                        createdOrder?.folio || '',
+                                        raffle?.title || '',
+                                        orderTickets,
+                                        orderTotal
+                                    );
+                                    const encodedMessage = encodeWhatsAppMessage(whatsappMessage);
+                                    const whatsappUrl = `https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=${encodedMessage}`;
+
+                                    if (!contactWhatsapp) return null;
+
+                                    return (
+                                        <a 
+                                            href={whatsappUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center"
+                                        >
+                                            Enviar comprobante por WhatsApp
+                                        </a>
+                                    );
+                                })()}
+                            </div>
+                        )}
                     </div>
                 </div>
             </PageAnimator>
@@ -461,314 +519,162 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
     
     return (
         <PageAnimator>
-            <div className="container mx-auto px-4 py-8 max-w-6xl">
-                {/* Header mejorado */}
-                <div className="text-center mb-8">
+            <div className="container mx-auto px-4 py-8 max-w-3xl">
+                <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-accent to-action rounded-full mb-4">
                         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                         </svg>
                     </div>
-                    <h1 className="text-4xl font-bold text-white mb-2">Confirmar tu Compra</h1>
-                    <p className="text-slate-300 text-lg">Estás a un paso de comprar tus boletos</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">Confirmar tu Compra</h1>
+                    <p className="text-slate-300 text-sm sm:text-base">Compra rápida: datos, método de pago y listo.</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Columna izquierda - Información del producto */}
-                    <div className="space-y-6">
-                        {/* Información del sorteo */}
-                        <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-                            <h2 className="text-2xl font-bold text-white mb-4">{raffle.title}</h2>
-                            
-                            {/* Imagen principal (sin galería rotativa) */}
-                            <div className="mb-6 relative z-0">
-                                <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-xl border-2 border-slate-700/50">
-                                    <img 
-                                        src={raffle.imageUrl || raffle.heroImage || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop'}
-                                        alt={raffle.title}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=300&fit=crop';
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Información del sorteo */}
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div className="bg-background-primary/50 p-3 rounded-lg">
-                                    <p className="text-slate-400">Fecha del sorteo</p>
-                                    <p className="text-white font-semibold">
-                                        {raffle.drawDate ? new Date(raffle.drawDate).toLocaleDateString('es-HN') : 'Por definir'}
-                                    </p>
-                                </div>
-                                <div className="bg-background-primary/50 p-3 rounded-lg">
-                                    <p className="text-slate-400">Precio por boleto</p>
-                                    <p className="text-accent font-bold text-lg">LPS {pricePerTicket.toFixed(2)}</p>
-                                </div>
-                            </div>
+                <div className="bg-background-secondary p-4 rounded-2xl border border-slate-700/50 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <p className="text-slate-400 text-xs">Boletos</p>
+                            <p className="text-white font-semibold text-lg">
+                                {baseTicketsCount}
+                                {boletosAdicionales > 0 ? ` + ${boletosAdicionales} regalo` : ''}
+                            </p>
                         </div>
+                        <div className="text-right">
+                            <p className="text-slate-400 text-xs">Total a pagar</p>
+                            <p className="text-accent font-bold text-2xl">LPS {total.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
 
-                        {/* Bonos y Premios Adicionales */}
-                        <BonusesCard bonuses={raffle.bonuses || []} className="mb-6" />
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+                        <h3 className="text-xl font-bold text-white mb-5">Datos del cliente</h3>
 
-                        {/* Boletos seleccionados */}
-                        <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                                <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-                                </svg>
-                                Tus Boletos
-                            </h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+                                    Nombre Completo *
+                                </label>
+                                <input 
+                                    id="name" 
+                                    {...register('name', { required: 'El nombre es requerido' })} 
+                                    className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                    placeholder="Tu nombre completo"
+                                />
+                                {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
+                            </div>
                             
-                            {/* Boletos comprados o paquete seleccionado */}
-                            {selectedPack ? (
-                                <div className="mb-4">
-                                    <div className="bg-gradient-to-r from-accent to-action px-4 py-3 rounded-xl mb-3">
-                                        <p className="text-white font-bold text-lg">{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</p>
-                                        <p className="text-white/80 text-sm">Cantidad: {packQuantity} paquete(s)</p>
-                                        <p className="text-white/80 text-sm">Total de boletos: {(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</p>
-                                    </div>
-                                    {/* Mostrar los boletos asignados */}
-                                    {assignedPackTickets.length > 0 ? (
-                                        <div className="mb-4">
-                                            <h4 className="text-white font-semibold mb-2 text-sm">Tus boletos asignados:</h4>
-                                            <div className="flex flex-wrap gap-2">
-                                                {assignedPackTickets.map(t => (
-                                                    <span key={t} className="bg-gradient-to-r from-accent to-action px-3 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                                        #{t.toString().padStart(3, '0')}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="mb-4">
-                                            <p className="text-slate-400 text-sm">Calculando boletos disponibles...</p>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="mb-4">
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {initialTickets.map(t => (
-                                            <span key={t} className="bg-gradient-to-r from-accent to-action px-4 py-2 rounded-full text-sm font-bold text-white shadow-lg">
-                                                #{t.toString().padStart(3, '0')}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    {/* Mostrar si se aplicó un paquete automáticamente */}
-                                    {matchedPack && savingsFromPack > 0 && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="bg-gradient-to-r from-green-900/30 to-green-800/30 border-2 border-green-500/50 rounded-xl p-3"
-                                        >
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-green-400 font-semibold text-sm flex items-center">
-                                                    <span className="mr-2">🎁</span>
-                                                    Descuento de Paquete Aplicado
-                                                </span>
-                                                <span className="text-green-400 font-bold text-sm">
-                                                    -LPS {savingsFromPack.toFixed(2)}
-                                                </span>
-                                            </div>
-                                            <p className="text-green-300 text-xs">
-                                                {matchedPack.name || `Pack de ${matchedPack.tickets || matchedPack.q || 1} boletos`} aplicado automáticamente
-                                            </p>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            )}
+                            <div>
+                                <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
+                                    Teléfono *
+                                </label>
+                                <input 
+                                    id="phone" 
+                                    type="tel" 
+                                    {...register('phone', { 
+                                        required: 'El teléfono es requerido', 
+                                        pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos'} 
+                                    })} 
+                                    className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
+                                    placeholder="12345678"
+                                />
+                                {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>}
+                            </div>
                             
-                            {/* Boletos de regalo */}
-                            {boletosAdicionales > 0 && (
-                                <div className="mb-4">
-                                    <h4 className="text-green-400 font-semibold mb-2 flex items-center">
-                                        <span className="mr-2">🎁</span>
-                                        Boletos de Regalo ({boletosAdicionales})
-                                    </h4>
-                                    <div className="bg-green-900/20 border border-green-700/50 rounded-xl p-3">
-                                        <p className="text-green-300 text-sm">
-                                            Recibirás {boletosAdicionales} boleto{boletosAdicionales > 1 ? 's' : ''} adicional{boletosAdicionales > 1 ? 'es' : ''} de regalo para aumentar tus probabilidades de ganar.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            <div className="bg-background-primary rounded-xl p-4 border border-slate-700/50">
-                                {selectedPack ? (
-                                    <>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-slate-300">Paquete:</span>
-                                            <span className="text-white font-bold text-lg">{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-slate-300">Cantidad de paquetes:</span>
-                                            <span className="text-white font-bold text-lg">{packQuantity}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-slate-300">Total de boletos:</span>
-                                            <span className="text-white font-bold text-lg">{(selectedPack.tickets || selectedPack.q || 1) * packQuantity}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-slate-300">Cantidad de boletos:</span>
-                                            <span className="text-white font-bold text-lg">{initialTickets.length}</span>
-                                        </div>
-                                        {matchedPack && savingsFromPack > 0 && (
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="text-green-400">Descuento aplicado:</span>
-                                                <span className="text-green-400 font-bold">-LPS {savingsFromPack.toFixed(2)}</span>
-                                            </div>
-                                        )}
-                                        {!matchedPack && (
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="text-slate-300">Precio unitario:</span>
-                                                <span className="text-accent font-bold">LPS {pricePerTicket.toFixed(2)}</span>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                                {boletosAdicionales > 0 && (
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-green-400">Boletos de regalo:</span>
-                                        <span className="text-green-400 font-bold">+ {boletosAdicionales}</span>
-                                    </div>
-                                )}
-                                <div className="border-t border-slate-700/50 pt-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-white font-bold text-xl">Total a pagar:</span>
-                                        <span className="text-accent font-bold text-2xl">LPS {total.toFixed(2)}</span>
-                                    </div>
-                                    {matchedPack && savingsFromPack > 0 && (
-                                        <div className="flex justify-between items-center mt-2">
-                                            <span className="text-green-400 text-sm">Ahorro:</span>
-                                            <span className="text-green-400 font-bold text-sm">LPS {savingsFromPack.toFixed(2)}</span>
-                                        </div>
-                                    )}
-                                </div>
+                            <div>
+                                <label htmlFor="department" className="block text-sm font-medium text-white mb-2">
+                                    Departamento *
+                                </label>
+                                <select 
+                                    id="department" 
+                                    {...register('department', { required: 'El departamento es requerido' })} 
+                                    className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+                                >
+                                    <option value="">Selecciona tu departamento</option>
+                                    {honduranDepartments.map(dept => (
+                                        <option key={dept} value={dept} className="bg-slate-800 text-white">
+                                            {dept}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.department && <p className="text-red-400 text-sm mt-1">{errors.department.message}</p>}
                             </div>
                         </div>
                     </div>
 
-                    {/* Columna derecha - Formulario */}
-                    <div className="space-y-6">
-                        {/* Formulario mejorado */}
-                        <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center">
-                                <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                Información Personal
-                            </h3>
-                            
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                                <div>
-                                    <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-                                        Nombre Completo *
-                                    </label>
-                                    <input 
-                                        id="name" 
-                                        {...register('name', { required: 'El nombre es requerido' })} 
-                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
-                                        placeholder="Tu nombre completo"
-                                    />
-                                    {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
+                    <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
+                        <h3 className="text-xl font-bold text-white mb-4">Método de pago</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <label className={`cursor-pointer border rounded-xl p-4 transition-all ${
+                                selectedPaymentMethod === 'transfer'
+                                    ? 'border-accent/70 bg-background-primary/60'
+                                    : 'border-slate-700/50 bg-background-primary/30 hover:border-slate-600'
+                            }`}>
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="transfer"
+                                    className="sr-only"
+                                    checked={selectedPaymentMethod === 'transfer'}
+                                    onChange={() => setSelectedPaymentMethod('transfer')}
+                                />
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-white font-semibold">Transferencia</p>
+                                        <p className="text-slate-400 text-xs">Paga por banco y envía tu comprobante</p>
+                                    </div>
+                                    {selectedPaymentMethod === 'transfer' && (
+                                        <span className="text-accent text-xs font-semibold">Seleccionado</span>
+                                    )}
                                 </div>
-                                
-                                <div>
-                                    <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
-                                        Teléfono *
-                                    </label>
-                                    <input 
-                                        id="phone" 
-                                        type="tel" 
-                                        {...register('phone', { 
-                                            required: 'El teléfono es requerido', 
-                                            pattern: {value: /^\d{8}$/, message: 'Ingresa un teléfono válido de 8 dígitos'} 
-                                        })} 
-                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200" 
-                                        placeholder="12345678"
-                                    />
-                                    {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone.message}</p>}
-                                </div>
-                                
-                                <div>
-                                    <label htmlFor="department" className="block text-sm font-medium text-white mb-2">
-                                        Departamento *
-                                    </label>
-                                    <select 
-                                        id="department" 
-                                        {...register('department', { required: 'El departamento es requerido' })} 
-                                        className="w-full bg-slate-800/50 border border-slate-600 rounded-lg py-3 px-4 text-white focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
-                                    >
-                                        <option value="">Selecciona tu departamento</option>
-                                        {honduranDepartments.map(dept => (
-                                            <option key={dept} value={dept} className="bg-slate-800 text-white">
-                                                {dept}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.department && <p className="text-red-400 text-sm mt-1">{errors.department.message}</p>}
-                                </div>
-                                
-                                {/* Botón mejorado */}
-                                <div className="pt-6">
-                                    <button 
-                                        type="submit" 
-                                        disabled={isSubmitting || (initialTickets.length === 0 && !selectedPack)} 
-                                        className="w-full bg-gradient-to-r from-action to-accent text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                                    >
-                                        {isSubmitting ? (
-                                            <div className="flex items-center justify-center">
-                                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Procesando...
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-center">
-                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                                </svg>
-                                                Comprar Boletos - LPS {total.toFixed(2)}
-                                            </div>
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </label>
 
-                        {/* Elementos de confianza */}
-                        <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
-                            <h4 className="text-lg font-bold text-white mb-4">¿Por qué elegirnos?</h4>
-                            <div className="space-y-3">
-                                <div className="flex items-center">
-                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span className="text-slate-300 text-sm">Transacciones 100% seguras</span>
+                            <label className={`cursor-pointer border rounded-xl p-4 transition-all ${
+                                selectedPaymentMethod === 'paypal'
+                                    ? 'border-accent/70 bg-background-primary/60'
+                                    : 'border-slate-700/50 bg-background-primary/30 hover:border-slate-600'
+                            }`}>
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="paypal"
+                                    className="sr-only"
+                                    checked={selectedPaymentMethod === 'paypal'}
+                                    onChange={() => setSelectedPaymentMethod('paypal')}
+                                />
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-white font-semibold">Tarjeta (PayPal)</p>
+                                        <p className="text-slate-400 text-xs">Pago inmediato con tarjeta o PayPal</p>
+                                    </div>
+                                    {selectedPaymentMethod === 'paypal' && (
+                                        <span className="text-accent text-xs font-semibold">Seleccionado</span>
+                                    )}
                                 </div>
-                                <div className="flex items-center">
-                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span className="text-slate-300 text-sm">Confirmación inmediata</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <svg className="w-5 h-5 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 100 19.5 9.75 9.75 0 000-19.5z" />
-                                    </svg>
-                                    <span className="text-slate-300 text-sm">Soporte 24/7</span>
-                                </div>
-                            </div>
+                            </label>
                         </div>
                     </div>
-                </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting || (initialTickets.length === 0 && !selectedPack)} 
+                        className="w-full bg-gradient-to-r from-action to-accent text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                    >
+                        {isSubmitting ? (
+                            <div className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Procesando...
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center">
+                                Comprar Boletos - LPS {total.toFixed(2)}
+                            </div>
+                        )}
+                    </button>
+                </form>
             </div>
         </PageAnimator>
     );
