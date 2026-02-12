@@ -5,11 +5,18 @@ import { Client, OrdersController, OrderRequest, OrderApplicationContext, Purcha
 export class PayPalService {
   private client: Client;
   private ordersController: OrdersController;
+  private clientId: string;
+  private clientSecret: string;
+  private mode: string;
 
   constructor() {
     const clientId = process.env.PAYPAL_CLIENT_ID;
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
     const mode = process.env.PAYPAL_MODE || 'sandbox';
+
+    this.clientId = clientId || '';
+    this.clientSecret = clientSecret || '';
+    this.mode = mode;
 
     if (!clientId || !clientSecret) {
       console.warn('⚠️ PayPal no configurado. Configura PAYPAL_CLIENT_ID y PAYPAL_CLIENT_SECRET');
@@ -32,6 +39,42 @@ export class PayPalService {
       environment: mode,
       clientId: clientId.substring(0, 10) + '...',
     });
+  }
+
+  /**
+   * Genera un client token para Card Fields
+   */
+  async generateClientToken(): Promise<string> {
+    if (!this.clientId || !this.clientSecret) {
+      throw new BadRequestException('PayPal no está configurado');
+    }
+
+    const baseUrl = this.mode === 'production'
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
+
+    const auth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+
+    const response = await fetch(`${baseUrl}/v1/identity/generate-token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message = data?.message || data?.error || response.statusText;
+      throw new BadRequestException(`Error al generar client token de PayPal: ${message}`);
+    }
+
+    if (!data?.client_token) {
+      throw new BadRequestException('PayPal no devolvió client_token');
+    }
+
+    return data.client_token;
   }
 
   /**

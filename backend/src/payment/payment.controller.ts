@@ -88,6 +88,23 @@ export class PaymentController {
   }
 
   /**
+   * Genera un client token para Card Fields
+   * GET /api/payment/paypal/client-token
+   */
+  @Get('paypal/client-token')
+  async getPayPalClientToken() {
+    try {
+      const clientToken = await this.paypalService.generateClientToken();
+      return { clientToken };
+    } catch (error: any) {
+      console.error('❌ Error generando client token:', error);
+      throw new BadRequestException(
+        `Error al generar client token: ${error.message || 'Error desconocido'}`
+      );
+    }
+  }
+
+  /**
    * Captura un pago de PayPal (después de que el usuario aprueba en PayPal)
    * POST /api/payment/paypal/capture
    */

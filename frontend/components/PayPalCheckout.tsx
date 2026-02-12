@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
+import React, { useState, useEffect, useMemo } from 'react';
+import { PayPalButtons, PayPalScriptProvider, PayPalCardFieldsProvider, PayPalCardFieldsForm, usePayPalCardFields } from '@paypal/react-paypal-js';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 
@@ -8,6 +8,7 @@ interface PayPalCheckoutProps {
   amount: number; // Monto en Lempiras
   onSuccess?: () => void;
   onError?: (error: string) => void;
+  variant?: 'card' | 'paypal';
 }
 
 const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
@@ -15,10 +16,13 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   amount,
   onSuccess,
   onError,
+  variant = 'card',
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
+  const [clientToken, setClientToken] = useState<string | null>(null);
+  const [isTokenLoading, setIsTokenLoading] = useState(false);
   const navigate = useNavigate();
 
   const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
@@ -31,6 +35,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   };
 
   const amountUSD = parseFloat(convertToUSD(amount));
+  const isCardVariant = variant === 'card';
 
   // Verificar que PayPal esté configurado
   if (!PAYPAL_CLIENT_ID) {
@@ -49,7 +54,6 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
 
   const handleCreateOrder = async (): Promise<string> => {
     try {
-      setLoading(true);
       setError(null);
 
       // Crear orden de PayPal en tu backend
@@ -72,12 +76,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
       const data = await response.json();
       setPaypalOrderId(data.paypalOrderId);
 
-      // Redirigir a PayPal para aprobación
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl;
-      }
-
-      // Retornar el order ID para PayPal (aunque redirigimos)
+      // Retornar el order ID para PayPal
       return data.paypalOrderId || '';
     } catch (err: any) {
       const errorMessage = err.message || 'Error al crear la orden de pago';
@@ -155,6 +154,82 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!isCardVariant) return;
+
+    const loadClientToken = async () => {
+      try {
+        setIsTokenLoading(true);
+        const response = await fetch(`${API_URL}/payment/paypal/client-token`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'No se pudo generar el client token');
+        }
+        const data = await response.json();
+        setClientToken(data.clientToken || null);
+      } catch (err: any) {
+        const errorMessage = err.message || 'Error al preparar el pago con tarjeta';
+        setError(errorMessage);
+        if (onError) {
+          onError(errorMessage);
+        }
+      } finally {
+        setIsTokenLoading(false);
+      }
+    };
+
+    loadClientToken();
+  }, [API_URL, isCardVariant, onError]);
+
+  const scriptOptions = useMemo(() => {
+    const baseOptions: Record<string, any> = {
+      clientId: PAYPAL_CLIENT_ID,
+      currency: 'USD',
+      intent: 'capture',
+    };
+
+    if (isCardVariant) {
+      baseOptions.components = 'card-fields';
+      if (clientToken) {
+        baseOptions.dataClientToken = clientToken;
+      }
+    }
+
+    return baseOptions;
+  }, [PAYPAL_CLIENT_ID, clientToken, isCardVariant]);
+
+  const CardSubmitButton: React.FC = () => {
+    const { cardFields } = usePayPalCardFields();
+
+    const submitHandler = async () => {
+      if (!cardFields || typeof cardFields.submit !== 'function') return;
+      try {
+        setLoading(true);
+        setError(null);
+        await cardFields.submit();
+      } catch (err: any) {
+        const errorMessage = err.message || 'Error al procesar el pago con tarjeta';
+        setError(errorMessage);
+        if (onError) {
+          onError(errorMessage);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <button
+        type="button"
+        onClick={submitHandler}
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-action to-accent text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 disabled:opacity-50"
+      >
+        {loading ? 'Procesando...' : 'Pagar con tarjeta'}
+      </button>
+    );
+  };
+
   return (
     <div className="w-full">
       {error && (
@@ -179,7 +254,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <div className="mb-4 text-center">
           <h3 className="text-lg font-bold text-gray-900 mb-2">
-            Completa tu pago con PayPal
+            {isCardVariant ? 'Completa tu pago con tarjeta' : 'Completa tu pago con PayPal'}
           </h3>
           <p className="text-gray-600 text-sm">
             Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
@@ -190,32 +265,50 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
           </p>
         </div>
 
-        <PayPalScriptProvider
-          options={{
-            clientId: PAYPAL_CLIENT_ID,
-            currency: 'USD',
-            intent: 'capture',
-          }}
-        >
-          <PayPalButtons
-            createOrder={handleCreateOrder}
-            onApprove={handleApprove}
-            onError={handleError}
-            onCancel={() => {
-              setError('Pago cancelado por el usuario');
-            }}
-            style={{
-              layout: 'vertical',
-              color: 'blue',
-              shape: 'rect',
-              label: 'paypal',
-            }}
-            disabled={loading}
-          />
+        {isCardVariant && isTokenLoading && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <p className="font-semibold">Preparando pago con tarjeta...</p>
+            </div>
+          </div>
+        )}
+
+        <PayPalScriptProvider options={scriptOptions}>
+          {isCardVariant ? (
+            <PayPalCardFieldsProvider
+              createOrder={handleCreateOrder}
+              onApprove={handleApprove}
+              onError={handleError}
+            >
+              <div className="mb-4">
+                <PayPalCardFieldsForm />
+              </div>
+              <CardSubmitButton />
+            </PayPalCardFieldsProvider>
+          ) : (
+            <PayPalButtons
+              createOrder={handleCreateOrder}
+              onApprove={handleApprove}
+              onError={handleError}
+              onCancel={() => {
+                setError('Pago cancelado por el usuario');
+              }}
+              style={{
+                layout: 'vertical',
+                color: 'blue',
+                shape: 'rect',
+                label: 'paypal',
+              }}
+              disabled={loading}
+            />
+          )}
         </PayPalScriptProvider>
 
         <p className="text-xs text-gray-500 text-center mt-4">
-          Al hacer clic en el botón, serás redirigido a PayPal para completar tu pago de forma segura.
+          {isCardVariant
+            ? 'Tus datos de tarjeta se procesan de forma segura por PayPal.'
+            : 'Al hacer clic en el botón, serás redirigido a PayPal para completar tu pago de forma segura.'}
         </p>
       </div>
     </div>
