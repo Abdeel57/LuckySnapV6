@@ -128,9 +128,66 @@ const ReceiptPage: React.FC = () => {
                     .print-only { display: none; }
                 }
             `}</style>
-            <div className="min-h-screen bg-gray-50 py-8 px-4">
+            <div className="min-h-screen bg-gradient-to-br from-background-primary via-background-secondary to-background-primary py-8 px-4">
                 <div className="max-w-2xl mx-auto">
-                    {/* Header */}
+                    {/* Mensaje de agradecimiento */}
+                    <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-2xl shadow-xl p-8 mb-6 border border-green-500/30 text-center">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-6">
+                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h1 className="text-4xl font-bold text-white mb-4">
+                            ¡Gracias por tu compra!
+                        </h1>
+                        <p className="text-2xl text-slate-200 mb-6">
+                            ¡Mucha suerte en el sorteo! 🍀
+                        </p>
+                        <p className="text-slate-300 text-sm">
+                            Tu compra ha sido confirmada exitosamente. Guarda este comprobante.
+                        </p>
+                    </div>
+
+                    {/* Botón de descarga y link permanente */}
+                    <div className="bg-background-secondary rounded-xl p-6 mb-6 border border-slate-700/50 space-y-4">
+                        <button
+                            onClick={() => window.print()}
+                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Descargar Comprobante de Pago
+                        </button>
+                        
+                        <div className="border-t border-slate-700/50 pt-4">
+                            <h3 className="text-lg font-bold text-white mb-3 flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                Guarda este link para más tarde
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    readOnly
+                                    value={`${window.location.origin}/#/comprobante/${order.folio}`}
+                                    className="flex-1 bg-background-primary text-white p-3 rounded-lg text-sm border border-slate-700/50 font-mono"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`${window.location.origin}/#/comprobante/${order.folio}`);
+                                        alert('Link copiado al portapapeles');
+                                    }}
+                                    className="px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors font-semibold"
+                                    title="Copiar link"
+                                >
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Header del comprobante */}
                     <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
                         <div className="text-center mb-8 pb-6 border-b-2 border-gray-200">
                             {logoUrl && (

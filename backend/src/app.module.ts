@@ -9,6 +9,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { MetaModule } from './meta/meta.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { UploadModule } from './upload/upload.module';
+import { PaymentModule } from './payment/payment.module';
 import { InitController } from './init.controller';
 import { InitDatabaseService } from './init-database';
 
@@ -20,7 +21,8 @@ import { InitDatabaseService } from './init-database';
     AnalyticsModule, 
     MetaModule, 
     TrackingModule,
-    UploadModule
+    UploadModule,
+    PaymentModule
   ],
   controllers: [AppController, InitController],
   providers: [AppService, InitDatabaseService],
