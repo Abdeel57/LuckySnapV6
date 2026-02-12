@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent, Configuration, Environment } from '@paypal/paypal-server-sdk';
+import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent, Configuration, Environment, OrderApplicationContextLandingPage, OrderApplicationContextUserAction } from '@paypal/paypal-server-sdk';
 
 @Injectable()
 export class PayPalService {
@@ -72,8 +72,8 @@ export class PayPalService {
         ],
         applicationContext: {
           brandName: 'Lucky Snap',
-          landingPage: 'BILLING',
-          userAction: 'PAY_NOW',
+          landingPage: OrderApplicationContextLandingPage.Billing,
+          userAction: OrderApplicationContextUserAction.PayNow,
           returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/comprobante/${orderId}`,
           cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/purchase/${orderId}`,
         } as OrderApplicationContext,
@@ -102,8 +102,17 @@ export class PayPalService {
       };
     } catch (error: any) {
       console.error('❌ Error creando orden PayPal:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      console.error('❌ Error stack:', error.stack);
+      
+      // Si es un error de la API de PayPal, extraer más detalles
+      if (error.response) {
+        console.error('❌ PayPal API Error Response:', JSON.stringify(error.response, null, 2));
+      }
+      
+      const errorMessage = error.message || error.toString() || 'Error desconocido';
       throw new BadRequestException(
-        `Error al crear orden de PayPal: ${error.message || 'Error desconocido'}`
+        `Error al crear orden de PayPal: ${errorMessage}`
       );
     }
   }

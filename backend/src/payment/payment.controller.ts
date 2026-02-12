@@ -62,8 +62,18 @@ export class PaymentController {
         approvalUrl,
       };
     } catch (error: any) {
-      console.error('❌ Error creando orden PayPal:', error);
-      throw error;
+      console.error('❌ Error en createPayPalOrder:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      
+      // Si ya es una excepción HTTP de NestJS, re-lanzarla
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      // Si no, convertir a BadRequestException
+      throw new BadRequestException(
+        `Error al crear orden de PayPal: ${error.message || 'Error desconocido'}`
+      );
     }
   }
 
