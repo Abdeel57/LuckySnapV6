@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent } from '@paypal/paypal-server-sdk';
+import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent, Configuration, Environment } from '@paypal/paypal-server-sdk';
 
 @Injectable()
 export class PayPalService {
@@ -16,13 +16,22 @@ export class PayPalService {
       return;
     }
 
-    this.client = Client.fromEnvironment({
-      PAYPAL_CLIENT_ID: clientId,
-      PAYPAL_CLIENT_SECRET: clientSecret,
-      PAYPAL_ENVIRONMENT: mode === 'production' ? 'production' : 'sandbox',
-    });
+    // Configurar directamente con Configuration
+    const config: Partial<Configuration> = {
+      environment: mode === 'production' ? Environment.Production : Environment.Sandbox,
+      clientCredentialsAuthCredentials: {
+        oAuthClientId: clientId,
+        oAuthClientSecret: clientSecret,
+      },
+    };
 
+    this.client = new Client(config);
     this.ordersController = new OrdersController(this.client);
+    
+    console.log('✅ PayPal Service inicializado:', {
+      environment: mode,
+      clientId: clientId.substring(0, 10) + '...',
+    });
   }
 
   /**
