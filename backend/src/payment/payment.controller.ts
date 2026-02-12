@@ -44,7 +44,17 @@ export class PaymentController {
       );
 
       // Guardar PayPal Order ID en la orden
-      const currentNotes = order.notes ? JSON.parse(order.notes) : {};
+      let currentNotes = {};
+      if (order.notes) {
+        try {
+          currentNotes = typeof order.notes === 'string' ? JSON.parse(order.notes) : order.notes;
+        } catch (e) {
+          // Si notes no es JSON válido, empezar desde cero
+          console.warn('⚠️ order.notes no es JSON válido, iniciando desde cero:', order.notes);
+          currentNotes = {};
+        }
+      }
+      
       await this.prisma.order.update({
         where: { id: orderId },
         data: {
