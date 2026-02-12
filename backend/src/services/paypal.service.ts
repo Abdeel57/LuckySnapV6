@@ -1,9 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PayPalClient, Orders } from '@paypal/paypal-server-sdk';
+import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent } from '@paypal/paypal-server-sdk';
 
 @Injectable()
 export class PayPalService {
-  private client: PayPalClient;
+  private client: Client;
+  private ordersController: OrdersController;
 
   constructor() {
     const clientId = process.env.PAYPAL_CLIENT_ID;
@@ -15,13 +16,13 @@ export class PayPalService {
       return;
     }
 
-    this.client = new PayPalClient({
-      clientId,
-      clientSecret,
-      environment: mode === 'production' 
-        ? 'production' 
-        : 'sandbox',
+    this.client = Client.fromEnvironment({
+      PAYPAL_CLIENT_ID: clientId,
+      PAYPAL_CLIENT_SECRET: clientSecret,
+      PAYPAL_ENVIRONMENT: mode === 'production' ? 'production' : 'sandbox',
     });
+
+    this.ordersController = new OrdersController(this.client);
   }
 
   /**
@@ -40,47 +41,54 @@ export class PayPalService {
     }
 
     try {
+      if (!this.ordersController) {
+        throw new BadRequestException('PayPal no está configurado');
+      }
+
       // Convertir HNL a USD (tasa aproximada, ajustar según necesidad)
       const exchangeRate = parseFloat(process.env.PAYPAL_EXCHANGE_RATE || '24.7');
       const amountUSD = (amount / exchangeRate).toFixed(2);
 
-      const request = new Orders.OrdersCreateRequest();
-      request.prefer('return=representation');
-      request.requestBody({
-        intent: 'CAPTURE',
-        purchase_units: [
+      const orderRequest: OrderRequest = {
+        intent: CheckoutPaymentIntent.Capture,
+        purchaseUnits: [
           {
-            reference_id: orderId,
+            referenceId: orderId,
             description: `Compra de boletos - Orden ${orderId}`,
             amount: {
-              currency_code: currency,
+              currencyCode: currency,
               value: amountUSD,
-            },
-          },
+            } as Money,
+          } as PurchaseUnitRequest,
         ],
-        application_context: {
-          brand_name: 'Lucky Snap',
-          landing_page: 'BILLING',
-          user_action: 'PAY_NOW',
-          return_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/comprobante/${orderId}`,
-          cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/purchase/${orderId}`,
-        },
-      });
+        applicationContext: {
+          brandName: 'Lucky Snap',
+          landingPage: 'BILLING',
+          userAction: 'PAY_NOW',
+          returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/comprobante/${orderId}`,
+          cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/purchase/${orderId}`,
+        } as OrderApplicationContext,
+      };
 
-      const order = await this.client.execute(request);
+      const response = await this.ordersController.createOrder({
+        body: orderRequest,
+        prefer: 'return=representation',
+      });
       
-      if (!order.result || !order.result.id) {
+      const order = response.result;
+      
+      if (!order || !order.id) {
         throw new Error('PayPal no devolvió un Order ID válido');
       }
 
-      const approvalUrl = order.result.links?.find(link => link.rel === 'approve')?.href;
+      const approvalUrl = order.links?.find(link => link.rel === 'approve')?.href;
       
       if (!approvalUrl) {
         throw new Error('PayPal no devolvió URL de aprobación');
       }
 
       return {
-        paypalOrderId: order.result.id,
+        paypalOrderId: order.id,
         approvalUrl,
       };
     } catch (error: any) {
@@ -97,17 +105,17 @@ export class PayPalService {
    * @returns true si el pago fue exitoso
    */
   async captureOrder(paypalOrderId: string): Promise<boolean> {
-    if (!this.client) {
+    if (!this.ordersController) {
       throw new BadRequestException('PayPal no está configurado');
     }
 
     try {
-      const request = new Orders.OrdersCaptureRequest(paypalOrderId);
-      request.requestBody({});
-
-      const capture = await this.client.execute(request);
+      const response = await this.ordersController.captureOrder({
+        id: paypalOrderId,
+        prefer: 'return=representation',
+      });
       
-      return capture.result?.status === 'COMPLETED';
+      return response.result?.status === 'COMPLETED';
     } catch (error: any) {
       console.error('❌ Error capturando orden PayPal:', error);
       return false;
@@ -119,15 +127,16 @@ export class PayPalService {
    * @param paypalOrderId - ID de la orden de PayPal
    * @returns Detalles de la orden
    */
-  async getOrder(paypalOrderId: string): Promise<any> {
-    if (!this.client) {
+  async getOrder(paypalOrderId: string): Promise<Order> {
+    if (!this.ordersController) {
       throw new BadRequestException('PayPal no está configurado');
     }
 
     try {
-      const request = new Orders.OrdersGetRequest(paypalOrderId);
-      const order = await this.client.execute(request);
-      return order.result;
+      const response = await this.ordersController.getOrder({
+        id: paypalOrderId,
+      });
+      return response.result;
     } catch (error: any) {
       console.error('❌ Error obteniendo orden PayPal:', error);
       throw new BadRequestException(`Error al obtener orden: ${error.message}`);

@@ -109,7 +109,7 @@ export class PaymentController {
       // Obtener detalles de la orden de PayPal para validar monto
       const paypalOrder = await this.paypalService.getOrder(paypalOrderId);
       const paypalAmount = parseFloat(
-        paypalOrder.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || '0'
+        paypalOrder.purchaseUnits?.[0]?.payments?.captures?.[0]?.amount?.value || '0'
       );
       
       // Convertir a HNL para comparar
