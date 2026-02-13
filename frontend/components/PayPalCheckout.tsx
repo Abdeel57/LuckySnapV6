@@ -28,6 +28,16 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
   const PAYPAL_CLIENT_ID = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID || '';
 
+  // Logs de depuración
+  console.log('🔍 PayPalCheckout renderizado:', {
+    orderId,
+    amount,
+    variant,
+    hasClientId: !!PAYPAL_CLIENT_ID,
+    clientIdLength: PAYPAL_CLIENT_ID?.length || 0,
+    apiUrl: API_URL,
+  });
+
   // Convertir HNL a USD (tasa aproximada, ajustar según necesidad)
   const convertToUSD = (lempiras: number): string => {
     const exchangeRate = 24.7; // Ajustar según tasa actual
@@ -39,6 +49,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
 
   // Verificar que PayPal esté configurado
   if (!PAYPAL_CLIENT_ID) {
+    console.error('❌ PayPal no configurado: VITE_PAYPAL_CLIENT_ID está vacío');
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-center gap-2 text-yellow-800">
@@ -155,32 +166,43 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   };
 
   useEffect(() => {
-    if (!isCardVariant) return;
+    if (!isCardVariant) {
+      console.log('ℹ️ No es variant card, saltando carga de client token');
+      return;
+    }
 
+    console.log('🔄 Iniciando carga de client token...');
     const loadClientToken = async () => {
       try {
         setIsTokenLoading(true);
+        console.log('📡 Fetching client token desde:', `${API_URL}/payment/paypal/client-token`);
         const response = await fetch(`${API_URL}/payment/paypal/client-token`);
+        console.log('📡 Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
           // Si no se puede obtener el token (Advanced Card Payments no disponible),
           // simplemente no lo establecemos y usaremos PayPalButtons con tarjeta
-          console.warn('Advanced Card Payments no disponible, usando PayPalButtons con tarjeta');
+          const errorText = await response.text();
+          console.warn('⚠️ Advanced Card Payments no disponible, usando PayPalButtons con tarjeta. Error:', errorText);
           setClientToken(null);
+          setIsTokenLoading(false);
           return;
         }
         const data = await response.json();
+        console.log('✅ Client token recibido:', data.clientToken ? 'Sí' : 'No');
         setClientToken(data.clientToken || null);
       } catch (err: any) {
         // Si hay error, usamos PayPalButtons con tarjeta como fallback
-        console.warn('Error obteniendo client token, usando PayPalButtons con tarjeta:', err);
+        console.warn('⚠️ Error obteniendo client token, usando PayPalButtons con tarjeta:', err);
         setClientToken(null);
       } finally {
         setIsTokenLoading(false);
+        console.log('🏁 Carga de client token finalizada');
       }
     };
 
     loadClientToken();
-  }, [API_URL, isCardVariant, onError]);
+  }, [API_URL, isCardVariant]);
 
   const scriptOptions = useMemo(() => {
     const baseOptions: Record<string, any> = {
@@ -263,6 +285,15 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   // Si no hay clientToken disponible, usar PayPalButtons con tarjeta
   const useCardFields = isCardVariant && clientToken;
 
+  console.log('🎨 Renderizando PayPalCheckout:', {
+    useCardFields,
+    isCardVariant,
+    hasClientToken: !!clientToken,
+    isTokenLoading,
+    hasError: !!error,
+    scriptOptions,
+  });
+
   return (
     <div className="w-full">
       {error && (
@@ -298,7 +329,15 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
           </p>
         </div>
 
-        <PayPalScriptProvider options={scriptOptions}>
+        <PayPalScriptProvider 
+          options={scriptOptions}
+          onLoadStart={() => console.log('📦 PayPal script iniciando carga...')}
+          onLoadError={(err) => {
+            console.error('❌ Error cargando PayPal script:', err);
+            setError('Error al cargar PayPal. Por favor, recarga la página.');
+          }}
+          onLoadSuccess={() => console.log('✅ PayPal script cargado exitosamente')}
+        >
           {useCardFields ? (
             <PayPalCardFieldsProvider
               createOrder={handleCreateOrder}
@@ -311,23 +350,36 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
               <CardSubmitButton />
             </PayPalCardFieldsProvider>
           ) : (
-            <PayPalButtons
-              createOrder={handleCreateOrder}
-              onApprove={handleApprove}
-              onError={handleError}
-              onCancel={() => {
-                setError('Pago cancelado por el usuario');
-              }}
-              fundingSource={isCardVariant ? 'card' : undefined}
-              style={{
-                layout: 'vertical',
-                color: isCardVariant ? 'black' : 'blue',
-                shape: 'rect',
-                label: isCardVariant ? 'pay' : 'paypal',
-                height: 50,
-              }}
-              disabled={loading}
-            />
+            <div>
+              <p className="text-sm text-gray-600 mb-3 text-center">
+                {isCardVariant 
+                  ? 'Haz clic en el botón para pagar con tarjeta'
+                  : 'Haz clic en el botón para pagar con PayPal'}
+              </p>
+              <PayPalButtons
+                createOrder={handleCreateOrder}
+                onApprove={handleApprove}
+                onError={handleError}
+                onCancel={() => {
+                  setError('Pago cancelado por el usuario');
+                }}
+                fundingSource={isCardVariant ? 'card' : undefined}
+                style={{
+                  layout: 'vertical',
+                  color: isCardVariant ? 'black' : 'blue',
+                  shape: 'rect',
+                  label: isCardVariant ? 'pay' : 'paypal',
+                  height: 50,
+                }}
+                disabled={loading}
+                onInit={(data, actions) => {
+                  console.log('✅ PayPalButtons inicializado:', { data, actions });
+                }}
+                onRender={(data, actions) => {
+                  console.log('🎨 PayPalButtons renderizado:', { data, actions });
+                }}
+              />
+            </div>
           )}
         </PayPalScriptProvider>
 
