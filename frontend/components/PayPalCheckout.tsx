@@ -162,17 +162,18 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
         setIsTokenLoading(true);
         const response = await fetch(`${API_URL}/payment/paypal/client-token`);
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'No se pudo generar el client token');
+          // Si no se puede obtener el token (Advanced Card Payments no disponible),
+          // simplemente no lo establecemos y usaremos PayPalButtons con tarjeta
+          console.warn('Advanced Card Payments no disponible, usando PayPalButtons con tarjeta');
+          setClientToken(null);
+          return;
         }
         const data = await response.json();
         setClientToken(data.clientToken || null);
       } catch (err: any) {
-        const errorMessage = err.message || 'Error al preparar el pago con tarjeta';
-        setError(errorMessage);
-        if (onError) {
-          onError(errorMessage);
-        }
+        // Si hay error, usamos PayPalButtons con tarjeta como fallback
+        console.warn('Error obteniendo client token, usando PayPalButtons con tarjeta:', err);
+        setClientToken(null);
       } finally {
         setIsTokenLoading(false);
       }
@@ -230,19 +231,10 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
     );
   };
 
-  if (isCardVariant && (!clientToken || isTokenLoading)) {
+  // Si está cargando el token, mostrar loading
+  if (isCardVariant && isTokenLoading) {
     return (
       <div className="w-full">
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="w-5 h-5" />
-              <p className="font-semibold">Error</p>
-            </div>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
-          </div>
-        )}
-
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="mb-4 text-center">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -267,6 +259,9 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
       </div>
     );
   }
+
+  // Si no hay clientToken disponible, usar PayPalButtons con tarjeta
+  const useCardFields = isCardVariant && clientToken;
 
   return (
     <div className="w-full">
@@ -304,7 +299,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
         </div>
 
         <PayPalScriptProvider options={scriptOptions}>
-          {isCardVariant ? (
+          {useCardFields ? (
             <PayPalCardFieldsProvider
               createOrder={handleCreateOrder}
               onApprove={handleApprove}
@@ -323,11 +318,13 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
               onCancel={() => {
                 setError('Pago cancelado por el usuario');
               }}
+              fundingSource={isCardVariant ? 'card' : undefined}
               style={{
                 layout: 'vertical',
-                color: 'blue',
+                color: isCardVariant ? 'black' : 'blue',
                 shape: 'rect',
-                label: 'paypal',
+                label: isCardVariant ? 'pay' : 'paypal',
+                height: 50,
               }}
               disabled={loading}
             />
@@ -335,8 +332,10 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
         </PayPalScriptProvider>
 
         <p className="text-xs text-gray-500 text-center mt-4">
-          {isCardVariant
+          {useCardFields
             ? 'Tus datos de tarjeta se procesan de forma segura por PayPal.'
+            : isCardVariant
+            ? 'Al hacer clic, serás redirigido a PayPal para pagar con tarjeta. No necesitas cuenta PayPal.'
             : 'Al hacer clic en el botón, serás redirigido a PayPal para completar tu pago de forma segura.'}
         </p>
       </div>
