@@ -23,6 +23,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
   const [clientToken, setClientToken] = useState<string | null>(null);
   const [isTokenLoading, setIsTokenLoading] = useState(false);
+  const [isScriptReady, setIsScriptReady] = useState(false);
   const navigate = useNavigate();
 
   const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
@@ -283,13 +284,15 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   }
 
   // Si no hay clientToken disponible, usar PayPalButtons con tarjeta
-  const useCardFields = isCardVariant && clientToken;
+  // Solo usar Card Fields si tenemos token Y el script está listo
+  const useCardFields = Boolean(isCardVariant && clientToken && isScriptReady);
 
   console.log('🎨 Renderizando PayPalCheckout:', {
     useCardFields,
     isCardVariant,
     hasClientToken: !!clientToken,
     isTokenLoading,
+    isScriptReady,
     hasError: !!error,
     scriptOptions,
   });
@@ -331,12 +334,19 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
 
         <PayPalScriptProvider 
           options={scriptOptions}
-          onLoadStart={() => console.log('📦 PayPal script iniciando carga...')}
+          onLoadStart={() => {
+            console.log('📦 PayPal script iniciando carga...');
+            setIsScriptReady(false);
+          }}
           onLoadError={(err) => {
             console.error('❌ Error cargando PayPal script:', err);
             setError('Error al cargar PayPal. Por favor, recarga la página.');
+            setIsScriptReady(false);
           }}
-          onLoadSuccess={() => console.log('✅ PayPal script cargado exitosamente')}
+          onLoadSuccess={() => {
+            console.log('✅ PayPal script cargado exitosamente');
+            setIsScriptReady(true);
+          }}
         >
           {useCardFields ? (
             <PayPalCardFieldsProvider
