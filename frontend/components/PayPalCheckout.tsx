@@ -213,10 +213,14 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
     };
 
     if (isCardVariant) {
-      baseOptions.components = 'card-fields';
+      // Incluir ambos componentes: card-fields para campos embebidos y buttons como fallback
+      baseOptions.components = 'card-fields,buttons';
       if (clientToken) {
         baseOptions.dataClientToken = clientToken;
       }
+    } else {
+      // Para variant PayPal, solo necesitamos buttons
+      baseOptions.components = 'buttons';
     }
 
     return baseOptions;
