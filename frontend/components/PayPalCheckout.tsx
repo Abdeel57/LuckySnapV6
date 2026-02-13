@@ -365,11 +365,13 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
             </PayPalCardFieldsProvider>
           ) : (
             <div>
-              <p className="text-sm text-gray-600 mb-3 text-center">
-                {isCardVariant 
-                  ? 'Haz clic en el botón para pagar con tarjeta'
-                  : 'Haz clic en el botón para pagar con PayPal'}
-              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800 text-center">
+                  {isCardVariant 
+                    ? '🔒 Serás redirigido a PayPal para completar tu pago con tarjeta de forma segura. No necesitas cuenta PayPal.'
+                    : '🔒 Serás redirigido a PayPal para completar tu pago de forma segura.'}
+                </p>
+              </div>
               <PayPalButtons
                 createOrder={handleCreateOrder}
                 onApprove={handleApprove}
@@ -401,7 +403,7 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
           {useCardFields
             ? 'Tus datos de tarjeta se procesan de forma segura por PayPal.'
             : isCardVariant
-            ? 'Al hacer clic, serás redirigido a PayPal para pagar con tarjeta. No necesitas cuenta PayPal.'
+            ? '💳 Puedes pagar con cualquier tarjeta de crédito o débito. PayPal procesa el pago de forma segura.'
             : 'Al hacer clic en el botón, serás redirigido a PayPal para completar tu pago de forma segura.'}
         </p>
       </div>
