@@ -356,10 +356,16 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         const orderTicketsCount = createdOrder.tickets?.length || baseTicketsCount;
         const orderTotal = createdOrder.total || total;
         
-        // Calcular boletos adicionales basándose en los boletos reales de la orden
+        // Calcular boletos adicionales: la orden ya contiene todos los boletos (comprados + regalo)
+        // Si numeroOportunidades = 5, cada boleto comprado genera 4 de regalo
+        // Total = boletosComprados * numeroOportunidades
+        // Entonces: boletosRegalo = total * (numeroOportunidades - 1) / numeroOportunidades
         const orderGiftTickets = (raffle?.boletosConOportunidades && raffle.numeroOportunidades > 1)
-            ? orderTicketsCount * (raffle.numeroOportunidades - 1)
+            ? Math.floor(orderTicketsCount * (raffle.numeroOportunidades - 1) / raffle.numeroOportunidades)
             : 0;
+        
+        // Boletos comprados originalmente (sin regalos)
+        const orderPurchasedTickets = orderTicketsCount - orderGiftTickets;
 
         return (
             <PageAnimator>
@@ -397,7 +403,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 <div>
                                     <p className="text-slate-400">Boletos</p>
                                     <p className="text-white font-semibold">
-                                        {orderTicketsCount}
+                                        {orderPurchasedTickets}
                                         {orderGiftTickets > 0 ? ` + ${orderGiftTickets} regalo` : ''}
                                     </p>
                                 </div>
