@@ -355,6 +355,11 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
         const isPaypalPayment = orderPaymentMethod === 'paypal';
         const orderTicketsCount = createdOrder.tickets?.length || baseTicketsCount;
         const orderTotal = createdOrder.total || total;
+        
+        // Calcular boletos adicionales basándose en los boletos reales de la orden
+        const orderGiftTickets = (raffle?.boletosConOportunidades && raffle.numeroOportunidades > 1)
+            ? orderTicketsCount * (raffle.numeroOportunidades - 1)
+            : 0;
 
         return (
             <PageAnimator>
@@ -393,7 +398,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                     <p className="text-slate-400">Boletos</p>
                                     <p className="text-white font-semibold">
                                         {orderTicketsCount}
-                                        {boletosAdicionales > 0 ? ` + ${boletosAdicionales} regalo` : ''}
+                                        {orderGiftTickets > 0 ? ` + ${orderGiftTickets} regalo` : ''}
                                     </p>
                                 </div>
                                 <div className="text-right">
