@@ -61,10 +61,42 @@ export class AdminService {
       where: { status: 'active' },
     });
 
+    // Estadísticas por método de pago (solo órdenes pagadas)
+    const paymentMethodStats = await this.prisma.order.groupBy({
+      by: ['paymentMethod'],
+      where: {
+        status: 'PAID',
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        total: true,
+      },
+    });
+
+    const paypalStats = paymentMethodStats.find(s => s.paymentMethod === 'paypal') || { _count: { id: 0 }, _sum: { total: 0 } };
+    const transferStats = paymentMethodStats.find(s => s.paymentMethod === 'transfer') || { _count: { id: 0 }, _sum: { total: 0 } };
+    const otherStats = paymentMethodStats.find(s => s.paymentMethod && s.paymentMethod !== 'paypal' && s.paymentMethod !== 'transfer') || { _count: { id: 0 }, _sum: { total: 0 } };
+
     return {
       todaySales: todaySales._sum.total || 0,
       pendingOrders,
       activeRaffles,
+      paymentMethods: {
+        paypal: {
+          count: paypalStats._count.id,
+          total: paypalStats._sum.total || 0,
+        },
+        transfer: {
+          count: transferStats._count.id,
+          total: transferStats._sum.total || 0,
+        },
+        other: {
+          count: otherStats._count.id,
+          total: otherStats._sum.total || 0,
+        },
+      },
     };
   }
 

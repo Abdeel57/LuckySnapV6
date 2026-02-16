@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Ticket, Users, BarChart3, Calendar, DollarSign, List, TrendingUp, Clock, CheckCircle, AlertCircle, Package, Activity } from 'lucide-react';
+import { Ticket, Users, BarChart3, Calendar, DollarSign, List, TrendingUp, Clock, CheckCircle, AlertCircle, Package, Activity, CreditCard, ArrowLeftRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MetaPixelManager from '../../components/admin/MetaPixelManager';
 import { getDashboardStats, getOrders, getRaffles } from '../../services/api';
@@ -39,6 +39,11 @@ interface DashboardStats {
     todaySales: number;
     pendingOrders: number;
     activeRaffles: number;
+    paymentMethods?: {
+        paypal: { count: number; total: number };
+        transfer: { count: number; total: number };
+        other: { count: number; total: number };
+    };
 }
 
 const StatCard = ({ 
@@ -372,6 +377,54 @@ const AdminDashboardPage: React.FC = () => {
                                     color="bg-gradient-to-r from-blue-500 to-blue-600"
                                 />
                             </div>
+
+                            {/* Estadísticas por Método de Pago */}
+                            {stats?.paymentMethods && (
+                                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200">
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <CreditCard className="w-5 h-5 text-blue-600" />
+                                        Métodos de Pago
+                                    </h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <CreditCard className="w-5 h-5 text-blue-600" />
+                                                <h3 className="font-semibold text-blue-900">Tarjeta (PayPal)</h3>
+                                            </div>
+                                            <p className="text-2xl font-bold text-blue-900 mb-1">
+                                                {stats.paymentMethods.paypal.count}
+                                            </p>
+                                            <p className="text-sm text-blue-700">
+                                                L. {stats.paymentMethods.paypal.total.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <ArrowLeftRight className="w-5 h-5 text-green-600" />
+                                                <h3 className="font-semibold text-green-900">Transferencia</h3>
+                                            </div>
+                                            <p className="text-2xl font-bold text-green-900 mb-1">
+                                                {stats.paymentMethods.transfer.count}
+                                            </p>
+                                            <p className="text-sm text-green-700">
+                                                L. {stats.paymentMethods.transfer.total.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Clock className="w-5 h-5 text-gray-600" />
+                                                <h3 className="font-semibold text-gray-900">Otros</h3>
+                                            </div>
+                                            <p className="text-2xl font-bold text-gray-900 mb-1">
+                                                {stats.paymentMethods.other.count}
+                                            </p>
+                                            <p className="text-sm text-gray-700">
+                                                L. {stats.paymentMethods.other.total.toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Contenido en dos columnas - Optimizado para móvil */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

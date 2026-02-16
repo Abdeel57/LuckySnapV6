@@ -9,7 +9,9 @@ import {
   RefreshCw,
   FileText,
   Download as DownloadIcon,
-  Clock
+  Clock,
+  CreditCard,
+  ArrowLeftRight
 } from 'lucide-react';
 import { Order, Raffle, Settings } from '../../types';
 import { getOrders, updateOrder, deleteOrder, markOrderPaid, releaseOrder, getSettings } from '../../services/api';
@@ -26,6 +28,7 @@ const AdminOrdersPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchType, setSearchType] = useState<'folio' | 'cliente' | 'boleto'>('folio');
     const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>(''); // 'paypal', 'transfer', o '' para todos
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -103,6 +106,9 @@ const AdminOrdersPage: React.FC = () => {
         // Filtrar por rifa si está seleccionada
         if (selectedRaffleId && order.raffleId !== selectedRaffleId) return;
         
+        // Filtrar por método de pago si está seleccionado
+        if (selectedPaymentMethod && order.paymentMethod !== selectedPaymentMethod) return;
+        
         // Filtrar por búsqueda según tipo seleccionado
         const matchesSearch = (() => {
             if (!searchTerm) return true;
@@ -145,6 +151,43 @@ const AdminOrdersPage: React.FC = () => {
     });
     
     const filteredOrders = Array.from(filteredOrdersMap.values());
+
+    // Helper para obtener el badge del método de pago
+    const getPaymentMethodBadge = (paymentMethod: string | null | undefined) => {
+        if (!paymentMethod) {
+            return {
+                label: 'Sin método',
+                icon: Clock,
+                className: 'bg-gray-100 text-gray-700 border-gray-300',
+                iconColor: 'text-gray-600'
+            };
+        }
+        
+        switch (paymentMethod.toLowerCase()) {
+            case 'paypal':
+                return {
+                    label: 'Tarjeta (PayPal)',
+                    icon: CreditCard,
+                    className: 'bg-blue-100 text-blue-700 border-blue-300',
+                    iconColor: 'text-blue-600'
+                };
+            case 'transfer':
+            case 'transferencia':
+                return {
+                    label: 'Transferencia',
+                    icon: ArrowLeftRight,
+                    className: 'bg-green-100 text-green-700 border-green-300',
+                    iconColor: 'text-green-600'
+                };
+            default:
+                return {
+                    label: paymentMethod,
+                    icon: Clock,
+                    className: 'bg-gray-100 text-gray-700 border-gray-300',
+                    iconColor: 'text-gray-600'
+                };
+        }
+    };
 
     // Abrir modal de método de pago
     const handleOpenPaymentModal = (orderId: string) => {
@@ -367,6 +410,19 @@ const AdminOrdersPage: React.FC = () => {
                             </select>
                         </div>
 
+                        {/* Filtro por método de pago */}
+                        <div className="w-full md:w-auto md:min-w-[180px]">
+                            <select
+                                value={selectedPaymentMethod}
+                                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            >
+                                <option value="">Todos los métodos</option>
+                                <option value="paypal">Tarjeta (PayPal)</option>
+                                <option value="transfer">Transferencia</option>
+                            </select>
+                        </div>
+
                         {/* Tipo de búsqueda */}
                         <div className="w-full md:w-auto md:min-w-[150px]">
                             <select
@@ -422,7 +478,19 @@ const AdminOrdersPage: React.FC = () => {
                                                 </span>
                                             </div>
                                         )}
-                                        <h3 className="text-lg font-bold text-gray-900 mb-2">{order.folio}</h3>
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">{order.folio}</h3>
+                                            {(() => {
+                                                const paymentBadge = getPaymentMethodBadge(order.paymentMethod);
+                                                const IconComponent = paymentBadge.icon;
+                                                return (
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${paymentBadge.className} whitespace-nowrap`}>
+                                                        <IconComponent className={`w-3.5 h-3.5 ${paymentBadge.iconColor}`} />
+                                                        {paymentBadge.label}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
                                         <div className="space-y-1 text-sm text-gray-600">
                                             {order.customer && (
                                                 <>
@@ -431,7 +499,7 @@ const AdminOrdersPage: React.FC = () => {
                                                 </>
                                             )}
                                             <p>🎫 Boletos: {order.tickets?.join(', ') || 'N/A'}</p>
-                                            <p className="font-bold text-green-600">💰 ${(order.totalAmount || order.total || 0).toLocaleString()}</p>
+                                            <p className="font-bold text-green-600">💰 L. {(order.totalAmount || order.total || 0).toLocaleString()}</p>
                                         </div>
                                     </div>
 
@@ -550,8 +618,23 @@ const AdminOrdersPage: React.FC = () => {
                                             <div>
                                                 <span className="text-sm text-gray-600">Total:</span>
                                                 <p className="font-bold text-green-600">
-                                                    ${(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}
+                                                    L. {(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}
                                                 </p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <span className="text-sm text-gray-600">Método de Pago:</span>
+                                                {(() => {
+                                                    const paymentBadge = getPaymentMethodBadge((selectedOrder as any).paymentMethod);
+                                                    const IconComponent = paymentBadge.icon;
+                                                    return (
+                                                        <div className="mt-1">
+                                                            <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border ${paymentBadge.className}`}>
+                                                                <IconComponent className={`w-4 h-4 ${paymentBadge.iconColor}`} />
+                                                                {paymentBadge.label}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
