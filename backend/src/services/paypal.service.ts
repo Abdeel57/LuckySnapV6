@@ -117,8 +117,8 @@ export class PayPalService {
           brandName: 'Lucky Snap',
           landingPage: OrderApplicationContextLandingPage.Billing,
           userAction: OrderApplicationContextUserAction.PayNow,
-          returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/comprobante/${orderId}`,
-          cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/purchase/${orderId}`,
+          returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/comprobante/${orderId}`,
+          cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/purchase/${orderId}`,
         } as OrderApplicationContext,
       };
 
