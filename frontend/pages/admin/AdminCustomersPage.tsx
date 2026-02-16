@@ -68,6 +68,43 @@ const AdminCustomersPage: React.FC = () => {
         return s === 'PAID' || s === 'COMPLETED';
     };
 
+    // Helper para obtener el badge del método de pago
+    const getPaymentMethodBadge = (paymentMethod: string | null | undefined) => {
+        if (!paymentMethod) {
+            return {
+                label: 'Sin método',
+                icon: Clock,
+                className: 'bg-gray-100 text-gray-700 border-gray-300',
+                iconColor: 'text-gray-600'
+            };
+        }
+        
+        switch (paymentMethod.toLowerCase()) {
+            case 'paypal':
+                return {
+                    label: 'Tarjeta',
+                    icon: CreditCard,
+                    className: 'bg-blue-100 text-blue-700 border-blue-300',
+                    iconColor: 'text-blue-600'
+                };
+            case 'transfer':
+            case 'transferencia':
+                return {
+                    label: 'Transferencia',
+                    icon: ArrowLeftRight,
+                    className: 'bg-green-100 text-green-700 border-green-300',
+                    iconColor: 'text-green-600'
+                };
+            default:
+                return {
+                    label: paymentMethod,
+                    icon: Clock,
+                    className: 'bg-gray-100 text-gray-700 border-gray-300',
+                    iconColor: 'text-gray-600'
+                };
+        }
+    };
+
     // Calcular estadísticas por rifa
     const rafflesWithStats = useMemo(() => {
         const paidOrders = orders.filter(o => isPaid(String(o.status)));
