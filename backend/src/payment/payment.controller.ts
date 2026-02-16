@@ -73,16 +73,30 @@ export class PaymentController {
       };
     } catch (error: any) {
       console.error('❌ Error en createPayPalOrder:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error constructor:', error?.constructor?.name);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Error statusCode:', error?.statusCode);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
       
       // Si ya es una excepción HTTP de NestJS, re-lanzarla
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
       
+      // Extraer mensaje de error más detallado
+      let errorMessage = error?.message || 'Error desconocido';
+      if (error?.response?.body) {
+        const body = typeof error.response.body === 'string' 
+          ? JSON.parse(error.response.body) 
+          : error.response.body;
+        errorMessage = body?.message || body?.error_description || body?.details?.[0]?.description || errorMessage;
+      }
+      
       // Si no, convertir a BadRequestException
       throw new BadRequestException(
-        `Error al crear orden de PayPal: ${error.message || 'Error desconocido'}`
+        `Error al crear orden de PayPal: ${errorMessage}`
       );
     }
   }
