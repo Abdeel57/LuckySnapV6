@@ -99,17 +99,42 @@ export class PayPalService {
 
       // Convertir HNL a USD (tasa aproximada, ajustar según necesidad)
       const exchangeRate = parseFloat(process.env.PAYPAL_EXCHANGE_RATE || '24.7');
-      const amountUSD = (amount / exchangeRate).toFixed(2);
+      let amountUSD = parseFloat((amount / exchangeRate).toFixed(2));
+      
+      // Validar monto mínimo de PayPal ($0.01 USD)
+      if (amountUSD < 0.01) {
+        throw new BadRequestException(
+          `El monto mínimo para PayPal es $0.01 USD. Monto calculado: $${amountUSD.toFixed(2)} USD (L. ${amount})`
+        );
+      }
+      
+      // Asegurar que el monto tenga exactamente 2 decimales
+      const amountUSDString = amountUSD.toFixed(2);
+
+      // Validar y limpiar FRONTEND_URL
+      let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      // Remover trailing slash y hash
+      frontendUrl = frontendUrl.replace(/\/$/, '').replace(/#.*$/, '');
+      
+      // Validar que las URLs sean válidas
+      try {
+        new URL(frontendUrl);
+      } catch (e) {
+        throw new BadRequestException(`FRONTEND_URL inválida: ${frontendUrl}`);
+      }
+
+      const returnUrl = `${frontendUrl}/comprobante/${orderId}`;
+      const cancelUrl = `${frontendUrl}/purchase/${orderId}`;
 
       const orderRequest: OrderRequest = {
         intent: CheckoutPaymentIntent.Capture,
         purchaseUnits: [
           {
-            referenceId: orderId,
-            description: `Compra de boletos - Orden ${orderId}`,
+            referenceId: orderId.substring(0, 50), // PayPal limita a 50 caracteres
+            description: `Compra de boletos - Orden ${orderId}`.substring(0, 127), // PayPal limita a 127 caracteres
             amount: {
               currencyCode: currency,
-              value: amountUSD,
+              value: amountUSDString,
             } as Money,
           } as PurchaseUnitRequest,
         ],
@@ -117,19 +142,22 @@ export class PayPalService {
           brandName: 'Lucky Snap',
           landingPage: OrderApplicationContextLandingPage.Billing,
           userAction: OrderApplicationContextUserAction.PayNow,
-          returnUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/comprobante/${orderId}`,
-          cancelUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/purchase/${orderId}`,
+          returnUrl: returnUrl,
+          cancelUrl: cancelUrl,
         } as OrderApplicationContext,
       };
 
       console.log('📤 Creando orden en PayPal con:', {
         orderId,
         amountHNL: amount,
-        amountUSD,
+        amountUSD: amountUSDString,
         currency,
         mode: this.mode,
         hasClient: !!this.client,
         hasController: !!this.ordersController,
+        frontendUrl,
+        returnUrl,
+        cancelUrl,
         orderRequest: JSON.stringify(orderRequest, null, 2),
       });
 
