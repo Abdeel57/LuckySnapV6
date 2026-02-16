@@ -10,6 +10,8 @@ import {
     Ticket,
     ArrowLeft,
     Users,
+    CreditCard,
+    ArrowLeftRight,
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
 import { getOrders, updateOrder, releaseOrder, getRaffles } from '../../services/api';
@@ -416,13 +418,23 @@ const AdminCustomersPage: React.FC = () => {
                                                         </a>
                                                     )}
                                                 </div>
-                                                {order.folio && (
-                                                    <div className="flex-shrink-0">
+                                                <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                                    {order.folio && (
                                                         <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-700">
                                                             {order.folio}
                                                         </span>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                    {(() => {
+                                                        const paymentBadge = getPaymentMethodBadge((order as any).paymentMethod);
+                                                        const IconComponent = paymentBadge.icon;
+                                                        return (
+                                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${paymentBadge.className} whitespace-nowrap`}>
+                                                                <IconComponent className={`w-3.5 h-3.5 ${paymentBadge.iconColor}`} />
+                                                                {paymentBadge.label}
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
@@ -541,7 +553,22 @@ const AdminCustomersPage: React.FC = () => {
                                             )}
                                             <div>
                                                 <span className="text-sm text-gray-600">Monto:</span>
-                                                <p className="font-bold text-green-600">${(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}</p>
+                                                <p className="font-bold text-green-600">L. {(selectedOrder.totalAmount || selectedOrder.total || 0).toLocaleString()}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <span className="text-sm text-gray-600">Método de Pago:</span>
+                                                {(() => {
+                                                    const paymentBadge = getPaymentMethodBadge((selectedOrder as any).paymentMethod);
+                                                    const IconComponent = paymentBadge.icon;
+                                                    return (
+                                                        <div className="mt-1">
+                                                            <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border ${paymentBadge.className}`}>
+                                                                <IconComponent className={`w-4 h-4 ${paymentBadge.iconColor}`} />
+                                                                {paymentBadge.label}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </div>
