@@ -369,75 +369,113 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
 
         return (
             <PageAnimator>
-                <div className="container mx-auto px-4 py-8 max-w-3xl">
-                    <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-accent to-action rounded-full mb-4">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                        </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">
+                <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-2xl">
+                    {/* Header minimalista */}
+                    <div className="text-center mb-8">
+                        {createdOrder.status === 'PAID' ? (
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-full mb-5 border border-green-500/30">
+                                <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        ) : (
+                            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-action/20 to-accent/20 rounded-full mb-5 border border-action/30">
+                                <svg className="w-10 h-10 text-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                        )}
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                             {createdOrder.status === 'PAID' ? '¡Pago completado!' : 'Completa tu pago'}
                         </h1>
-                        <p className="text-slate-300 text-sm sm:text-base">
+                        <p className="text-slate-400 text-sm sm:text-base">
                             {isPaypalPayment
-                                ? 'Paga con tarjeta de forma segura.'
-                                : 'Realiza la transferencia y envía tu comprobante.'}
+                                ? 'Pago seguro procesado por PayPal'
+                                : 'Realiza la transferencia y envía tu comprobante'}
                         </p>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="bg-background-secondary p-5 rounded-2xl border border-slate-700/50">
-                            <div className="flex items-center justify-between gap-4 mb-4">
-                                <div>
-                                    <p className="text-slate-400 text-xs">Folio</p>
-                                    <p className="text-white font-mono text-lg">{createdOrder.folio}</p>
+                    <div className="space-y-5">
+                        {/* Resumen de orden - diseño minimalista */}
+                        <div className="bg-background-secondary/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-slate-700/30 shadow-lg">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5 pb-5 border-b border-slate-700/30">
+                                <div className="flex-1">
+                                    <p className="text-slate-500 text-xs font-medium mb-1.5 uppercase tracking-wide">Folio de orden</p>
+                                    <p className="text-white font-mono text-base sm:text-lg font-semibold">{createdOrder.folio}</p>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                    createdOrder.status === 'PAID' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                                <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold w-fit ${
+                                    createdOrder.status === 'PAID' 
+                                        ? 'bg-green-500/15 text-green-400 border border-green-500/30' 
+                                        : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
                                 }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full mr-2 ${
+                                        createdOrder.status === 'PAID' ? 'bg-green-400' : 'bg-yellow-400'
+                                    }`}></span>
                                     {createdOrder.status === 'PAID' ? 'Pagado' : 'Pendiente'}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            
+                            <div className="grid grid-cols-2 gap-4 sm:gap-6">
                                 <div>
-                                    <p className="text-slate-400">Boletos</p>
-                                    <p className="text-white font-semibold">
+                                    <p className="text-slate-500 text-xs font-medium mb-2 uppercase tracking-wide">Boletos</p>
+                                    <p className="text-white font-semibold text-lg sm:text-xl">
                                         {orderPurchasedTickets}
-                                        {orderGiftTickets > 0 ? ` + ${orderGiftTickets} regalo` : ''}
+                                        {orderGiftTickets > 0 && (
+                                            <span className="text-accent ml-1.5 text-base">
+                                                +{orderGiftTickets} regalo
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-slate-400">Total</p>
-                                    <p className="text-accent font-bold text-lg">LPS {orderTotal.toFixed(2)}</p>
+                                    <p className="text-slate-500 text-xs font-medium mb-2 uppercase tracking-wide">Total</p>
+                                    <p className="text-accent font-bold text-xl sm:text-2xl">L. {orderTotal.toFixed(2)}</p>
                                 </div>
                             </div>
+                            
                             {orderPaymentMethod === 'transfer' && (
-                                <p className="text-slate-300 text-xs mt-3">
-                                    Usa el folio como concepto de pago en tu transferencia.
-                                </p>
+                                <div className="mt-4 pt-4 border-t border-slate-700/30">
+                                    <p className="text-slate-400 text-xs flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Usa el folio como concepto de pago en tu transferencia
+                                    </p>
+                                </div>
                             )}
                         </div>
 
                         {createdOrder.status === 'PAID' ? (
-                            <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 p-6 rounded-2xl border border-green-500/50 shadow-xl text-center">
-                                <div className="mb-4">
-                                    <svg className="w-16 h-16 text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                            <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 backdrop-blur-sm p-6 sm:p-8 rounded-2xl border border-green-500/30 shadow-xl text-center">
+                                <div className="mb-5">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500/20 rounded-full">
+                                        <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">¡Pago Completado!</h3>
-                                <p className="text-slate-300 mb-6">Tu compra ha sido confirmada exitosamente.</p>
+                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">¡Pago Completado!</h3>
+                                <p className="text-slate-400 text-sm mb-6">Tu compra ha sido confirmada exitosamente.</p>
                                 <button
                                     onClick={() => navigate(`/#/comprobante/${createdOrder.folio}`)}
-                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-[0.98]"
                                 >
                                     Ver Comprobante
                                 </button>
                             </div>
                         ) : isPaypalPayment ? (
-                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-                                <h3 className="text-xl font-bold text-white mb-4">Pago con tarjeta</h3>
+                            <div className="bg-background-secondary/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-slate-700/30 shadow-lg">
+                                <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-700/30">
+                                    <div className="flex items-center justify-center w-10 h-10 bg-action/20 rounded-lg">
+                                        <svg className="w-5 h-5 text-action" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Pago con tarjeta</h3>
+                                        <p className="text-slate-400 text-xs">Procesado de forma segura por PayPal</p>
+                                    </div>
+                                </div>
                                 <PayPalCheckout
                                     orderId={createdOrder.id}
                                     amount={orderTotal}
@@ -453,10 +491,20 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 />
                             </div>
                         ) : (
-                            <div className="bg-gradient-to-br from-background-secondary to-background-primary p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-                                <h3 className="text-xl font-bold text-white mb-3">Transferencia bancaria</h3>
-                                <p className="text-slate-300 text-sm mb-5">
-                                    Realiza la transferencia por <span className="text-accent font-semibold">LPS {orderTotal.toFixed(2)}</span> y envía tu comprobante.
+                            <div className="bg-background-secondary/80 backdrop-blur-sm p-5 sm:p-6 rounded-2xl border border-slate-700/30 shadow-lg">
+                                <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-700/30">
+                                    <div className="flex items-center justify-center w-10 h-10 bg-accent/20 rounded-lg">
+                                        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Transferencia bancaria</h3>
+                                        <p className="text-slate-400 text-xs">Realiza tu transferencia y envía el comprobante</p>
+                                    </div>
+                                </div>
+                                <p className="text-slate-300 text-sm mb-6">
+                                    Realiza la transferencia por <span className="text-accent font-semibold text-base">L. {orderTotal.toFixed(2)}</span> y envía tu comprobante.
                                 </p>
 
                                 {paymentAccounts.length > 0 ? (
@@ -471,24 +519,27 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                             };
 
                                             return (
-                                                <div key={acc.id} className="bg-background-primary p-4 rounded-xl border border-slate-700/50">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h4 className="font-bold text-white">{acc.bank}</h4>
+                                                <div key={acc.id} className="bg-background-primary/60 p-4 rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <h4 className="font-semibold text-white text-base">{acc.bank}</h4>
                                                     </div>
-                                                    <div className="space-y-2 text-sm">
-                                                        <div className="flex justify-between">
-                                                            <span className="text-slate-400">Titular:</span>
-                                                            <span className="text-white font-semibold">{acc.accountHolder}</span>
+                                                    <div className="space-y-2.5 text-sm">
+                                                        <div className="flex justify-between items-center py-1.5">
+                                                            <span className="text-slate-500 text-xs uppercase tracking-wide">Titular</span>
+                                                            <span className="text-white font-medium">{acc.accountHolder}</span>
                                                         </div>
                                                         {acc.accountNumber && (
                                                             <div 
-                                                                className="flex justify-between cursor-pointer hover:bg-slate-800/50 p-2 rounded-lg transition-colors"
+                                                                className="flex justify-between items-center py-1.5 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-slate-800/30 transition-colors group"
                                                                 onClick={copyAccountNumber}
                                                                 title="Click para copiar"
                                                             >
-                                                                <span className="text-slate-400">No. Cuenta:</span>
-                                                                <span className="text-white font-mono hover:text-accent transition-colors">
-                                                                    {acc.accountNumber} 📋
+                                                                <span className="text-slate-500 text-xs uppercase tracking-wide">No. Cuenta</span>
+                                                                <span className="text-white font-mono text-base group-hover:text-accent transition-colors flex items-center gap-2">
+                                                                    {acc.accountNumber}
+                                                                    <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                                    </svg>
                                                                 </span>
                                                             </div>
                                                         )}
@@ -498,7 +549,9 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                         })}
                                     </div>
                                 ) : (
-                                    <p className="text-slate-400 text-sm mb-6">No hay cuentas configuradas para transferencia.</p>
+                                    <div className="bg-background-primary/30 p-4 rounded-xl border border-slate-700/20 mb-6">
+                                        <p className="text-slate-400 text-sm text-center">No hay cuentas configuradas para transferencia.</p>
+                                    </div>
                                 )}
 
                                 {(() => {
@@ -523,8 +576,11 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                             href={whatsappUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-6 rounded-xl hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center"
+                                            className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3.5 px-6 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
                                         >
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                                            </svg>
                                             Enviar comprobante por WhatsApp
                                         </a>
                                     );

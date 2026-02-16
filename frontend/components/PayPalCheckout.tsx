@@ -262,25 +262,28 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   if (isCardVariant && isTokenLoading) {
     return (
       <div className="w-full">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="mb-4 text-center">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+        <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200/50 shadow-sm">
+          <div className="mb-5 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-full mb-3">
+              <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
               Completa tu pago con tarjeta
             </h3>
-            <p className="text-gray-600 text-sm">
-              Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
-              {' '}
-              <span className="text-gray-500">
-                (${amountUSD.toFixed(2)} USD aprox.)
-              </span>
-            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <p className="text-gray-700 text-sm">
+                Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
+              </p>
+              <span className="text-gray-400">•</span>
+              <p className="text-gray-500 text-xs">
+                ${amountUSD.toFixed(2)} USD aprox.
+              </p>
+            </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-blue-800">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <p className="font-semibold">Preparando pago con tarjeta...</p>
-            </div>
+          <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-4 flex items-center justify-center gap-2.5">
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            <p className="text-sm text-blue-800 font-medium">Preparando pago con tarjeta...</p>
           </div>
         </div>
       </div>
@@ -304,36 +307,41 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
   return (
     <div className="w-full">
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-800">
-            <AlertCircle className="w-5 h-5" />
-            <p className="font-semibold">Error</p>
+        <div className="mb-4 bg-red-50/80 border border-red-200/50 rounded-lg p-3.5 flex items-start gap-2.5">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-800 text-sm mb-1">Error</p>
+            <p className="text-xs text-red-700 leading-relaxed">{error}</p>
           </div>
-          <p className="text-sm text-red-700 mt-1">{error}</p>
         </div>
       )}
 
       {loading && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-blue-800">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            <p className="font-semibold">Procesando pago...</p>
-          </div>
+        <div className="mb-4 bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 flex items-center gap-2.5">
+          <Loader2 className="w-5 h-5 text-blue-600 animate-spin flex-shrink-0" />
+          <p className="font-medium text-blue-800 text-sm">Procesando pago...</p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <div className="mb-4 text-center">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
+      <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-200/50 shadow-sm">
+        <div className="mb-5 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-full mb-3">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
             {isCardVariant ? 'Completa tu pago con tarjeta' : 'Completa tu pago con PayPal'}
           </h3>
-          <p className="text-gray-600 text-sm">
-            Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
-            {' '}
-            <span className="text-gray-500">
-              (${amountUSD.toFixed(2)} USD aprox.)
-            </span>
-          </p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-gray-700 text-sm">
+              Monto: <span className="font-bold text-lg text-blue-600">L. {amount.toFixed(2)}</span>
+            </p>
+            <span className="text-gray-400">•</span>
+            <p className="text-gray-500 text-xs">
+              ${amountUSD.toFixed(2)} USD aprox.
+            </p>
+          </div>
         </div>
 
         <PayPalScriptProvider 
@@ -365,11 +373,14 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
             </PayPalCardFieldsProvider>
           ) : (
             <div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-800 text-center">
+              <div className="bg-blue-50/80 border border-blue-200/50 rounded-lg p-3.5 mb-4 flex items-start gap-2.5">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
                   {isCardVariant 
-                    ? '🔒 Serás redirigido a PayPal para completar tu pago con tarjeta de forma segura. No necesitas cuenta PayPal.'
-                    : '🔒 Serás redirigido a PayPal para completar tu pago de forma segura.'}
+                    ? 'Serás redirigido a PayPal para completar tu pago con tarjeta de forma segura. No necesitas cuenta PayPal.'
+                    : 'Serás redirigido a PayPal para completar tu pago de forma segura.'}
                 </p>
               </div>
               <PayPalButtons
@@ -399,13 +410,20 @@ const PayPalCheckout: React.FC<PayPalCheckoutProps> = ({
           )}
         </PayPalScriptProvider>
 
-        <p className="text-xs text-gray-500 text-center mt-4">
-          {useCardFields
-            ? 'Tus datos de tarjeta se procesan de forma segura por PayPal.'
-            : isCardVariant
-            ? '💳 Puedes pagar con cualquier tarjeta de crédito o débito. PayPal procesa el pago de forma segura.'
-            : 'Al hacer clic en el botón, serás redirigido a PayPal para completar tu pago de forma segura.'}
-        </p>
+        <div className="mt-5 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <p className="text-center">
+              {useCardFields
+                ? 'Tus datos se procesan de forma segura por PayPal'
+                : isCardVariant
+                ? 'Puedes pagar con cualquier tarjeta. PayPal procesa el pago de forma segura'
+                : 'Pago procesado de forma segura por PayPal'}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
