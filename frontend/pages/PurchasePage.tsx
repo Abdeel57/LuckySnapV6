@@ -479,14 +479,15 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 <PayPalCheckout
                                     orderId={createdOrder.id}
                                     amount={orderTotal}
-                                    onSuccess={() => {
+                                    onSuccess={async () => {
+                                        // Actualizar el estado local para mostrar confirmación
                                         setCreatedOrder({ ...createdOrder, status: 'PAID' });
-                                        setTimeout(() => {
-                                            navigate(`/#/comprobante/${createdOrder.folio}`);
-                                        }, 1500);
+                                        // Redirigir inmediatamente al comprobante
+                                        navigate(`/#/comprobante/${createdOrder.folio}`);
                                     }}
                                     onError={(error) => {
                                         console.error('Error en PayPal:', error);
+                                        alert(`Error al procesar el pago: ${error}`);
                                     }}
                                 />
                             </div>

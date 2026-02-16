@@ -92,12 +92,18 @@ const AdminOrdersPage: React.FC = () => {
         setRefreshing(false);
     };
 
-    // Filtrar órdenes - SOLO PENDING con deduplicación adicional
+    // Filtrar órdenes - SOLO PENDING de TRANSFERENCIA (no PayPal)
+    // Las órdenes PayPal se manejan automáticamente y van directo a Clientes
     const filteredOrdersMap = new Map<string | undefined, Order>();
     
     orders.forEach(order => {
         // Solo mostrar órdenes PENDING
         if (order.status !== 'PENDING') return;
+        
+        // Excluir órdenes PayPal - estas se procesan automáticamente
+        // Solo mostrar órdenes de transferencia (o sin método de pago definido)
+        const paymentMethod = (order as any).paymentMethod?.toLowerCase();
+        if (paymentMethod === 'paypal') return; // No mostrar órdenes PayPal en apartados
         
         // Validar que customer existe
         if (!order.customer) return;
