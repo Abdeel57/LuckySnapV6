@@ -122,6 +122,17 @@ export class PayPalService {
         } as OrderApplicationContext,
       };
 
+      console.log('📤 Creando orden en PayPal con:', {
+        orderId,
+        amountHNL: amount,
+        amountUSD,
+        currency,
+        mode: this.mode,
+        hasClient: !!this.client,
+        hasController: !!this.ordersController,
+        orderRequest: JSON.stringify(orderRequest, null, 2),
+      });
+
       const response = await this.ordersController.createOrder({
         body: orderRequest,
         prefer: 'return=representation',
@@ -130,14 +141,21 @@ export class PayPalService {
       const order = response.result;
       
       if (!order || !order.id) {
+        console.error('❌ PayPal response sin order ID:', JSON.stringify(response, null, 2));
         throw new Error('PayPal no devolvió un Order ID válido');
       }
 
       const approvalUrl = order.links?.find(link => link.rel === 'approve')?.href;
       
       if (!approvalUrl) {
+        console.error('❌ PayPal order sin approval URL:', JSON.stringify(order, null, 2));
         throw new Error('PayPal no devolvió URL de aprobación');
       }
+
+      console.log('✅ Orden PayPal creada exitosamente:', {
+        paypalOrderId: order.id,
+        approvalUrl,
+      });
 
       return {
         paypalOrderId: order.id,
@@ -145,17 +163,43 @@ export class PayPalService {
       };
     } catch (error: any) {
       console.error('❌ Error creando orden PayPal:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error type:', typeof error);
+      console.error('❌ Error constructor:', error?.constructor?.name);
+      console.error('❌ Error message:', error?.message);
+      console.error('❌ Error statusCode:', error?.statusCode);
+      console.error('❌ Error response:', error?.response);
+      console.error('❌ Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
       
-      // Si es un error de la API de PayPal, extraer más detalles
-      if (error.response) {
+      // Intentar extraer más información del error
+      let errorDetails = error?.message || 'Error desconocido';
+      
+      if (error?.response) {
         console.error('❌ PayPal API Error Response:', JSON.stringify(error.response, null, 2));
+        if (error.response.body) {
+          try {
+            const body = typeof error.response.body === 'string' 
+              ? JSON.parse(error.response.body) 
+              : error.response.body;
+            errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+            console.error('❌ PayPal Error Body:', JSON.stringify(body, null, 2));
+          } catch (e) {
+            console.error('❌ Error parsing response body:', e);
+          }
+        }
       }
       
-      const errorMessage = error.message || error.toString() || 'Error desconocido';
+      if (error?.body) {
+        try {
+          const body = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+          errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+          console.error('❌ PayPal Error Body (direct):', JSON.stringify(body, null, 2));
+        } catch (e) {
+          console.error('❌ Error parsing error body:', e);
+        }
+      }
+      
       throw new BadRequestException(
-        `Error al crear orden de PayPal: ${errorMessage}`
+        `Error al crear orden de PayPal: ${errorDetails}`
       );
     }
   }
