@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent, Configuration, Environment, OrderApplicationContextLandingPage, OrderApplicationContextUserAction } from '@paypal/paypal-server-sdk';
+import { Client, OrdersController, OrderRequest, OrderApplicationContext, PurchaseUnitRequest, Money, Order, CheckoutPaymentIntent, Configuration, Environment, OrderApplicationContextLandingPage, OrderApplicationContextUserAction, Item } from '@paypal/paypal-server-sdk';
 
 @Injectable()
 export class PayPalService {
@@ -123,27 +123,64 @@ export class PayPalService {
         throw new BadRequestException(`FRONTEND_URL inválida: ${frontendUrl}`);
       }
 
+      // Validar que las URLs sean HTTPS en producción
+      if (this.mode === 'production') {
+        if (!frontendUrl.startsWith('https://')) {
+          throw new BadRequestException(
+            `FRONTEND_URL debe ser HTTPS en producción: ${frontendUrl}`
+          );
+        }
+      }
+
+      // Construir URLs de retorno (sin hash, sin trailing slash)
       const returnUrl = `${frontendUrl}/comprobante/${orderId}`;
       const cancelUrl = `${frontendUrl}/purchase/${orderId}`;
 
+      // Validar que las URLs sean accesibles (al menos que sean URLs válidas)
+      try {
+        const returnUrlObj = new URL(returnUrl);
+        const cancelUrlObj = new URL(cancelUrl);
+        
+        // En producción, las URLs deben ser HTTPS
+        if (this.mode === 'production') {
+          if (returnUrlObj.protocol !== 'https:' || cancelUrlObj.protocol !== 'https:') {
+            throw new BadRequestException('Las URLs de retorno deben ser HTTPS en producción');
+          }
+        }
+      } catch (e: any) {
+        if (e instanceof BadRequestException) throw e;
+        throw new BadRequestException(`URLs inválidas: ${e.message}`);
+      }
+
+      // Crear referencia única para evitar duplicados
+      const referenceId = `LS-${orderId.substring(0, 40)}`; // Máximo 50 caracteres
+      const customId = orderId; // Usar el orderId completo como custom_id para webhooks
+
+      // Construir purchase unit con todos los campos necesarios
+      const purchaseUnit: any = {
+        referenceId: referenceId,
+        description: `Compra de boletos - Orden ${orderId}`.substring(0, 127), // PayPal limita a 127 caracteres
+        amount: {
+          currencyCode: currency,
+          value: amountUSDString,
+        } as Money,
+      };
+
+      // Agregar customId si está disponible (para webhooks)
+      if (customId) {
+        purchaseUnit.customId = customId;
+      }
+
       const orderRequest: OrderRequest = {
         intent: CheckoutPaymentIntent.Capture,
-        purchaseUnits: [
-          {
-            referenceId: orderId.substring(0, 50), // PayPal limita a 50 caracteres
-            description: `Compra de boletos - Orden ${orderId}`.substring(0, 127), // PayPal limita a 127 caracteres
-            amount: {
-              currencyCode: currency,
-              value: amountUSDString,
-            } as Money,
-          } as PurchaseUnitRequest,
-        ],
+        purchaseUnits: [purchaseUnit as PurchaseUnitRequest],
         applicationContext: {
           brandName: 'Lucky Snap',
           landingPage: OrderApplicationContextLandingPage.Billing,
           userAction: OrderApplicationContextUserAction.PayNow,
           returnUrl: returnUrl,
           cancelUrl: cancelUrl,
+          locale: 'es-HN', // Especificar locale para Honduras
         } as OrderApplicationContext,
       };
 
@@ -158,8 +195,25 @@ export class PayPalService {
         frontendUrl,
         returnUrl,
         cancelUrl,
+        referenceId,
+        customId,
+        purchaseUnitCount: orderRequest.purchaseUnits?.length || 0,
         orderRequest: JSON.stringify(orderRequest, null, 2),
       });
+
+      // Validación final antes de enviar
+      if (!orderRequest.purchaseUnits || orderRequest.purchaseUnits.length === 0) {
+        throw new BadRequestException('La orden debe tener al menos una purchase unit');
+      }
+
+      const firstUnit = orderRequest.purchaseUnits[0];
+      if (!firstUnit.amount || !firstUnit.amount.value || !firstUnit.amount.currencyCode) {
+        throw new BadRequestException('La purchase unit debe tener amount válido');
+      }
+
+      if (parseFloat(firstUnit.amount.value) < 0.01) {
+        throw new BadRequestException(`El monto debe ser al menos $0.01 USD. Actual: $${firstUnit.amount.value}`);
+      }
 
       const response = await this.ordersController.createOrder({
         body: orderRequest,
