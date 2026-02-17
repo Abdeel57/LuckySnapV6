@@ -325,8 +325,14 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                 userData: userData
             };
             console.log('🛒 Creating order with data:', orderData);
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PurchasePage.tsx:328',message:'Creando orden con método de pago',data:{paymentMethod:orderData.paymentMethod,raffleId:orderData.raffleId,ticketsCount:orderData.tickets.length,total:orderData.total,userData:orderData.userData},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             const newOrder = await createOrder(orderData);
             console.log('✅ Order created successfully:', newOrder);
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PurchasePage.tsx:330',message:'Orden creada exitosamente',data:{orderId:newOrder.id,folio:newOrder.folio,paymentMethod:(newOrder as any).paymentMethod,status:newOrder.status,hasCustomer:!!newOrder.customer},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             
             // Track Purchase event
             metaPixelService.trackPurchase(newOrder.id, raffle.id, ticketsToOrder, total);

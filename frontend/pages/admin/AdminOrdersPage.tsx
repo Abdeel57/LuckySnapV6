@@ -75,6 +75,9 @@ const AdminOrdersPage: React.FC = () => {
                 duplicates: (ordersData?.length || 0) - uniqueOrders.length,
                 raffles: rafflesData?.length || 0 
             });
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:72',message:'Órdenes cargadas',data:{totalOrders:ordersData?.length||0,uniqueOrders:uniqueOrders.length,ordersWithCustomer:uniqueOrders.filter((o:Order)=>o.customer).length,ordersPending:uniqueOrders.filter((o:Order)=>o.status==='PENDING').length,ordersTransfer:uniqueOrders.filter((o:Order)=>(o as any).paymentMethod==='transfer').length,ordersPaypal:uniqueOrders.filter((o:Order)=>(o as any).paymentMethod==='paypal').length},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
         } catch (error) {
             console.error('❌ Error loading data:', error);
             // Mostrar mensaje de error al usuario
@@ -97,23 +100,49 @@ const AdminOrdersPage: React.FC = () => {
     const filteredOrdersMap = new Map<string | undefined, Order>();
     
     orders.forEach(order => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:99',message:'Evaluando orden para filtro',data:{orderId:order.id,folio:order.folio,status:order.status,paymentMethod:(order as any).paymentMethod,hasCustomer:!!order.customer,customerName:order.customer?.name},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         // Solo mostrar órdenes PENDING
-        if (order.status !== 'PENDING') return;
+        if (order.status !== 'PENDING') {
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:102',message:'Orden filtrada: status no PENDING',data:{orderId:order.id,status:order.status},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            return;
+        }
         
         // Excluir órdenes PayPal - estas se procesan automáticamente
         // Solo mostrar órdenes de transferencia (o sin método de pago definido)
         const paymentMethod = (order as any).paymentMethod?.toLowerCase();
-        if (paymentMethod === 'paypal') return; // No mostrar órdenes PayPal en apartados
+        if (paymentMethod === 'paypal') {
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:106',message:'Orden filtrada: método PayPal',data:{orderId:order.id,paymentMethod},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            return; // No mostrar órdenes PayPal en apartados
+        }
         
-        // Validar que customer existe
-        if (!order.customer) return;
+        // Validar que customer existe (permitir órdenes con customer básico)
+        if (!order.customer) {
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:125',message:'Orden filtrada: sin customer',data:{orderId:order.id,folio:order.folio,hasUser:(order as any).user,userId:(order as any).userId},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            return;
+        }
         
         // Validar búsqueda
         // Filtrar por rifa si está seleccionada
         if (selectedRaffleId && order.raffleId !== selectedRaffleId) return;
         
         // Filtrar por método de pago si está seleccionado
-        if (selectedPaymentMethod && order.paymentMethod !== selectedPaymentMethod) return;
+        // Normalizar paymentMethod para comparación (case-insensitive)
+        const orderPaymentMethod = (order as any).paymentMethod?.toLowerCase() || 'transfer';
+        const selectedPaymentMethodLower = selectedPaymentMethod?.toLowerCase() || '';
+        if (selectedPaymentMethodLower && orderPaymentMethod !== selectedPaymentMethodLower) {
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdminOrdersPage.tsx:137',message:'Orden filtrada: método de pago no coincide',data:{orderId:order.id,orderPaymentMethod,selectedPaymentMethodLower},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            return;
+        }
         
         // Filtrar por búsqueda según tipo seleccionado
         const matchesSearch = (() => {

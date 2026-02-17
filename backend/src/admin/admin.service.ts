@@ -138,18 +138,45 @@ export class AdminService {
       ]);
       
       // Transformar los datos para que coincidan con el frontend
-      const transformedOrders = orders.map(order => ({
-        ...order,
-        customer: {
-          id: order.user.id,
-          name: order.user.name || 'Sin nombre',
-          phone: order.user.phone || 'Sin teléfono',
-          email: order.user.email || '',
-          district: order.user.district || 'Sin distrito',
-        },
-        raffleTitle: order.raffle.title,
-        total: order.total,
-      }));
+      const transformedOrders = orders.map(order => {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin.service.ts:141',message:'Transformando orden',data:{orderId:order.id,folio:order.folio,paymentMethod:order.paymentMethod,hasUser:!!order.user,userId:order.userId,status:order.status},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // Si no hay usuario, intentar obtenerlo o crear un customer por defecto
+        let customer;
+        if (order.user) {
+          customer = {
+            id: order.user.id,
+            name: order.user.name || 'Sin nombre',
+            phone: order.user.phone || 'Sin teléfono',
+            email: order.user.email || '',
+            district: order.user.district || 'Sin distrito',
+          };
+        } else if (order.userId) {
+          // Si hay userId pero no user, crear customer básico
+          // Esto puede pasar si el usuario fue eliminado pero la orden sigue existiendo
+          customer = {
+            id: order.userId,
+            name: 'Usuario no encontrado',
+            phone: 'N/A',
+            email: '',
+            district: '',
+          };
+        } else {
+          // Fallback: customer null solo si no hay userId
+          customer = null;
+        }
+        
+        return {
+          ...order,
+          customer,
+          raffleTitle: order.raffle?.title || 'Sin título',
+          total: order.total,
+          // Asegurar que paymentMethod esté presente (normalizar a 'transfer' si es null/undefined)
+          paymentMethod: order.paymentMethod || 'transfer',
+        };
+      });
       
       return {
         orders: transformedOrders,
