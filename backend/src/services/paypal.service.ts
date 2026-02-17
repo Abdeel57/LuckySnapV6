@@ -254,6 +254,31 @@ export class PayPalService {
       
       // Intentar extraer más información del error
       let errorDetails = error?.message || 'Error desconocido';
+      let errorIssue = null;
+      let errorDescription = null;
+      
+      // Extraer información del error de PayPal
+      if (error?.result) {
+        const result = error.result;
+        errorDetails = result?.message || errorDetails;
+        if (result?.details && result.details.length > 0) {
+          const detail = result.details[0];
+          errorIssue = detail.issue;
+          errorDescription = detail.description;
+          
+          // Mensajes específicos para errores comunes
+          if (errorIssue === 'PAYEE_ACCOUNT_RESTRICTED') {
+            errorDetails = 'La cuenta de PayPal está restringida. Por favor, contacta a PayPal para resolver las restricciones de tu cuenta.';
+          } else if (errorIssue === 'INVALID_REQUEST') {
+            errorDetails = `Solicitud inválida: ${errorDescription || errorDetails}`;
+          } else if (errorIssue === 'UNPROCESSABLE_ENTITY') {
+            errorDetails = `No se pudo procesar la orden: ${errorDescription || errorDetails}`;
+          } else {
+            errorDetails = `${errorDescription || errorDetails} (Código: ${errorIssue})`;
+          }
+        }
+        console.error('❌ PayPal Error Result:', JSON.stringify(result, null, 2));
+      }
       
       if (error?.response) {
         console.error('❌ PayPal API Error Response:', JSON.stringify(error.response, null, 2));
@@ -262,7 +287,22 @@ export class PayPalService {
             const body = typeof error.response.body === 'string' 
               ? JSON.parse(error.response.body) 
               : error.response.body;
-            errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+            
+            if (body?.details && body.details.length > 0) {
+              const detail = body.details[0];
+              errorIssue = detail.issue;
+              errorDescription = detail.description;
+              
+              // Mensajes específicos
+              if (errorIssue === 'PAYEE_ACCOUNT_RESTRICTED') {
+                errorDetails = 'La cuenta de PayPal está restringida. Por favor, contacta a PayPal para resolver las restricciones de tu cuenta.';
+              } else if (errorDescription) {
+                errorDetails = `${errorDescription} (Código: ${errorIssue || 'UNKNOWN'})`;
+              }
+            } else {
+              errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+            }
+            
             console.error('❌ PayPal Error Body:', JSON.stringify(body, null, 2));
           } catch (e) {
             console.error('❌ Error parsing response body:', e);
@@ -273,15 +313,43 @@ export class PayPalService {
       if (error?.body) {
         try {
           const body = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
-          errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+          
+          if (body?.details && body.details.length > 0) {
+            const detail = body.details[0];
+            errorIssue = detail.issue;
+            errorDescription = detail.description;
+            
+            if (errorIssue === 'PAYEE_ACCOUNT_RESTRICTED') {
+              errorDetails = 'La cuenta de PayPal está restringida. Por favor, contacta a PayPal para resolver las restricciones de tu cuenta.';
+            } else if (errorDescription) {
+              errorDetails = `${errorDescription} (Código: ${errorIssue || 'UNKNOWN'})`;
+            }
+          } else {
+            errorDetails = body?.message || body?.error_description || body?.details?.[0]?.description || errorDetails;
+          }
+          
           console.error('❌ PayPal Error Body (direct):', JSON.stringify(body, null, 2));
         } catch (e) {
           console.error('❌ Error parsing error body:', e);
         }
       }
       
+      // Si es un error de cuenta restringida, dar instrucciones más claras
+      if (errorIssue === 'PAYEE_ACCOUNT_RESTRICTED') {
+        throw new BadRequestException(
+          `🚫 CUENTA DE PAYPAL RESTRINGIDA\n\n` +
+          `Tu cuenta de PayPal tiene restricciones que impiden recibir pagos.\n\n` +
+          `Pasos para resolver:\n` +
+          `1. Inicia sesión en tu cuenta de PayPal\n` +
+          `2. Ve a Configuración → Estado de la cuenta\n` +
+          `3. Completa cualquier verificación pendiente\n` +
+          `4. Contacta al soporte de PayPal si el problema persiste\n\n` +
+          `Debug ID: ${error?.result?.debug_id || error?.body?.debug_id || 'N/A'}`
+        );
+      }
+      
       throw new BadRequestException(
-        `Error al crear orden de PayPal: ${errorDetails}`
+        `Error al crear orden de PayPal: ${errorDetails}${errorIssue ? ` (Código: ${errorIssue})` : ''}`
       );
     }
   }
