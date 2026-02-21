@@ -9,7 +9,7 @@ export class ImageUploadService {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   };
   // Usamos SIGNED uploads desde el backend para evitar problemas de presets/unsigned restrictions.
-  // (El preset puede seguir existiendo, pero ya no es requisito).
+  // (El preset puede seguir existiendo, pero ya no es requisito). n 
   private folder = process.env.CLOUDINARY_FOLDER || 'luckysnap';
 
   private createUniquePublicId(): string {

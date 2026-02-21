@@ -26,7 +26,9 @@ const PurchasePage = () => {
     const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>([]);
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer'>('paypal');
+    // PayPal deshabilitado por defecto; activar con VITE_PAYPAL_ENABLED=true en el entorno
+    const paypalEnabled = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_PAYPAL_ENABLED === 'true';
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer'>(paypalEnabled ? 'paypal' : 'transfer');
     const formRef = useRef<HTMLFormElement | null>(null);
     const [assignedPackTickets, setAssignedPackTickets] = useState<number[]>([]);
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
@@ -687,7 +689,7 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
 
                     <div className="bg-background-secondary p-6 rounded-2xl border border-slate-700/50">
                         <h3 className="text-xl font-bold text-white mb-4">Método de pago</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className={`grid gap-4 ${paypalEnabled ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                             <label className={`cursor-pointer border rounded-xl p-4 transition-all ${
                                 selectedPaymentMethod === 'transfer'
                                     ? 'border-accent/70 bg-background-primary/60'
@@ -712,29 +714,31 @@ Adjunto el comprobante de pago. Gracias! 🙏`;
                                 </div>
                             </label>
 
-                            <label className={`cursor-pointer border rounded-xl p-4 transition-all ${
-                                selectedPaymentMethod === 'paypal'
-                                    ? 'border-accent/70 bg-background-primary/60'
-                                    : 'border-slate-700/50 bg-background-primary/30 hover:border-slate-600'
-                            }`}>
-                                <input
-                                    type="radio"
-                                    name="paymentMethod"
-                                    value="paypal"
-                                    className="sr-only"
-                                    checked={selectedPaymentMethod === 'paypal'}
-                                    onChange={() => setSelectedPaymentMethod('paypal')}
-                                />
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                        <p className="text-white font-semibold">Tarjeta (PayPal)</p>
-                                        <p className="text-slate-400 text-xs">Pago inmediato con tarjeta o PayPal</p>
+                            {paypalEnabled && (
+                                <label className={`cursor-pointer border rounded-xl p-4 transition-all ${
+                                    selectedPaymentMethod === 'paypal'
+                                        ? 'border-accent/70 bg-background-primary/60'
+                                        : 'border-slate-700/50 bg-background-primary/30 hover:border-slate-600'
+                                }`}>
+                                    <input
+                                        type="radio"
+                                        name="paymentMethod"
+                                        value="paypal"
+                                        className="sr-only"
+                                        checked={selectedPaymentMethod === 'paypal'}
+                                        onChange={() => setSelectedPaymentMethod('paypal')}
+                                    />
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-white font-semibold">Tarjeta (PayPal)</p>
+                                            <p className="text-slate-400 text-xs">Pago inmediato con tarjeta o PayPal</p>
+                                        </div>
+                                        {selectedPaymentMethod === 'paypal' && (
+                                            <span className="text-accent text-xs font-semibold">Seleccionado</span>
+                                        )}
                                     </div>
-                                    {selectedPaymentMethod === 'paypal' && (
-                                        <span className="text-accent text-xs font-semibold">Seleccionado</span>
-                                    )}
-                                </div>
-                            </label>
+                                </label>
+                            )}
                         </div>
                     </div>
 
