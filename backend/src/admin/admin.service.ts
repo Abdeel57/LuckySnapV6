@@ -197,6 +197,67 @@ export class AdminService {
     }
   }
   
+  /**
+   * Búsqueda directa en BD por número de boleto (misma lógica que el verificador).
+   * Sin paginación para no perder órdenes antiguas. Solo órdenes PAID.
+   */
+  async getOrdersByTicket(ticketNumber: number, raffleId?: string) {
+    const num = Math.floor(Number(ticketNumber));
+    if (isNaN(num) || num < 0) {
+      return { orders: [] };
+    }
+    const where: any = {
+      status: 'PAID' as any,
+      tickets: { has: num },
+    };
+    if (raffleId) where.raffleId = raffleId;
+
+    const orders = await this.prisma.order.findMany({
+      where,
+      include: {
+        raffle: {
+          select: { id: true, title: true, price: true, status: true },
+        },
+        user: {
+          select: { id: true, name: true, email: true, phone: true, district: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const transformedOrders = orders.map((order) => {
+      let customer;
+      if (order.user) {
+        customer = {
+          id: order.user.id,
+          name: order.user.name || 'Sin nombre',
+          phone: order.user.phone || 'Sin teléfono',
+          email: order.user.email || '',
+          district: order.user.district || 'Sin distrito',
+        };
+      } else if (order.userId) {
+        customer = {
+          id: order.userId,
+          name: 'Usuario no encontrado',
+          phone: 'N/A',
+          email: '',
+          district: '',
+        };
+      } else {
+        customer = null;
+      }
+      return {
+        ...order,
+        customer,
+        raffleTitle: order.raffle?.title || 'Sin título',
+        total: order.total,
+        paymentMethod: order.paymentMethod || 'transfer',
+      };
+    });
+
+    return { orders: transformedOrders };
+  }
+
   async getOrderById(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },

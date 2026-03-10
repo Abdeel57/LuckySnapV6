@@ -1040,6 +1040,26 @@ export const getOrders = async (page: number = 1, limit: number = 50, status?: s
     }
 };
 
+/**
+ * Búsqueda directa en BD por número de boleto (misma lógica que el verificador).
+ * Garantiza encontrar la orden aunque sea antigua o haya muchas órdenes.
+ */
+export const getOrdersByTicket = async (ticket: number, raffleId?: string): Promise<Order[]> => {
+    try {
+        const params = new URLSearchParams();
+        params.set('ticket', String(Math.floor(Number(ticket))));
+        if (raffleId) params.set('raffleId', raffleId);
+        const response = await fetch(`${API_URL}/admin/orders/search/by-ticket?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const data = await response.json();
+        const orders = data.orders || [];
+        return orders.map(parseOrderDates);
+    } catch (error) {
+        console.error('❌ Error getOrdersByTicket:', error);
+        return [];
+    }
+};
+
 export const updateOrder = async (id: string, order: Partial<Order>): Promise<Order> => {
     try {
         console.log('Trying backend for update order...');

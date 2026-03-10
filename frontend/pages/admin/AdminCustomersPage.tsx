@@ -14,7 +14,7 @@ import {
     ArrowLeftRight,
 } from 'lucide-react';
 import { Order, Raffle } from '../../types';
-import { getOrders, updateOrder, releaseOrder, getRaffles } from '../../services/api';
+import { getOrders, getOrdersByTicket, updateOrder, releaseOrder, getRaffles } from '../../services/api';
 import EditOrderForm from '../../components/admin/EditOrderForm';
 
 const AdminCustomersPage: React.FC = () => {
@@ -25,16 +25,46 @@ const AdminCustomersPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchType, setSearchType] = useState<'nombre' | 'telefono' | 'folio' | 'boleto'>('nombre');
     const [selectedRaffleId, setSelectedRaffleId] = useState<string>('');
-    const [viewMode, setViewMode] = useState<'rifas' | 'clientes'>('rifas'); // Nueva vista: rifas o clientes
+    const [viewMode, setViewMode] = useState<'rifas' | 'clientes'>('rifas');
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState<Order | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isLoadingAction, setIsLoadingAction] = useState(false);
+    /** Resultado de búsqueda por boleto vía API (consulta directa en BD, sin límite de órdenes) */
+    const [ticketSearchResults, setTicketSearchResults] = useState<Order[] | null>(null);
+    const [ticketSearchLoading, setTicketSearchLoading] = useState(false);
 
     useEffect(() => {
         loadData();
     }, []);
+
+    /** Búsqueda por boleto: consulta directa al backend (misma lógica que el verificador) para no perder datos antiguos */
+    useEffect(() => {
+        if (searchType !== 'boleto' || !searchTerm.trim()) {
+            setTicketSearchResults(null);
+            return;
+        }
+        const num = parseInt(searchTerm.trim(), 10);
+        if (isNaN(num) || num < 0) {
+            setTicketSearchResults(null);
+            return;
+        }
+        const t = setTimeout(async () => {
+            setTicketSearchLoading(true);
+            setTicketSearchResults(null);
+            try {
+                const list = await getOrdersByTicket(num, selectedRaffleId || undefined);
+                setTicketSearchResults(list);
+            } catch (e) {
+                console.error('Error búsqueda por boleto:', e);
+                setTicketSearchResults([]);
+            } finally {
+                setTicketSearchLoading(false);
+            }
+        }, 400);
+        return () => clearTimeout(t);
+    }, [searchType, searchTerm, selectedRaffleId]);
 
     const loadData = async () => {
         try {
@@ -124,42 +154,45 @@ const AdminCustomersPage: React.FC = () => {
     }, [raffles, orders]);
 
     const paidCustomers = useMemo(() => {
-        // Filtrar por rifa primero
+        // Búsqueda por boleto: usar resultado de API (consulta directa en BD, sin límite de órdenes)
+        if (searchType === 'boleto' && searchTerm.trim()) {
+            if (ticketSearchLoading) return [];
+            if (ticketSearchResults !== null) return ticketSearchResults;
+        }
+
+        // Resto: filtrar en memoria desde las órdenes cargadas
         let base = orders.filter(o => isPaid(String(o.status)));
         if (selectedRaffleId) {
             base = base.filter(o => o.raffleId === selectedRaffleId);
         }
-        
         if (!searchTerm) return base;
+
         const term = searchTerm.toLowerCase();
         return base.filter(o => {
             switch (searchType) {
                 case 'nombre':
-                    // Nombre permite búsqueda parcial
                     return o.customer?.name?.toLowerCase?.().includes(term);
                 case 'telefono':
-                    // Teléfono debe ser búsqueda exacta (sin espacios, guiones, etc.)
                     const cleanPhone = searchTerm.replace(/[\s\-\(\)]/g, '');
                     const orderPhone = o.customer?.phone?.replace(/[\s\-\(\)]/g, '');
                     return orderPhone?.includes(cleanPhone);
                 case 'folio':
-                    // Folio debe ser búsqueda exacta
                     return o.folio?.toLowerCase() === searchTerm.toLowerCase();
                 case 'boleto':
-                    // Boleto debe ser búsqueda exacta
-                    const boletoNum = parseInt(searchTerm);
+                    const boletoNum = parseInt(searchTerm, 10);
                     return !isNaN(boletoNum) && o.tickets?.includes(boletoNum);
                 default:
                     return true;
             }
         });
-    }, [orders, searchTerm, selectedRaffleId]);
+    }, [orders, searchTerm, selectedRaffleId, searchType, ticketSearchLoading, ticketSearchResults]);
 
     // Manejar selección de rifa
     const handleRaffleSelect = (raffleId: string) => {
         setSelectedRaffleId(raffleId);
         setViewMode('clientes');
-        setSearchTerm(''); // Limpiar búsqueda al cambiar de rifa
+        setSearchTerm('');
+        setTicketSearchResults(null);
     };
 
     // Volver a vista de rifas
@@ -167,6 +200,7 @@ const AdminCustomersPage: React.FC = () => {
         setViewMode('rifas');
         setSelectedRaffleId('');
         setSearchTerm('');
+        setTicketSearchResults(null);
     };
 
     const handleView = (order: Order) => {
@@ -393,7 +427,11 @@ const AdminCustomersPage: React.FC = () => {
                                 <div className="w-full md:w-auto md:min-w-[150px]">
                                     <select
                                         value={searchType}
-                                        onChange={(e) => setSearchType(e.target.value as 'nombre' | 'telefono' | 'folio' | 'boleto')}
+                                        onChange={(e) => {
+                                            const v = e.target.value as 'nombre' | 'telefono' | 'folio' | 'boleto';
+                                            setSearchType(v);
+                                            if (v !== 'boleto') setTicketSearchResults(null);
+                                        }}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                                     >
                                         <option value="nombre">Buscar por nombre</option>
@@ -428,6 +466,12 @@ const AdminCustomersPage: React.FC = () => {
 
                         {/* Lista de Clientes - Optimizada para móviles */}
                         <div className="space-y-4">
+                            {searchType === 'boleto' && ticketSearchLoading && (
+                                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 text-center">
+                                    <RefreshCw className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-2" />
+                                    <p className="text-gray-600">Buscando boleto en la base de datos...</p>
+                                </div>
+                            )}
                             <AnimatePresence>
                                 {paidCustomers.map((order) => (
                                     <motion.div

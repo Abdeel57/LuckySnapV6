@@ -35,6 +35,23 @@ export class AdminController {
       throw new HttpException('Error al obtener las órdenes', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  @Get('orders/search/by-ticket')
+  async searchOrdersByTicket(
+    @Query('ticket') ticket?: string,
+    @Query('raffleId') raffleId?: string,
+  ) {
+    try {
+      const result = await this.adminService.getOrdersByTicket(
+        ticket ? Number(ticket) : NaN,
+        raffleId || undefined,
+      );
+      return result;
+    } catch (error) {
+      console.error('Error searching orders by ticket:', error);
+      throw new HttpException('Error al buscar órdenes por boleto', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
   
   @Get('orders/:id')
   async getOrderById(@Param('id') id: string) {
