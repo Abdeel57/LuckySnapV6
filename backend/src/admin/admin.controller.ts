@@ -24,7 +24,9 @@ export class AdminController {
   ) {
     try {
       const pageNum = page ? parseInt(page, 10) : 1;
-      const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 50; // Máximo 100
+      // Permitir más registros para vistas de análisis/clientes sin perder seguridad
+      // Límite máximo aumentado a 5000 para no "ocultar" órdenes antiguas
+      const limitNum = limit ? Math.min(parseInt(limit, 10), 5000) : 50;
       
       const result = await this.adminService.getAllOrders(pageNum, limitNum, status, raffleId);
       return result;

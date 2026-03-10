@@ -40,7 +40,8 @@ const AdminCustomersPage: React.FC = () => {
         try {
             setLoading(true);
             const [ordersData, rafflesData] = await Promise.all([
-                getOrders(1, 200),
+                // Cargar un número alto de órdenes para no perder boletos antiguos en la vista de clientes
+                getOrders(1, 5000),
                 getRaffles()
             ]);
             setOrders(Array.isArray(ordersData) ? ordersData : []);
