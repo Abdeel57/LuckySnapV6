@@ -314,16 +314,16 @@ const AdminSettingsPage = () => {
         setPreviewColors(preset.colors);
         // Actualizar el formulario
         reset({
-            ...reset,
+            ...(settings || {}),
             appearance: {
-                ...reset.appearance,
+                ...(settings?.appearance || { siteName: '', logoAnimation: 'none', colors: { backgroundPrimary: '', backgroundSecondary: '', accent: '', action: '' } }),
                 colors: {
                     backgroundPrimary: preset.colors.background,
                     backgroundSecondary: preset.colors.secondaryBackground,
                     accent: preset.colors.accent,
                     action: preset.colors.primary
                 }
-            }
+            } as any
         });
         handleColorChange(preset.colors);
     };
@@ -419,7 +419,7 @@ const AdminSettingsPage = () => {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <Spinner size="lg" />
+                    <Spinner />
                     <p className="mt-4 text-gray-600">Cargando configuración...</p>
                 </div>
             </div>
@@ -478,7 +478,7 @@ const AdminSettingsPage = () => {
                                     control={control}
                                     render={({ field }) => (
                                         <ImageUploaderAdvanced
-                                            value={field.value}
+                                            value={field.value || ''}
                                             onChange={field.onChange}
                                             placeholder="Seleccionar logo del sitio"
                                             maxWidth={200}
@@ -652,7 +652,7 @@ const AdminSettingsPage = () => {
                         </div>
                     </OptimizedSectionWrapper>
 
-                    {/* Listados y Boletos - SOLO VISUAL (sin lógica aún) */}
+                    {/* Listados y Boletos */}
                     <OptimizedSectionWrapper
                         title="Listados y Boletos"
                         icon={Eye}
@@ -713,6 +713,57 @@ const AdminSettingsPage = () => {
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">Elige si se muestran o se deshabilitan los boletos ya pagados.</p>
+                            </div>
+                        </div>
+                    </OptimizedSectionWrapper>
+
+                    {/* Expiración de Órdenes */}
+                    <OptimizedSectionWrapper
+                        title="Configuración de Órdenes"
+                        icon={RefreshCw}
+                        description="Configura el tiempo de vida de las órdenes pendientes de pago"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={labelClasses}>Tiempo para liberar boletos (minutos)</label>
+                                <input 
+                                    type="number" 
+                                    {...register('orderExpirationMinutes', { 
+                                        required: true,
+                                        min: 1,
+                                        valueAsNumber: true 
+                                    })} 
+                                    className={inputClasses} 
+                                    placeholder="1440" 
+                                />
+                                <div className="mt-2 space-y-1">
+                                    <p className="text-xs text-gray-500">
+                                        Tiempo que debe pasar para que una orden PENDIENTE se libere automáticamente.
+                                    </p>
+                                    <div className="flex space-x-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setValue('orderExpirationMinutes', 15)}
+                                            className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                                        >
+                                            15 min
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setValue('orderExpirationMinutes', 60)}
+                                            className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                                        >
+                                            1 hora
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setValue('orderExpirationMinutes', 1440)}
+                                            className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                                        >
+                                            24 horas
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </OptimizedSectionWrapper>
@@ -797,7 +848,7 @@ const AdminSettingsPage = () => {
                             ))}
                             <button
                                 type="button"
-                                onClick={() => appendFaq({ question: '', answer: '' })}
+                                onClick={() => appendFaq({ id: `faq-${Date.now()}`, question: '', answer: '' })}
                                 className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
                             >
                                 <Plus className="w-4 h-4" />
@@ -822,7 +873,7 @@ const AdminSettingsPage = () => {
                         >
                             {saving ? (
                                 <>
-                                    <Spinner size="sm" />
+                                    <Spinner />
                                     <span>Guardando...</span>
                                 </>
                             ) : (

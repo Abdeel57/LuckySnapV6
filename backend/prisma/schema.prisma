@@ -145,6 +145,7 @@ model Settings {
   paymentAccounts Json?
   faqs            Json?
   displayPreferences Json?
+  orderExpirationMinutes Int      @default(1440)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

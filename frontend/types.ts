@@ -96,7 +96,7 @@ export type LogoAnimation = 'none' | 'rotate' | 'pulse' | 'bounce';
 
 export interface AppearanceSettings {
     siteName: string;
-    logoUrl?: string; // Optional custom logo URL
+    logo?: string; // Matching backend field name
     logoAnimation: LogoAnimation;
     colors: {
         backgroundPrimary: string;
@@ -128,6 +128,7 @@ export interface Settings {
     paymentAccounts: PaymentAccount[];
     faqs: FaqItemData[];
     displayPreferences?: DisplayPreferences;
+    orderExpirationMinutes?: number;
 }
 
 export interface AdminUser {

@@ -2,7 +2,7 @@
 const { PrismaClient } = require('@prisma/client');
 
 // Configurar URL de base de datos específica
-const DATABASE_URL = 'postgresql://postgres:ZuCkGpLHcIJynmWvsMEqzIzypbuXotKm@nozomi.proxy.rlwy.net:50670/railway';
+const DATABASE_URL = 'postgresql://postgres:sqhugHkVDLqIIeXsXWZHIraMvtPLIyiE@shinkansen.proxy.rlwy.net:35011/railway?sslmode=no-verify';
 
 const prisma = new PrismaClient({
   datasources: {

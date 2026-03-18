@@ -1,12 +1,68 @@
-import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 // FIX: Using `import type` for types/namespaces and value import for the enum to fix module resolution.
 import { type Prisma, type Raffle, type Winner } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class AdminService {
+export class AdminService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
+
+  onModuleInit() {
+    // Verificar cada 15 minutos por órdenes expiradas
+    console.log('🗓️ Starting Expiration Monitor (every 15 min)...');
+    setInterval(() => {
+      this.autoExpireOrders();
+    }, 15 * 60 * 1000);
+    
+    // Ejecutar una vez al inicio (después de 10 segundos)
+    setTimeout(() => this.autoExpireOrders(), 10000);
+  }
+
+  async autoExpireOrders() {
+    try {
+      const now = new Date();
+      console.log(`⏰ [AutoExpire] checking for orders expired before ${now.toISOString()}...`);
+      
+      const expiredOrders = await this.prisma.order.findMany({
+        where: {
+          status: 'PENDING',
+          expiresAt: { lt: now }
+        },
+        select: { id: true, folio: true, raffleId: true }
+      });
+
+      if (expiredOrders.length === 0) {
+        return;
+      }
+
+      console.log(`♻️ Found ${expiredOrders.length} expired orders. Releasing...`);
+
+      const raffleIds = new Set<string>();
+      
+      for (const order of expiredOrders) {
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { 
+            status: 'CANCELLED' as any,
+            updatedAt: new Date(),
+            notes: (await this.prisma.order.findUnique({ where: { id: order.id }, select: { notes: true } }))?.notes + '\n[Auto-release: Expired]'
+          }
+        });
+        raffleIds.add(order.raffleId);
+        console.log(`✅ Order ${order.folio} released due to expiration.`);
+      }
+
+      // Recalcular sold para las rifas afectadas
+      for (const raffleId of raffleIds) {
+        await this.recomputeAndPersistSold(raffleId);
+      }
+      
+      console.log('✨ Auto-release process completed.');
+    } catch (error) {
+      console.error('❌ Error in autoExpireOrders:', error);
+    }
+  }
 
   /**
    * Recalcula el conteo "sold" de una rifa basado SOLO en órdenes pagadas (PAID).
@@ -1524,6 +1580,9 @@ export class AdminService {
         instagramUrl: socialData.instagramUrl || null,
         tiktokUrl: socialData.tiktokUrl || null,
         
+        // Order settings
+        orderExpirationMinutes: parseInt(data.orderExpirationMinutes || '1440', 10),
+        
         // Other settings - Ensure proper serialization
         paymentAccounts: this.safeStringify(paymentAccounts),
         faqs: this.safeStringify(faqs),
@@ -1604,6 +1663,7 @@ export class AdminService {
       paymentAccounts: this.parseJsonField(settings.paymentAccounts),
       faqs: this.parseJsonField(settings.faqs),
       displayPreferences: this.parseJsonField(settings.displayPreferences),
+      orderExpirationMinutes: settings.orderExpirationMinutes || 1440,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };

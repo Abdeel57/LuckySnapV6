@@ -38,6 +38,15 @@ export class PublicService {
       where: {
         raffleId,
         status: { in: ['PAID', 'PENDING'] },
+        OR: [
+          { status: 'PAID' },
+          {
+            AND: [
+              { status: 'PENDING' },
+              { expiresAt: { gt: new Date() } },
+            ],
+          },
+        ],
       },
       select: { tickets: true },
     });
@@ -138,6 +147,7 @@ export class PublicService {
         },
         paymentAccounts: [],
         faqs: [],
+        orderExpirationMinutes: 1440,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -175,6 +185,7 @@ export class PublicService {
       paymentAccounts: this.parseJsonField(settings.paymentAccounts),
       faqs: this.parseJsonField(settings.faqs),
       displayPreferences: this.parseJsonField(settings.displayPreferences),
+      orderExpirationMinutes: settings.orderExpirationMinutes || 1440,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
     };
@@ -351,7 +362,7 @@ export class PublicService {
           status: 'PENDING',
           paymentMethod: orderData.paymentMethod || 'transfer',
           notes: orderData.notes || '',
-          expiresAt: add(new Date(), { hours: 24 }),
+          expiresAt: add(new Date(), { minutes: (await this.getSettings()).orderExpirationMinutes || 1440 }),
         },
         include: {
           raffle: true,
