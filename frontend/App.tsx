@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './hooks/useToast';
 import ToastContainer from './components/ToastContainer';
+import MaintenanceOverlay from './components/MaintenanceOverlay';
 
 // Public Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -36,6 +37,7 @@ const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
 
 const App: React.FC = () => {
   return (
+    <MaintenanceOverlay>
     <ErrorBoundary>
       <ThemeProvider>
         <ToastProvider>
@@ -107,6 +109,7 @@ const App: React.FC = () => {
         </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
+    </MaintenanceOverlay>
   );
 };
 
