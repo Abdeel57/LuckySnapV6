@@ -755,14 +755,33 @@ const AdminSettingsPage = () => {
                                         >
                                             1 hora
                                         </button>
-                                        <button 
+                                        <button
                                             type="button"
-                                            onClick={() => setValue('orderExpirationMinutes', 1440)}
+                                            onClick={() => setValue('orderExpirationMinutes', 1440, { shouldDirty: true })}
                                             className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
                                         >
                                             24 horas
                                         </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setValue('orderExpirationMinutes', 2880, { shouldDirty: true })}
+                                            className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                                        >
+                                            48 horas
+                                        </button>
                                     </div>
+                                    {(() => {
+                                        const mins = Number(watch('orderExpirationMinutes')) || 0;
+                                        if (mins <= 0) return null;
+                                        const horas = (mins / 60);
+                                        const horasTexto = Number.isInteger(horas) ? `${horas}` : horas.toFixed(1);
+                                        return (
+                                            <p className="text-xs font-medium text-blue-600">
+                                                Equivale a {horasTexto} hora{horas === 1 ? '' : 's'}.
+                                                Al guardar, las órdenes pendientes se recalcularán con este tiempo.
+                                            </p>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>

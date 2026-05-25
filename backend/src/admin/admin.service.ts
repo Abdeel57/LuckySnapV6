@@ -1599,8 +1599,24 @@ export class AdminService implements OnModuleInit {
           ...settingsData,
         },
       });
-      
+
       console.log('✅ Settings updated successfully:', result);
+
+      // 🔄 Recalcular expiresAt de las órdenes PENDIENTES con el nuevo tiempo de
+      // expiración, basándose en su fecha de creación. Sin esto, las órdenes creadas
+      // antes del cambio seguirían liberándose con el tiempo anterior (ej: cambiar a
+      // 48h pero las órdenes viejas se liberan a las 24h por tener expiresAt congelado).
+      try {
+        const minutes = settingsData.orderExpirationMinutes;
+        const updatedCount = await this.prisma.$executeRaw`
+          UPDATE "orders"
+          SET "expiresAt" = "createdAt" + (interval '1 minute' * ${minutes}::int)
+          WHERE "status" = 'PENDING'
+        `;
+        console.log(`🔄 expiresAt recalculado en ${updatedCount} órdenes PENDIENTES a ${minutes} min.`);
+      } catch (recalcError) {
+        console.error('⚠️ No se pudo recalcular expiresAt de órdenes pendientes:', recalcError);
+      }
       
       // Formatear la respuesta igual que en publicService
       return this.formatSettingsResponse(result);
