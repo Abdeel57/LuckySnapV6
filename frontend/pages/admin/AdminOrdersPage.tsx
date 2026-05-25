@@ -48,8 +48,11 @@ const AdminOrdersPage: React.FC = () => {
     const loadData = async () => {
         try {
             setLoading(true);
+            // Apartados solo muestra órdenes PENDING. Pedimos directamente las
+            // pendientes con un límite alto para no perder órdenes por la
+            // paginación por defecto (50), que dejaba fuera las recuperadas.
             const [ordersData, rafflesData, settingsData] = await Promise.all([
-                getOrders(),
+                getOrders(1, 2000, 'PENDING'),
                 getRaffles(),
                 getSettings()
             ]);
