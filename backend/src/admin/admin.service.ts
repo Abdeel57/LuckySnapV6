@@ -27,7 +27,8 @@ export class AdminService implements OnModuleInit {
       const expiredOrders = await this.prisma.order.findMany({
         where: {
           status: 'PENDING',
-          expiresAt: { lt: now }
+          expiresAt: { lt: now },
+          NOT: { notes: { contains: '[NO_AUTO_RELEASE]' } }
         },
         select: { id: true, folio: true, raffleId: true }
       });
@@ -1612,6 +1613,7 @@ export class AdminService implements OnModuleInit {
           UPDATE "orders"
           SET "expiresAt" = "createdAt" + (interval '1 minute' * ${minutes}::int)
           WHERE "status" = 'PENDING'
+            AND ("notes" IS NULL OR "notes" NOT LIKE '%[NO_AUTO_RELEASE]%')
         `;
         console.log(`🔄 expiresAt recalculado en ${updatedCount} órdenes PENDIENTES a ${minutes} min.`);
       } catch (recalcError) {

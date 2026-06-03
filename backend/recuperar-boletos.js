@@ -31,7 +31,13 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
 const AUTO_NOTE = '[Auto-release: Expired]';
-const WINDOW_HOURS = 72; // ventana para buscar liberaciones recientes
+// Marcador que el backend respeta para NO recalcular expiresAt al guardar ajustes
+// ni cancelar la orden en el job de auto-expiración. Cualquier orden con esta
+// marca queda "blindada" frente a futuros cambios automáticos.
+const PROTECT_MARKER = '[NO_AUTO_RELEASE]';
+// Ventana por defecto para buscar liberaciones recientes. Se puede sobrescribir
+// con la variable de entorno WINDOW_HOURS (ej: WINDOW_HOURS=720 para 30 días).
+const WINDOW_HOURS = Number(process.env.WINDOW_HOURS) || 72;
 const FAR_FUTURE = new Date('2027-12-31T23:59:59Z');
 
 // URLs de respaldo (mismas que usan los scripts existentes del proyecto)
@@ -170,15 +176,25 @@ async function diagnose(prisma) {
 
 async function proteger(prisma) {
   console.log('\n========== PROTEGER (detener auto-liberación) ==========\n');
-  const res = await prisma.order.updateMany({
+  // Marcar y empujar expiresAt para todas las PENDING. El marcador hace que el
+  // backend (>=fix) ya no las recalcule ni cancele en ciclos posteriores.
+  const pending = await prisma.order.findMany({
     where: { status: 'PENDING' },
-    data: { expiresAt: FAR_FUTURE },
+    select: { id: true, notes: true },
   });
-  console.log(`🛡️  ${res.count} órdenes PENDIENTES protegidas.`);
-  console.log(`   expiresAt -> ${FAR_FUTURE.toISOString()}`);
-  console.log('   La auto-liberación ya no las cancelará. Tienes tiempo para revisar y marcar pagos.');
-  console.log('\n   NOTA: esto es temporal. Después debes ajustar el tiempo real en Ajustes');
-  console.log('   y redeployar el backend con el fix de recálculo de expiración.');
+  let count = 0;
+  for (const o of pending) {
+    const notes = (o.notes || '').includes(PROTECT_MARKER)
+      ? (o.notes || '')
+      : `${o.notes || ''}\n${PROTECT_MARKER}`;
+    await prisma.order.update({
+      where: { id: o.id },
+      data: { expiresAt: FAR_FUTURE, notes },
+    });
+    count++;
+  }
+  console.log(`🛡️  ${count} órdenes PENDIENTES protegidas (expiresAt + marcador ${PROTECT_MARKER}).`);
+  console.log('   El backend (con el fix) ya no las tocará al guardar ajustes ni en auto-expire.');
 }
 
 async function restaurar(prisma) {
@@ -215,7 +231,7 @@ async function restaurar(prisma) {
       data: {
         status: 'PENDING',
         expiresAt: FAR_FUTURE,
-        notes: `${o.notes || ''}\n[Recuperado ${now.toISOString()} - revisar pago]`,
+        notes: `${o.notes || ''}\n[Recuperado ${now.toISOString()} - revisar pago] ${PROTECT_MARKER}`,
       },
     });
     // Marcar estos boletos como ocupados para que otra orden posterior detecte el conflicto
