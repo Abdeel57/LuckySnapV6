@@ -1,190 +1,173 @@
-import { Injectable, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
-import crypto from 'crypto';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+
+/**
+ * Almacenamiento local de imágenes en el sistema de archivos.
+ *
+ * En Railway se debe montar un Volume persistente (p. ej. en /data) y setear:
+ *   IMAGE_STORAGE_PATH=/data/uploads
+ *
+ * Localmente, si no está seteada la variable, se usa ./uploads relativo al
+ * proceso. El archivo se guarda tal cual llegó (bytes originales, sin
+ * transformación) para preservar la calidad al 100%.
+ *
+ * El servicio devuelve una ruta pública relativa (/uploads/<nombre>.<ext>);
+ * el controlador se encarga de convertirla a URL absoluta usando el host de
+ * la petición o la variable PUBLIC_BASE_URL.
+ */
+
+const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/avif': 'avif',
+};
 
 @Injectable()
 export class ImageUploadService {
-  private cloudinaryConfig = {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
-  };
-  // Usamos SIGNED uploads desde el backend para evitar problemas de presets/unsigned restrictions.
-  // (El preset puede seguir existiendo, pero ya no es requisito). n 
-  private folder = process.env.CLOUDINARY_FOLDER || 'luckysnap';
+  private readonly storagePath: string;
 
-  private createUniquePublicId(): string {
-    // Evita colisiones sin depender de APIs de Node que requieran typings extra en el editor.
-    return `luckysnap_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-  }
+  constructor() {
+    const configured = process.env.IMAGE_STORAGE_PATH;
+    this.storagePath = configured
+      ? path.resolve(configured)
+      : path.resolve(process.cwd(), 'uploads');
 
-  private signCloudinaryParams(params: Record<string, string | number>): { timestamp: number; signature: string } {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const toSign: Record<string, string | number> = { ...params, timestamp };
-    const paramString = Object.keys(toSign)
-      .sort()
-      .map((k) => `${k}=${toSign[k]}`)
-      .join('&');
-    const signature = crypto
-      .createHash('sha1')
-      .update(paramString + this.cloudinaryConfig.apiSecret)
-      .digest('hex');
-    return { timestamp, signature };
+    try {
+      fs.mkdirSync(this.storagePath, { recursive: true });
+      console.log(`📁 Directorio de imágenes: ${this.storagePath}`);
+    } catch (e) {
+      console.error(`❌ No se pudo preparar ${this.storagePath}:`, e);
+    }
   }
 
   /**
-   * Sube una imagen a Cloudinary
-   * @param imageData - Datos de la imagen en formato base64 o FormData
-   * @returns URL de la imagen subida
+   * Guarda una imagen en disco y devuelve la ruta pública relativa.
+   * Acepta data URI (`data:image/xxx;base64,...`) o base64 crudo, o un Buffer.
    */
   async uploadImage(imageData: string | Buffer): Promise<string> {
-    // Validar que Cloudinary esté configurado
-    if (!this.cloudinaryConfig.cloudName || 
-        !this.cloudinaryConfig.apiKey || 
-        !this.cloudinaryConfig.apiSecret) {
-      // No devolver placeholders aleatorios: eso causa que el admin vea "otra imagen"
-      // y además oculta el problema real de configuración.
-      throw new ServiceUnavailableException(
-        'Cloudinary no configurado. Configura CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET.'
-      );
+    if (!imageData) {
+      throw new BadRequestException('No se proporcionó imagen');
     }
+
+    let bytes: Buffer;
+    let ext = 'bin';
+
+    if (typeof imageData === 'string') {
+      const dataUriMatch = imageData.match(/^data:([^;]+);base64,(.+)$/);
+      let base64Payload: string;
+      if (dataUriMatch) {
+        const mime = dataUriMatch[1].toLowerCase();
+        ext = MIME_TO_EXT[mime] || 'bin';
+        base64Payload = dataUriMatch[2];
+      } else {
+        base64Payload = imageData;
+      }
+      if (this.base64Size(base64Payload) > MAX_SIZE_BYTES) {
+        throw new BadRequestException('La imagen excede el tamaño máximo de 10MB');
+      }
+      bytes = Buffer.from(base64Payload, 'base64');
+    } else {
+      bytes = imageData;
+      if (bytes.length > MAX_SIZE_BYTES) {
+        throw new BadRequestException('La imagen excede el tamaño máximo de 10MB');
+      }
+    }
+
+    if (!bytes || bytes.length === 0) {
+      throw new BadRequestException('Los datos de la imagen están vacíos o mal formados');
+    }
+
+    if (ext === 'bin') {
+      ext = this.detectExtFromBuffer(bytes);
+    }
+
+    const filename = this.createUniqueFilename(ext);
+    const fullPath = path.join(this.storagePath, filename);
 
     try {
-      // Si es base64, verificar tamaño
-      if (typeof imageData === 'string') {
-        const base64Size = this.getBase64Size(imageData);
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        if (base64Size > maxSize) {
-          throw new BadRequestException('La imagen excede el tamaño máximo de 10MB');
-        }
-      }
-
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${this.cloudinaryConfig.cloudName}/image/upload`;
-
-      const publicId = this.createUniquePublicId();
-      const { timestamp, signature } = this.signCloudinaryParams({
-        folder: this.folder,
-        public_id: publicId,
-      });
-
-      const form = new FormData();
-      // Cloudinary acepta Data URI base64 en `file`
-      form.append('file', typeof imageData === 'string' ? imageData : imageData.toString('base64'));
-      form.append('api_key', this.cloudinaryConfig.apiKey);
-      form.append('timestamp', String(timestamp));
-      form.append('signature', signature);
-      form.append('folder', this.folder);
-      form.append('public_id', publicId);
-
-      const response = await fetch(cloudinaryUrl, {
-        method: 'POST',
-        body: form as any,
-      });
-
-      const result = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const msg =
-          result?.error?.message ||
-          result?.message ||
-          `Cloudinary error: ${response.status} ${response.statusText}`;
-        throw new BadRequestException(msg);
-      }
-
-      const secureUrl = result?.secure_url as string | undefined;
-      if (!secureUrl) {
-        throw new BadRequestException('Cloudinary no devolvió secure_url. Revisa el upload preset/configuración.');
-      }
-
-      console.log('✅ Imagen subida a Cloudinary:', secureUrl);
-      return secureUrl;
-    } catch (error) {
-      // No ocultar el error con placeholders: propagar para que el frontend informe correctamente.
-      console.error('❌ Error subiendo imagen a Cloudinary:', error);
-      if (error instanceof BadRequestException || error instanceof ServiceUnavailableException) {
-        throw error;
-      }
-      throw new BadRequestException('Error al subir la imagen a Cloudinary');
+      await fs.promises.writeFile(fullPath, bytes);
+    } catch (e) {
+      console.error('❌ Error escribiendo imagen a disco:', e);
+      throw new BadRequestException('No se pudo guardar la imagen en el servidor');
     }
+
+    const relativeUrl = `/uploads/${filename}`;
+    console.log(`✅ Imagen guardada (${bytes.length} bytes): ${relativeUrl}`);
+    return relativeUrl;
   }
 
-  /**
-   * Valida el tamaño de una imagen
-   * @param imageData - Datos de la imagen
-   * @returns true si es válida
-   */
   validateImageSize(imageData: string | Buffer): boolean {
-    const sizeInBytes = typeof imageData === 'string' 
-      ? this.getBase64Size(imageData)
-      : imageData.length;
-    
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    return sizeInBytes <= maxSize;
+    if (typeof imageData === 'string') {
+      const payload = imageData.startsWith('data:')
+        ? imageData.split(',')[1] || ''
+        : imageData;
+      return this.base64Size(payload) <= MAX_SIZE_BYTES;
+    }
+    return imageData.length <= MAX_SIZE_BYTES;
   }
 
   /**
-   * Obtiene el tamaño de una imagen base64 en bytes
-   * @param base64String - String base64
-   * @returns Tamaño en bytes
-   */
-  private getBase64Size(base64String: string): number {
-    // Remover el prefijo data:image/...;base64, si existe
-    const base64Data = base64String.split(',')[1] || base64String;
-    
-    // Calcular tamaño: cada carácter base64 representa 6 bits
-    // y el padding '=' reduce el tamaño
-    const padding = (base64Data.match(/=/g) || []).length;
-    return (base64Data.length * 3) / 4 - padding;
-  }
-
-  /**
-   * Elimina una imagen de Cloudinary
-   * @param imageUrl - URL de la imagen
+   * Elimina una imagen local. Ignora URLs externas (Cloudinary previo)
+   * y bloquea path traversal.
    */
   async deleteImage(imageUrl: string): Promise<void> {
-    if (!this.cloudinaryConfig.cloudName) {
-      console.warn('⚠️ Cloudinary no configurado, no se puede eliminar imagen');
+    if (!imageUrl) return;
+    let relativePath = imageUrl;
+    try {
+      if (/^https?:\/\//i.test(imageUrl)) {
+        const u = new URL(imageUrl);
+        relativePath = u.pathname;
+      }
+    } catch {
+      /* no-op: usar imageUrl como pathname */
+    }
+    if (!relativePath.startsWith('/uploads/')) return;
+
+    const filename = path.basename(relativePath);
+    if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
       return;
     }
-
+    const fullPath = path.join(this.storagePath, filename);
     try {
-      // Extraer public_id de la URL de Cloudinary
-      const publicId = this.extractPublicId(imageUrl);
-      
-      if (!publicId) {
-        console.warn('⚠️ No se pudo extraer public_id de la URL');
-        return;
+      await fs.promises.unlink(fullPath);
+      console.log(`🗑️ Imagen eliminada: ${filename}`);
+    } catch (e: any) {
+      if (e && e.code !== 'ENOENT') {
+        console.warn('⚠️ No se pudo eliminar imagen:', e.message);
       }
-
-      // Cloudinary requiere una firma para delete, por simplicidad
-      // no implementamos el delete en esta versión básica
-      console.log('ℹ️ Delete de imagen no implementado (requiere firma)');
-    } catch (error) {
-      console.error('❌ Error eliminando imagen:', error);
     }
+  }
+
+  private createUniqueFilename(ext: string): string {
+    const rnd = crypto.randomBytes(6).toString('hex');
+    return `luckysnap_${Date.now()}_${rnd}.${ext}`;
+  }
+
+  private base64Size(base64Payload: string): number {
+    const padding = (base64Payload.match(/=/g) || []).length;
+    return Math.floor((base64Payload.length * 3) / 4) - padding;
   }
 
   /**
-   * Extrae el public_id de una URL de Cloudinary
-   * @param url - URL de Cloudinary
-   * @returns public_id o null
+   * Detecta la extensión por los "magic bytes" del contenido. Se usa cuando
+   * el cliente mandó base64 crudo sin data URI.
    */
-  private extractPublicId(url: string): string | null {
-    try {
-      const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split('/');
-      
-      // El public_id está después de /upload/vX/
-      const uploadIndex = pathParts.indexOf('upload');
-      if (uploadIndex >= 0 && uploadIndex < pathParts.length - 2) {
-        // Omitir version (v1234567890) y obtener el resto
-        const publicIdParts = pathParts.slice(uploadIndex + 2);
-        return publicIdParts.join('/').replace(/\.[^.]+$/, ''); // Remover extensión
-      }
-      
-      return null;
-    } catch (error) {
-      return null;
-    }
+  private detectExtFromBuffer(buf: Buffer): string {
+    if (buf.length < 12) return 'bin';
+    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg';
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'png';
+    if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x38) return 'gif';
+    if (
+      buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 &&
+      buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50
+    ) return 'webp';
+    return 'bin';
   }
 }
-

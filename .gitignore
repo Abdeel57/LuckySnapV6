@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Imágenes subidas por el admin (se guardan en Railway Volume en producción,
+# y en backend/uploads localmente durante desarrollo).
+backend/uploads/
+uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

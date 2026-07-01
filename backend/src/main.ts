@@ -1,16 +1,47 @@
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as path from 'path';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false, // Disable default body parser
   });
-  
+
   // Configure body parser with increased limit for images
   const express = require('express');
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // Servir imágenes subidas desde el Volume persistente. En Railway, montar el
+  // Volume en /data y setear IMAGE_STORAGE_PATH=/data/uploads. Los archivos se
+  // guardan y se sirven byte-por-byte (sin transformación) para mantener la
+  // calidad original.
+  const uploadsDir = process.env.IMAGE_STORAGE_PATH
+    ? path.resolve(process.env.IMAGE_STORAGE_PATH)
+    : path.resolve(process.cwd(), 'uploads');
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (e) {
+    console.error(`⚠️ No se pudo preparar directorio de uploads (${uploadsDir}):`, e);
+  }
+  console.log(`🖼️  Sirviendo /uploads desde: ${uploadsDir}`);
+  app.use(
+    '/uploads',
+    express.static(uploadsDir, {
+      maxAge: '30d',
+      immutable: true,
+      index: false,
+      setHeaders: (res: any) => {
+        // Los nombres incluyen hash aleatorio, así que son immutables por definición.
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+        // Permitir cargarlas desde cualquier origen (el frontend está en otro dominio).
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      },
+    }),
+  );
   
   // Enable CORS with specific configuration
   const allowedOrigins = [

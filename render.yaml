@@ -16,6 +16,13 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      # Almacenamiento local de imágenes en un Volume persistente.
+      # En Railway/Render, montar un disco en /data y setear esta ruta.
+      - key: IMAGE_STORAGE_PATH
+        value: /data/uploads
+      # URL pública del backend (para construir las URLs absolutas de las imágenes).
+      - key: PUBLIC_BASE_URL
+        sync: false
 
   # Frontend Service
   - type: static
