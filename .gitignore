@@ -17,6 +17,11 @@ dist-ssr
 backend/uploads/
 uploads/
 
+# Exports locales con datos personales de clientes. Se generan bajo demanda
+# con backend/exportar-recuperadas-csv.js; nunca deben ir al repo.
+ordenes-recuperadas.csv
+ordenes-*.csv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
