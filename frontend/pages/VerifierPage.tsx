@@ -31,7 +31,8 @@ const VerifierPage = () => {
             setLoadingRaffles(true);
             try {
                 const rafflesData = await getRaffles();
-                setRaffles(rafflesData);
+                // Solo mostrar sorteos activos en el filtro
+                setRaffles(rafflesData.filter(raffle => raffle.status === 'active'));
             } catch (error) {
                 console.error('Error loading raffles:', error);
             } finally {
@@ -244,7 +245,7 @@ const VerifierPage = () => {
                                 ) : (
                                     raffles.map((raffle) => (
                                         <option key={raffle.id} value={raffle.id}>
-                                            {raffle.title} {raffle.status === 'finished' ? '(Terminada)' : ''}
+                                            {raffle.title}
                                         </option>
                                     ))
                                 )}

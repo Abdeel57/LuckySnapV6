@@ -25,6 +25,8 @@ const RaffleDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
+    // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
+    const [showSoldPercentage, setShowSoldPercentage] = useState<boolean>(false);
     const toast = useToast();
     
     // CRÍTICO: Usar useRef para mantener referencia estable a toast.error
@@ -43,7 +45,8 @@ const RaffleDetailPage = () => {
             const prefs = (settings as any)?.displayPreferences;
             if (prefs?.listingMode) setListingMode(prefs.listingMode);
             if (prefs?.paidTicketsVisibility) setHideOccupied(prefs.paidTicketsVisibility === 'no_disponibles');
-        }).catch(() => {});
+            setShowSoldPercentage(prefs?.showSoldPercentage !== false);
+        }).catch(() => setShowSoldPercentage(true));
 
         if (slug) {
             setLoading(true);
@@ -249,17 +252,21 @@ const RaffleDetailPage = () => {
                             <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg shadow-neon-accent">
                                 <h2 className="text-2xl font-bold text-center mb-4">Participa Ahora</h2>
                                 <CountdownTimer targetDate={raffle.drawDate} />
-                                <div className="my-6">
-                                    <div className="w-full bg-slate-700 rounded-full h-2.5">
-                                        <motion.div 
-                                            className="bg-accent h-2.5 rounded-full" 
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${progress}%` }}
-                                            transition={{ duration: 1, ease: 'easeOut' }}
-                                        />
+                                {showSoldPercentage ? (
+                                    <div className="my-6">
+                                        <div className="w-full bg-slate-700 rounded-full h-2.5">
+                                            <motion.div
+                                                className="bg-accent h-2.5 rounded-full"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${progress}%` }}
+                                                transition={{ duration: 1, ease: 'easeOut' }}
+                                            />
+                                        </div>
+                                        <p className="text-center text-sm text-slate-300 mt-2">{progress.toFixed(2)}% vendido</p>
                                     </div>
-                                    <p className="text-center text-sm text-slate-300 mt-2">{progress.toFixed(2)}% vendido</p>
-                                </div>
+                                ) : (
+                                    <div className="my-6" />
+                                )}
                                 {/* Selector de Paquetes */}
                                 {raffle.packs && raffle.packs.length > 0 && (
                                     <div className="mb-6">

@@ -6,10 +6,11 @@ import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 interface RaffleCardProps {
     raffle: Raffle;
+    showSoldPercentage?: boolean;
 }
 
 // FIX: Explicitly type as React.FC to handle special props like 'key'.
-const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
+const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, showSoldPercentage = true }) => {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = React.useState(false);
     const reduceAnimations = useOptimizedAnimations();
     
@@ -55,15 +56,17 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                     
                     {/* Badges mejorados */}
                     <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
-                        <motion.span 
-                            initial={reduceAnimations ? {} : { scale: 0 }}
-                            whileInView={reduceAnimations ? {} : { scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={reduceAnimations ? {} : { delay: 0.2, type: "spring" }}
-                            className="bg-background-secondary/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-xl border border-slate-600/50"
-                        >
-                            {progress.toFixed(0)}% vendido
-                        </motion.span>
+                        {showSoldPercentage && (
+                            <motion.span
+                                initial={reduceAnimations ? {} : { scale: 0 }}
+                                whileInView={reduceAnimations ? {} : { scale: 1 }}
+                                viewport={{ once: true }}
+                                transition={reduceAnimations ? {} : { delay: 0.2, type: "spring" }}
+                                className="bg-background-secondary/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-xl border border-slate-600/50"
+                            >
+                                {progress.toFixed(0)}% vendido
+                            </motion.span>
+                        )}
                         {raffle.boletosConOportunidades && raffle.numeroOportunidades > 1 && (
                             <motion.span 
                                 initial={reduceAnimations ? {} : { scale: 0 }}
@@ -112,35 +115,37 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle }) => {
                     </div>
                 )}
                 
-                <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-semibold text-slate-300">Boletos vendidos</span>
-                        <span className="text-sm font-bold text-accent">{(typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0)} / {raffle.tickets}</span>
-                    </div>
-                    {/* Barra de progreso mejorada */}
-                    <div className="w-full bg-slate-700/50 rounded-full h-4 overflow-hidden shadow-inner border border-slate-600/50">
-                        <div 
-                            className="h-4 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
-                            style={{ 
-                                width: `${progress}%`,
-                                background: `linear-gradient(90deg, #10b981, #34d399)`,
-                                boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
-                            }}
-                        >
-                            {/* Efecto de brillo */}
-                            <div 
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"
-                            ></div>
+                {showSoldPercentage && (
+                    <div className="mb-6">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-sm font-semibold text-slate-300">Boletos vendidos</span>
+                            <span className="text-sm font-bold text-accent">{(typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0)} / {raffle.tickets}</span>
+                        </div>
+                        {/* Barra de progreso mejorada */}
+                        <div className="w-full bg-slate-700/50 rounded-full h-4 overflow-hidden shadow-inner border border-slate-600/50">
+                            <div
+                                className="h-4 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
+                                style={{
+                                    width: `${progress}%`,
+                                    background: `linear-gradient(90deg, #10b981, #34d399)`,
+                                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                                }}
+                            >
+                                {/* Efecto de brillo */}
+                                <div
+                                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-pulse"
+                                ></div>
+                            </div>
+                        </div>
+                        {/* Indicador de porcentaje encima de la barra */}
+                        <div className="flex justify-between items-center mt-2">
+                            <span className="text-xs text-slate-400">0%</span>
+                            <span className="text-xs font-bold text-accent">{progress.toFixed(0)}% vendido</span>
+                            <span className="text-xs text-slate-400">100%</span>
                         </div>
                     </div>
-                    {/* Indicador de porcentaje encima de la barra */}
-                    <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-slate-400">0%</span>
-                        <span className="text-xs font-bold text-accent">{progress.toFixed(0)}% vendido</span>
-                        <span className="text-xs text-slate-400">100%</span>
-                    </div>
-                </div>
-                
+                )}
+
                 <Link
                     to={`/sorteo/${raffle.slug}`}
                     className="relative w-full text-center mt-auto px-6 py-3 bg-gradient-to-r from-action to-accent text-white font-bold rounded-xl hover:from-action/90 hover:to-accent/90 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] group/btn overflow-hidden"

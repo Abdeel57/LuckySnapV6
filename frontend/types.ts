@@ -109,6 +109,7 @@ export interface AppearanceSettings {
 export interface DisplayPreferences {
     listingMode: 'paginado' | 'scroll';
     paidTicketsVisibility: 'a_la_vista' | 'no_disponibles';
+    showSoldPercentage?: boolean; // Mostrar barra y porcentaje vendido (por defecto: true)
 }
 
 export interface Settings {

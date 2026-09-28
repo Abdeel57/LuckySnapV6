@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getActiveRaffles, getPastWinners } from '../services/api';
+import { getActiveRaffles, getPastWinners, getSettings } from '../services/api';
 import { Raffle, Winner } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import RaffleCard from '../components/RaffleCard';
@@ -19,8 +19,16 @@ const HomePage = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [winners, setWinners] = useState<Winner[]>([]);
     const [loading, setLoading] = useState(true);
+    // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
+    const [showSoldPercentage, setShowSoldPercentage] = useState(false);
     const { trackPageView } = useAnalytics();
     const reduceAnimations = useOptimizedAnimations();
+
+    useEffect(() => {
+        getSettings()
+            .then(settings => setShowSoldPercentage((settings as any)?.displayPreferences?.showSoldPercentage !== false))
+            .catch(() => setShowSoldPercentage(true));
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -136,7 +144,7 @@ const HomePage = () => {
                                         stiffness: 100
                                     }}
                                 >
-                                    <RaffleCard raffle={raffle} />
+                                    <RaffleCard raffle={raffle} showSoldPercentage={showSoldPercentage} />
                                 </motion.div>
                             ))}
                         </div>

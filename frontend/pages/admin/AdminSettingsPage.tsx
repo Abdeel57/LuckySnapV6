@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { getSettings, adminUpdateSettings } from '../../services/api';
-import { Settings, AppearanceSettings } from '../../types';
+import { Settings, AppearanceSettings, DisplayPreferences } from '../../types';
 import { Plus, Trash2, Save, RefreshCw, Palette, Globe, CreditCard, HelpCircle, Eye, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from '../../components/Spinner';
@@ -208,6 +208,7 @@ const AdminSettingsPage = () => {
     const { updateAppearance } = useTheme();
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [paidTicketsVisibility, setPaidTicketsVisibility] = useState<'a_la_vista' | 'no_disponibles'>('a_la_vista');
+    const [showSoldPercentage, setShowSoldPercentage] = useState<boolean>(true);
     const [previewColors, setPreviewColors] = useState({
         primary: '#0ea5e9',
         accent: '#ec4899',
@@ -255,33 +256,22 @@ const AdminSettingsPage = () => {
                 }
             }
 
-            if (displayPrefs) {
-                const listing = displayPrefs.listingMode || 'paginado';
-                const visibility = displayPrefs.paidTicketsVisibility || 'a_la_vista';
-                setListingMode(listing);
-                setPaidTicketsVisibility(visibility);
-                // Actualizar el formulario con los valores correctos
-                setValue('displayPreferences', {
-                    listingMode: listing,
-                    paidTicketsVisibility: visibility
-                });
-            } else {
-                // Valores por defecto si no existen
-                setListingMode('paginado');
-                setPaidTicketsVisibility('a_la_vista');
-                setValue('displayPreferences', {
-                    listingMode: 'paginado',
-                    paidTicketsVisibility: 'a_la_vista'
-                });
-            }
+            // Normalizar con valores por defecto si no existen
+            const normalizedPrefs: Required<DisplayPreferences> = {
+                listingMode: displayPrefs?.listingMode || 'paginado',
+                paidTicketsVisibility: displayPrefs?.paidTicketsVisibility || 'a_la_vista',
+                showSoldPercentage: displayPrefs?.showSoldPercentage !== false,
+            };
+            setListingMode(normalizedPrefs.listingMode);
+            setPaidTicketsVisibility(normalizedPrefs.paidTicketsVisibility);
+            setShowSoldPercentage(normalizedPrefs.showSoldPercentage);
+            // Actualizar el formulario con los valores correctos
+            setValue('displayPreferences', normalizedPrefs);
 
             // Reset del formulario con datos parseados
             reset({
                 ...data,
-                displayPreferences: displayPrefs || {
-                    listingMode: 'paginado',
-                    paidTicketsVisibility: 'a_la_vista'
-                }
+                displayPreferences: normalizedPrefs
             });
             setLoading(false);
         }).catch(error => {
@@ -337,6 +327,7 @@ const AdminSettingsPage = () => {
             const formDisplayPrefs = data.displayPreferences || {
                 listingMode,
                 paidTicketsVisibility,
+                showSoldPercentage,
             };
             
             // Validate data before sending
@@ -392,6 +383,7 @@ const AdminSettingsPage = () => {
                 const visibility = resultDisplayPrefs.paidTicketsVisibility || 'a_la_vista';
                 setListingMode(listing);
                 setPaidTicketsVisibility(visibility);
+                setShowSoldPercentage(resultDisplayPrefs.showSoldPercentage !== false);
             }
             
             // Reset del formulario con datos parseados
@@ -713,6 +705,34 @@ const AdminSettingsPage = () => {
                                     </button>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">Elige si se muestran o se deshabilitan los boletos ya pagados.</p>
+                            </div>
+
+                            {/* Visibilidad del porcentaje vendido */}
+                            <div>
+                                <label className={labelClasses}>Porcentaje vendido</label>
+                                <div className="inline-flex rounded-xl overflow-hidden border border-gray-300">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowSoldPercentage(true);
+                                            setValue('displayPreferences.showSoldPercentage', true, { shouldDirty: true });
+                                        }}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors ${showSoldPercentage ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        A la vista
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowSoldPercentage(false);
+                                            setValue('displayPreferences.showSoldPercentage', false, { shouldDirty: true });
+                                        }}
+                                        className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${!showSoldPercentage ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Oculto
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">Muestra u oculta la barra de progreso y el porcentaje vendido en los sorteos.</p>
                             </div>
                         </div>
                     </OptimizedSectionWrapper>
