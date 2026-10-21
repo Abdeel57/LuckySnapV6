@@ -29,7 +29,13 @@ const RaffleDetailPage = () => {
     const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
     const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
     const [packQuantity, setPackQuantity] = useState<number>(1);
-    const [loading, setLoading] = useState(true);
+    const [raffleStatus, setRaffleStatus] = useState<'loading' | 'ready' | 'notfound' | 'error'>('loading');
+    const [raffleReloadKey, setRaffleReloadKey] = useState(0);
+    // La disponibilidad se carga aparte: la página (y su imagen LCP) se pinta en cuanto llega el sorteo
+    const [occupiedStatus, setOccupiedStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [occupiedReloadKey, setOccupiedReloadKey] = useState(0);
+    // Hasta conocer las preferencias no se pinta la cuadrícula (evita saltar de paginado a scroll)
+    const [prefsReady, setPrefsReady] = useState(false);
     const [listingMode, setListingMode] = useState<'paginado' | 'scroll'>('paginado');
     const [hideOccupied, setHideOccupied] = useState<boolean>(false);
     // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
@@ -37,9 +43,17 @@ const RaffleDetailPage = () => {
     const [luckyOpen, setLuckyOpen] = useState(false);
     const toast = useToast();
 
-    // Referencia estable a toast.error para no recrear handleTicketClick
+    // Referencias estables para que handleTicketClick no cambie en cada selección:
+    // así tocar un boleto no obliga a volver a crear todas las celdas de la cuadrícula.
     const toastRef = useRef(toast);
     useEffect(() => { toastRef.current = toast; }, [toast]);
+    const occupiedSet = useMemo(() => new Set(occupiedTickets), [occupiedTickets]);
+    const occupiedSetRef = useRef(occupiedSet);
+    useEffect(() => { occupiedSetRef.current = occupiedSet; }, [occupiedSet]);
+    const selectedRef = useRef<number[]>(selectedTickets);
+    useEffect(() => { selectedRef.current = selectedTickets; }, [selectedTickets]);
+    const raffleRef = useRef<Raffle | null>(raffle);
+    useEffect(() => { raffleRef.current = raffle; }, [raffle]);
 
     useEffect(() => {
         // Cargar preferencias de visualización desde settings públicos
@@ -48,50 +62,79 @@ const RaffleDetailPage = () => {
             if (prefs?.listingMode) setListingMode(prefs.listingMode);
             if (prefs?.paidTicketsVisibility) setHideOccupied(prefs.paidTicketsVisibility === 'no_disponibles');
             setShowSoldPercentage(prefs?.showSoldPercentage !== false);
-        }).catch(() => setShowSoldPercentage(true));
+        }).catch(() => setShowSoldPercentage(true))
+            .finally(() => setPrefsReady(true));
+    }, []);
 
-        if (slug) {
-            setLoading(true);
-            getRaffleBySlug(slug).then(raffleData => {
-                setRaffle(raffleData || null);
-                if (raffleData) {
-                    metaPixelService.trackViewContent(raffleData.id, raffleData);
-                    getOccupiedTickets(raffleData.id).then(occupiedData => {
-                        setOccupiedTickets(occupiedData.tickets || []);
-                        setLoading(false);
-                    }).catch(() => setLoading(false));
-                } else {
-                    setLoading(false);
+    useEffect(() => {
+        if (!slug) return;
+        // Al cambiar de sorteo se descarta la selección anterior y cualquier respuesta tardía
+        let active = true;
+        setRaffleStatus('loading');
+        setRaffle(null);
+        setOccupiedTickets([]);
+        setOccupiedStatus('loading');
+        setSelectedTickets([]);
+        setSelectedPack(null);
+        setPackQuantity(1);
+        getRaffleBySlug(slug)
+            .then(raffleData => {
+                if (!active) return;
+                if (!raffleData) {
+                    setRaffleStatus('notfound');
+                    return;
                 }
-            }).catch(() => setLoading(false));
-        }
-    }, [slug]);
+                setRaffle(raffleData);
+                setRaffleStatus('ready');
+                metaPixelService.trackViewContent(raffleData.id, raffleData);
+            })
+            .catch(() => { if (active) setRaffleStatus('error'); });
+        return () => { active = false; };
+    }, [slug, raffleReloadKey]);
+
+    const raffleId = raffle?.id;
+    useEffect(() => {
+        if (!raffleId) return;
+        const controller = new AbortController();
+        setOccupiedStatus('loading');
+        getOccupiedTickets(raffleId, { signal: controller.signal })
+            .then(occupiedData => {
+                if (controller.signal.aborted) return;
+                setOccupiedTickets(occupiedData.tickets || []);
+                setOccupiedStatus('ready');
+            })
+            // Sin la lista de ocupados no se muestra la cuadrícula: todo parecería disponible
+            .catch(() => { if (!controller.signal.aborted) setOccupiedStatus('error'); });
+        return () => controller.abort();
+    }, [raffleId, occupiedReloadKey]);
 
     // Set.has() es O(1): instantáneo incluso con 10,000 boletos
     const handleTicketClick = useCallback((ticketNumber: number) => {
         if (!ticketNumber || typeof ticketNumber !== 'number') return;
-        const currentOccupiedSet = new Set(occupiedTickets);
-        const currentSelectedSet = new Set(selectedTickets);
 
-        if (currentOccupiedSet.has(ticketNumber)) {
+        if (occupiedSetRef.current.has(ticketNumber)) {
             toastRef.current.error('Boleto vendido', 'Ese número ya está ocupado. Elige otro.');
             return;
         }
 
-        const wasSelected = currentSelectedSet.has(ticketNumber);
+        const current = selectedRef.current;
+        const wasSelected = current.includes(ticketNumber);
         const newSelectedTickets = wasSelected
-            ? selectedTickets.filter(t => t !== ticketNumber)
-            : [...selectedTickets, ticketNumber];
+            ? current.filter(t => t !== ticketNumber)
+            : [...current, ticketNumber];
+        // Se actualiza ya para que dos toques seguidos antes del re-render no se pisen
+        selectedRef.current = newSelectedTickets;
         setSelectedTickets(newSelectedTickets);
 
         // Track AddToCart sin bloquear la UI
-        if (!wasSelected && raffle) {
+        const currentRaffle = raffleRef.current;
+        if (!wasSelected && currentRaffle) {
             setTimeout(() => {
-                const price = raffle.price || raffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
-                metaPixelService.trackAddToCart(raffle.id, newSelectedTickets, newSelectedTickets.length * price);
+                const price = currentRaffle.price || currentRaffle.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
+                metaPixelService.trackAddToCart(currentRaffle.id, newSelectedTickets, newSelectedTickets.length * price);
             }, 0);
         }
-    }, [occupiedTickets, selectedTickets, raffle]);
+    }, []);
 
     // Todos los hooks deben ejecutarse antes de cualquier return condicional
     const pricePerTicket = useMemo(() => {
@@ -150,7 +193,19 @@ const RaffleDetailPage = () => {
         return Math.max(0, raffle.tickets - occupiedInRange.size);
     }, [raffle?.tickets, occupiedTickets]);
 
-    if (loading) return <div className="w-full min-h-[60vh] flex items-center justify-center"><Spinner size="lg" /></div>;
+    // Alto de pantalla completa: con menos, el pie asoma durante la carga y luego salta (CLS)
+    if (raffleStatus === 'loading') return <div className="w-full min-h-screen flex items-center justify-center"><Spinner size="lg" /></div>;
+    if (raffleStatus === 'error') {
+        return (
+            <PageAnimator>
+                <div className="container mx-auto px-4 max-w-lg py-20 text-center" role="alert">
+                    <h1 className="text-title font-extrabold text-white">No pudimos cargar el sorteo</h1>
+                    <p className="mt-2 text-slate-400">Revisa tu conexión e inténtalo de nuevo.</p>
+                    <Button variant="secondary" className="mt-6" onClick={() => setRaffleReloadKey(k => k + 1)}>Reintentar</Button>
+                </div>
+            </PageAnimator>
+        );
+    }
     if (!raffle) {
         return (
             <PageAnimator>
@@ -195,7 +250,7 @@ const RaffleDetailPage = () => {
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                                     <h2 id="tickets-title" className="text-lg font-extrabold text-white">Elige tus boletos</h2>
                                     {!selectedPack && (
-                                        <Button variant="secondary" size="sm" onClick={() => setLuckyOpen(true)} icon={<Shuffle className="w-4 h-4" aria-hidden />}>
+                                        <Button variant="secondary" size="sm" onClick={() => setLuckyOpen(true)} disabled={occupiedStatus !== 'ready'} icon={<Shuffle className="w-4 h-4" aria-hidden />}>
                                             Elegir al azar
                                         </Button>
                                     )}
@@ -208,7 +263,7 @@ const RaffleDetailPage = () => {
                                         onPackSelect={handlePackSelect}
                                         selectedPack={selectedPack}
                                         selectedQuantity={packQuantity}
-                                        availableTickets={availableCount}
+                                        availableTickets={occupiedStatus === 'ready' ? availableCount : undefined}
                                         className="mb-5"
                                     />
                                 )}
@@ -217,7 +272,12 @@ const RaffleDetailPage = () => {
                                     <p className="text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
                                         Con un paquete, los números se asignan al azar entre los disponibles al confirmar tu compra.
                                     </p>
-                                ) : (
+                                ) : occupiedStatus === 'error' ? (
+                                    <div role="alert" className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 text-center">
+                                        <p className="text-sm text-slate-300">No pudimos comprobar qué boletos siguen disponibles.</p>
+                                        <Button variant="secondary" size="sm" onClick={() => setOccupiedReloadKey(k => k + 1)}>Reintentar</Button>
+                                    </div>
+                                ) : occupiedStatus === 'ready' && prefsReady ? (
                                     <TicketSelector
                                         totalTickets={raffle.tickets}
                                         occupiedTickets={occupiedTickets}
@@ -227,6 +287,10 @@ const RaffleDetailPage = () => {
                                         showAvailability={showSoldPercentage}
                                         onTicketClick={handleTicketClick}
                                     />
+                                ) : (
+                                    <div role="status" className="flex min-h-[320px] items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-sm text-slate-400">
+                                        Cargando boletos disponibles…
+                                    </div>
                                 )}
                             </Card>
                         </section>

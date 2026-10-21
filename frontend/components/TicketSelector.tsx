@@ -55,6 +55,34 @@ const CELL_STATES = {
     occupied: 'ticket-sold bg-transparent border-white/[0.05] text-slate-600 line-through cursor-not-allowed',
 };
 
+interface TicketCellProps {
+    ticket: number;
+    label: string;
+    isOccupied: boolean;
+    isSelected: boolean;
+    onTicketClick: (ticket: number) => void;
+}
+
+// Memoizada: al seleccionar un boleto solo se vuelve a renderizar la celda que cambió
+// (con onTicketClick estable en el padre), no las 50 de la página ni las visibles del scroll.
+const TicketCell = React.memo(({ ticket, label, isOccupied, isSelected, onTicketClick }: TicketCellProps) => {
+    const state = isOccupied ? 'occupied' : isSelected ? 'selected' : 'available';
+    return (
+        <button
+            type="button"
+            className={`${CELL_BASE} ${CELL_STATES[state]}`}
+            onClick={() => !isOccupied && onTicketClick(ticket)}
+            aria-pressed={isOccupied ? undefined : isSelected}
+            aria-disabled={isOccupied || undefined}
+            aria-label={`Boleto ${label}${isOccupied ? ', vendido' : isSelected ? ', seleccionado' : ''}`}
+        >
+            {isSelected ? (
+                <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{label}</span>
+            ) : label}
+        </button>
+    );
+});
+
 const Legend = () => (
     <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-400" aria-label="Leyenda">
         <li className="flex items-center gap-2"><span className={`w-5 h-5 rounded-md border ${CELL_STATES.available}`} aria-hidden /> Disponible</li>
@@ -101,24 +129,15 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
         };
     }, []);
 
-    const createTicketNode = useCallback((ticket: number, isOccupied: boolean, isSelected: boolean) => {
-        const state = isOccupied ? 'occupied' : isSelected ? 'selected' : 'available';
-        const label = formatTicket(ticket, totalTickets);
-        return (
-            <button
-                type="button"
-                className={`${CELL_BASE} ${CELL_STATES[state]}`}
-                onClick={() => !isOccupied && onTicketClick(ticket)}
-                aria-pressed={isOccupied ? undefined : isSelected}
-                aria-disabled={isOccupied || undefined}
-                aria-label={`Boleto ${label}${isOccupied ? ', vendido' : isSelected ? ', seleccionado' : ''}`}
-            >
-                {isSelected ? (
-                    <span className="flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{label}</span>
-                ) : label}
-            </button>
-        );
-    }, [onTicketClick, totalTickets]);
+    const createTicketNode = useCallback((ticket: number, isOccupied: boolean, isSelected: boolean) => (
+        <TicketCell
+            ticket={ticket}
+            label={formatTicket(ticket, totalTickets)}
+            isOccupied={isOccupied}
+            isSelected={isSelected}
+            onTicketClick={onTicketClick}
+        />
+    ), [onTicketClick, totalTickets]);
 
     const paginatedTickets = useMemo(() => {
         if (listingMode !== 'paginado' || totalDisplayTickets <= 0) return [];

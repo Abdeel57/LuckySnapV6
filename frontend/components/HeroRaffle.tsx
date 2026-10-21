@@ -36,7 +36,8 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
 
     return (
         <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-labelledby="hero-title">
-            <div className="grid gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
+            {/* grid-cols-1 = minmax(0,1fr): sin él la fila de miniaturas ensancha la columna en móvil (360 px) */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
                 {/* Imagen */}
                 <div className="lg:col-span-7">
                     <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
@@ -67,7 +68,8 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                                         index === currentIndex ? 'border-accent' : 'border-transparent opacity-70 hover:opacity-100'
                                     }`}
                                 >
-                                    <ResponsiveImage src={img} alt="" widths={[160, 240, 320]} sizesHint="64px" preferFormat="auto" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                                    {/* El backend no genera miniaturas: son las fotos completas; prioridad baja para no competir con la principal (LCP) */}
+                                    <ResponsiveImage src={img} alt="" widths={[160, 240, 320]} sizesHint="64px" preferFormat="auto" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>

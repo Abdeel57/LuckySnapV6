@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, Check, CheckCircle2, Clock, Copy, CreditCard, Landmark, MessageCircle, Phone } from 'lucide-react';
-import { getRaffleBySlug, createOrder, getSettings, getOccupiedTickets } from '../services/api';
+import { getRaffleBySlug, createOrder, fetchPublicSettings, getOccupiedTickets } from '../services/api';
 import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -85,8 +85,15 @@ const PurchasePage = () => {
     const toast = useToast();
 
     const [raffle, setRaffle] = useState<Raffle | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loadStatus, setLoadStatus] = useState<'loading' | 'ready' | 'notfound' | 'error'>('loading');
+    const [reloadKey, setReloadKey] = useState(0);
+    // Cuentas de pago y WhatsApp siempre del servidor; si fallan se ofrece reintentar
+    const [settingsStatus, setSettingsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [occupiedStatus, setOccupiedStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+    const [occupiedReloadKey, setOccupiedReloadKey] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // El estado tarda un render en aplicarse; el ref bloquea un segundo toque inmediato
+    const submittingRef = useRef(false);
     const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
     const [paymentAccounts, setPaymentAccounts] = useState<PaymentAccount[]>([]);
     const [contactWhatsapp, setContactWhatsapp] = useState('');
@@ -107,28 +114,58 @@ const PurchasePage = () => {
 
     useEffect(() => {
         if (!slug) return;
-        setLoading(true);
-        Promise.all([getRaffleBySlug(slug), getSettings()])
-            .then(([raffleData, settingsData]) => {
+        let active = true;
+        setLoadStatus('loading');
+        getRaffleBySlug(slug)
+            .then(raffleData => {
+                if (!active) return;
                 setRaffle(raffleData || null);
-                setPaymentAccounts(settingsData.paymentAccounts || []);
-                // Usar número por defecto si no existe contactInfo
-                setContactWhatsapp(settingsData.contactInfo?.whatsapp || '50400000000');
-                setOrderExpirationMinutes(settingsData.orderExpirationMinutes);
-
-                // Cargar boletos ocupados para poder asignar los disponibles a los paquetes
-                if (raffleData?.id) {
-                    getOccupiedTickets(raffleData.id)
-                        .then(occupiedResponse => setOccupiedTickets(occupiedResponse.tickets || []))
-                        .catch(() => setOccupiedTickets([]));
-                }
+                setLoadStatus(raffleData ? 'ready' : 'notfound');
             })
-            .catch(err => console.error('❌ Error loading raffle for purchase:', err))
-            .finally(() => setLoading(false));
-    }, [slug]);
+            .catch(err => {
+                console.error('❌ Error loading raffle for purchase:', err);
+                if (active) setLoadStatus('error');
+            });
+        return () => { active = false; };
+    }, [slug, reloadKey]);
+
+    const loadPaymentSettings = useCallback(() => {
+        setSettingsStatus('loading');
+        // fresh: las cuentas bancarias se muestran para pagar; no usar una copia en caché
+        fetchPublicSettings({ fresh: true })
+            .then(settingsData => {
+                setPaymentAccounts(settingsData.paymentAccounts || []);
+                // Sin número configurado no se muestra el botón (nunca un número inventado)
+                setContactWhatsapp(settingsData.contactInfo?.whatsapp || '');
+                setOrderExpirationMinutes(settingsData.orderExpirationMinutes);
+                setSettingsStatus('ready');
+            })
+            .catch(err => {
+                console.error('❌ Error loading payment settings:', err);
+                setSettingsStatus('error');
+            });
+    }, []);
+
+    useEffect(() => { loadPaymentSettings(); }, [loadPaymentSettings]);
+
+    // Los ocupados solo hacen falta para asignar números a un paquete
+    const raffleId = raffle?.id;
+    useEffect(() => {
+        if (!raffleId || !selectedPackName) return;
+        const controller = new AbortController();
+        setOccupiedStatus('loading');
+        getOccupiedTickets(raffleId, { signal: controller.signal })
+            .then(occupiedResponse => {
+                if (controller.signal.aborted) return;
+                setOccupiedTickets(occupiedResponse.tickets || []);
+                setOccupiedStatus('ready');
+            })
+            .catch(() => { if (!controller.signal.aborted) setOccupiedStatus('error'); });
+        return () => controller.abort();
+    }, [raffleId, selectedPackName, occupiedReloadKey]);
 
     // Empezar arriba al entrar y al pasar a la pantalla de pago
-    useEffect(() => { window.scrollTo({ top: 0 }); }, [loading, createdOrder]);
+    useEffect(() => { window.scrollTo({ top: 0 }); }, [loadStatus, createdOrder]);
 
     // Determinar si se está usando un paquete o boletos individuales
     const selectedPack = useMemo<Pack | null>(() => {
@@ -136,9 +173,9 @@ const PurchasePage = () => {
         return raffle.packs.find(p => (p.name || '').toLowerCase() === selectedPackName.toLowerCase()) || null;
     }, [raffle, selectedPackName]);
 
-    // Asignar boletos aleatorios disponibles cuando hay un paquete
+    // Asignar boletos aleatorios disponibles cuando hay un paquete (solo con la lista real de ocupados)
     useEffect(() => {
-        if (selectedPack && raffle) {
+        if (selectedPack && raffle && occupiedStatus === 'ready') {
             const ticketsInPack = packTicketCount(selectedPack) * packQuantity;
             const totalTickets = raffle.tickets || 1000;
             const occupiedSet = new Set(occupiedTickets);
@@ -148,7 +185,7 @@ const PurchasePage = () => {
         } else {
             setAssignedPackTickets([]);
         }
-    }, [selectedPack, packQuantity, raffle, occupiedTickets]);
+    }, [selectedPack, packQuantity, raffle, occupiedTickets, occupiedStatus]);
 
     // Usar el precio base del esquema Prisma (no packs)
     const pricePerTicket = raffle?.price || raffle?.packs?.find(p => p.tickets === 1 || p.q === 1)?.price || 50;
@@ -190,7 +227,12 @@ const PurchasePage = () => {
     };
 
     const onSubmit = async (data: FormData) => {
-        if (isSubmitting || !raffle || (initialTickets.length === 0 && !selectedPack)) return;
+        if (submittingRef.current || !raffle || (initialTickets.length === 0 && !selectedPack)) return;
+        if (selectedPack && assignedPackTickets.length < packTicketCount(selectedPack) * packQuantity) {
+            toast.error('No hay suficientes boletos disponibles', 'Elige un paquete más pequeño o boletos individuales.');
+            return;
+        }
+        submittingRef.current = true;
         setIsSubmitting(true);
         try {
             let ticketsToOrder: number[] = [];
@@ -228,11 +270,24 @@ const PurchasePage = () => {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             toast.error('No se pudo crear tu apartado', errorMessage);
         } finally {
+            submittingRef.current = false;
             setIsSubmitting(false);
         }
     };
 
-    if (loading) return <div className="w-full min-h-[60vh] flex items-center justify-center"><Spinner size="lg" /></div>;
+    // Alto de pantalla completa: con menos, el pie asoma durante la carga y luego salta (CLS)
+    if (loadStatus === 'loading') return <div className="w-full min-h-screen flex items-center justify-center"><Spinner size="lg" /></div>;
+    if (loadStatus === 'error') {
+        return (
+            <PageAnimator>
+                <div className="container mx-auto px-4 max-w-lg py-20 text-center" role="alert">
+                    <h1 className="text-title font-extrabold text-white">No pudimos cargar el sorteo</h1>
+                    <p className="mt-2 text-slate-400">Revisa tu conexión e inténtalo de nuevo. Tu selección se conserva.</p>
+                    <Button variant="secondary" className="mt-6" onClick={() => setReloadKey(k => k + 1)}>Reintentar</Button>
+                </div>
+            </PageAnimator>
+        );
+    }
     if (!raffle) {
         return (
             <PageAnimator>
@@ -388,6 +443,13 @@ const PurchasePage = () => {
                                                     </li>
                                                 ))}
                                             </ul>
+                                        ) : settingsStatus === 'error' ? (
+                                            <div role="alert" className="mt-3 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                                                <p className="text-sm text-slate-300">No pudimos cargar las cuentas de pago. Tu apartado ya está registrado con el folio {folio}.</p>
+                                                <Button variant="secondary" size="sm" className="mt-3" onClick={loadPaymentSettings}>Reintentar</Button>
+                                            </div>
+                                        ) : settingsStatus === 'loading' ? (
+                                            <p role="status" className="mt-3 text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">Cargando cuentas de pago…</p>
                                         ) : (
                                             <p className="mt-3 text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">No hay cuentas configuradas para transferencia. Escríbenos por WhatsApp.</p>
                                         )}
@@ -421,7 +483,9 @@ const PurchasePage = () => {
     const summary = (
         <Card>
             <div className="flex gap-3">
-                {raffleImage && <img src={raffleImage} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-background-primary" />}
+                {/* Es la foto completa (~0.7 MB, sin miniatura en el backend): decodificación asíncrona
+                    para no retener el pintado de la página mientras se decodifica */}
+                {raffleImage && <img src={raffleImage} alt="" decoding="async" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-background-primary" />}
                 <div className="min-w-0">
                     <p className="text-xs font-semibold text-slate-400">Sorteo</p>
                     <p className="font-extrabold text-white line-clamp-2">{raffle.title}</p>
@@ -542,10 +606,22 @@ const PurchasePage = () => {
                             </div>
                         </Card>
 
-                        <Button type="submit" size="lg" fullWidth loading={isSubmitting} disabled={initialTickets.length === 0 && !selectedPack}>
+                        {selectedPack && occupiedStatus === 'error' && (
+                            <div role="alert" className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-sm text-slate-300">
+                                No pudimos comprobar qué boletos siguen disponibles para tu paquete.
+                                <Button variant="secondary" size="sm" className="mt-3" onClick={() => setOccupiedReloadKey(k => k + 1)}>Reintentar</Button>
+                            </div>
+                        )}
+                        <Button
+                            type="submit"
+                            size="lg"
+                            fullWidth
+                            loading={isSubmitting || (!!selectedPack && occupiedStatus === 'loading')}
+                            disabled={(initialTickets.length === 0 && !selectedPack) || (!!selectedPack && occupiedStatus !== 'ready')}
+                        >
                             {isSubmitting ? 'Apartando boletos…' : `Apartar boletos · ${formatMoney(total)}`}
                         </Button>
-                        <p className="text-center text-xs text-slate-400">Al continuar aceptas los <Link to="/terminos" className="text-slate-300 hover:underline">términos y condiciones</Link>.</p>
+                        <p className="text-center text-xs text-slate-400">Al continuar aceptas los <Link to="/terminos" className="text-slate-300 underline underline-offset-2">términos y condiciones</Link>.</p>
                     </form>
                 </div>
             </div>

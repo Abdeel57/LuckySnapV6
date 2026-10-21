@@ -53,6 +53,7 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                         className="w-full h-full object-cover"
                         onError={onImgError}
                         decoding="async"
+                        fetchPriority="high"
                     />
                     <button
                         type="button"
@@ -83,7 +84,8 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                                 onClick={() => setCurrentIndex(index)}
                                 className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${index === currentIndex ? 'border-accent' : 'border-transparent opacity-70 hover:opacity-100'}`}
                             >
-                                <img src={image || FALLBACK_IMAGE} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" onError={onImgError} />
+                                {/* Fotos completas (no hay miniaturas en el backend): prioridad baja frente a la principal */}
+                                <img src={image || FALLBACK_IMAGE} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" fetchPriority="low" onError={onImgError} />
                             </button>
                         ))}
                     </div>
@@ -111,6 +113,7 @@ const RaffleGallery: React.FC<RaffleGalleryProps> = ({ images, title, className 
                             src={images[currentIndex] || FALLBACK_IMAGE}
                             alt={`${title} — foto ${currentIndex + 1} de ${images.length}`}
                             className="max-w-full max-h-full object-contain rounded-lg"
+                            decoding="async"
                             onClick={(e) => e.stopPropagation()}
                             onError={onImgError}
                         />
