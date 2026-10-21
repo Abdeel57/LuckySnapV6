@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { QrCode, Search } from 'lucide-react';
 import { searchTickets, getRaffles } from '../services/api';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
 import OrdenCard from '../components/OrdenCard';
 import QRScanner from '../components/QRScanner';
-import { QrCode, Search } from 'lucide-react';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Field, { inputClass } from '../components/ui/Field';
 import { useToast } from '../hooks/useToast';
-import ToastContainer from '../components/ToastContainer';
 import { Raffle } from '../types';
+import { formatMoney, pluralize } from '../utils/format';
 
 type SearchType = 'numero_boleto' | 'folio';
+
+const SEARCH_TYPES: { value: SearchType; label: string }[] = [
+    { value: 'folio', label: 'Folio' },
+    { value: 'numero_boleto', label: 'Número de boleto' },
+];
 
 const VerifierPage = () => {
     const [searchParams] = useSearchParams();
@@ -25,13 +33,12 @@ const VerifierPage = () => {
     const [showQRScanner, setShowQRScanner] = useState(false);
     const toast = useToast();
 
-    // Cargar rifas al montar el componente
+    // Cargar sorteos activos para el filtro opcional
     useEffect(() => {
         const loadRaffles = async () => {
             setLoadingRaffles(true);
             try {
                 const rafflesData = await getRaffles();
-                // Solo mostrar sorteos activos en el filtro
                 setRaffles(rafflesData.filter(raffle => raffle.status === 'active'));
             } catch (error) {
                 console.error('Error loading raffles:', error);
@@ -42,301 +49,190 @@ const VerifierPage = () => {
         loadRaffles();
     }, []);
 
-    // Función para búsqueda automática desde URL
-    const handleAutoSearch = async (folio: string) => {
+    const runSearch = async (criteria: Record<string, any>, messages: { empty: string; found?: string; errorTitle: string }) => {
         setIsLoading(true);
         setResultados(null);
         setExpandedOrdenes(new Set());
-        
         try {
-            const criteria: any = { folio };
-            if (selectedRaffleId) {
-                criteria.raffleId = selectedRaffleId;
-            }
+            if (selectedRaffleId) criteria.raffleId = selectedRaffleId;
             const result = await searchTickets(criteria);
             setResultados(result);
-            
             if (!result.clientes || result.clientes.length === 0) {
-                toast.info('Sin resultados', 'No se encontraron boletos para este folio');
-            } else {
-                toast.success('Éxito', 'Boleto encontrado desde código QR');
+                toast.info('Sin resultados', messages.empty);
+            } else if (messages.found) {
+                toast.success(messages.found);
             }
         } catch (error: any) {
-            console.error('Error searching from QR:', error);
-            toast.error('Error al buscar', error.message || 'No se encontraron resultados');
+            console.error('Error searching:', error);
+            toast.error(messages.errorTitle, error.message || 'No se encontraron resultados');
             setResultados(null);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Si hay un folio en la URL (viene de QR), buscarlo automáticamente
+    // Si hay un folio en la URL (viene de un QR), buscarlo automáticamente
     useEffect(() => {
         const folioFromUrl = searchParams.get('folio');
         if (folioFromUrl) {
             setSearchType('folio');
             setSearchValue(folioFromUrl);
-            // Buscar automáticamente después de un breve delay para que el componente esté listo
             setTimeout(() => {
-                handleAutoSearch(folioFromUrl);
+                runSearch({ folio: folioFromUrl }, { empty: 'No se encontraron boletos para este folio', found: 'Boleto encontrado', errorTitle: 'Error al buscar' });
             }, 500);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
-    const getPlaceholder = () => {
-        switch (searchType) {
-            case 'numero_boleto':
-                return 'Ingresa el número de boleto (ej. 123)';
-            case 'folio':
-                return 'Ingresa el folio (ej. LKSNP-XXXXX)';
-            default:
-                return 'Ingresa tu búsqueda';
-        }
-    };
-
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchValue.trim()) {
-            toast.error('Error', 'Por favor ingresa un valor para buscar');
+            toast.error('Escribe un valor para buscar');
             return;
         }
-        
-        setIsLoading(true);
-        setResultados(null);
-        setExpandedOrdenes(new Set());
-        
-        try {
-            // Construir criterios según el tipo de búsqueda
-            const criteria: any = {};
-            
-            if (searchType === 'numero_boleto') {
-                const num = parseInt(searchValue.trim());
-                if (isNaN(num)) {
-                    toast.error('Error', 'Por favor ingresa un número de boleto válido');
-                    setIsLoading(false);
-                    return;
-                }
-                criteria.numero_boleto = num;
-            } else if (searchType === 'folio') {
-                criteria.folio = searchValue.trim();
+        const criteria: Record<string, any> = {};
+        if (searchType === 'numero_boleto') {
+            const num = parseInt(searchValue.trim());
+            if (isNaN(num)) {
+                toast.error('Número de boleto inválido', 'Escribe solo el número, por ejemplo 123.');
+                return;
             }
-            
-            // Agregar filtro por rifa si está seleccionada
-            if (selectedRaffleId) {
-                criteria.raffleId = selectedRaffleId;
-            }
-            
-            const result = await searchTickets(criteria);
-            setResultados(result);
-            
-            if (!result.clientes || result.clientes.length === 0) {
-                toast.info('Sin resultados', 'No se encontraron boletos con esos criterios');
-            }
-        } catch (error: any) {
-            console.error('Error searching:', error);
-            toast.error('Error al buscar', error.message || 'No se encontraron resultados');
-            setResultados(null);
-        } finally {
-            setIsLoading(false);
+            criteria.numero_boleto = num;
+        } else {
+            criteria.folio = searchValue.trim();
         }
+        await runSearch(criteria, { empty: 'No se encontraron boletos con esos datos', errorTitle: 'Error al buscar' });
     };
 
     const handleQRScan = async (qrData: string) => {
-        setIsLoading(true);
         setShowQRScanner(false);
-        setResultados(null);
-        setExpandedOrdenes(new Set());
-        
-        try {
-            // El QR puede ser:
-            // 1. Una URL (formato nuevo): /#/verificador?folio=XXXXX
-            // 2. JSON (formato antiguo): { folio, ticket, raffleId }
-            
-            let folio: string | null = null;
-            
-            // Intentar como URL primero
-            if (qrData.includes('verificador') && qrData.includes('folio=')) {
-                try {
-                    const url = new URL(qrData);
-                    folio = url.searchParams.get('folio');
-                    // Si es hash router, buscar en el hash
-                    if (!folio && url.hash) {
-                        const hashParams = new URLSearchParams(url.hash.split('?')[1]);
-                        folio = hashParams.get('folio');
-                    }
-                } catch {
-                    // Si no es URL válida, intentar parsear como JSON
+        // El QR puede ser una URL (/#/verificador?folio=XXXXX) o JSON antiguo ({ folio, ... })
+        let folio: string | null = null;
+        if (qrData.includes('verificador') && qrData.includes('folio=')) {
+            try {
+                const url = new URL(qrData);
+                folio = url.searchParams.get('folio');
+                if (!folio && url.hash) {
+                    folio = new URLSearchParams(url.hash.split('?')[1]).get('folio');
                 }
-            }
-            
-            // Si no se encontró folio en URL, intentar como JSON (compatibilidad con códigos antiguos)
-            if (!folio) {
-                try {
-                    const qrParsed = JSON.parse(qrData);
-                    folio = qrParsed.folio;
-                } catch {
-                    // No es JSON ni URL válida
-                }
-            }
-            
-            if (!folio) {
-                toast.error('Error', 'El código QR no contiene un folio válido. Asegúrate de escanear el QR del boleto digital.');
-                setIsLoading(false);
-                return;
-            }
-            
-            // Buscar por folio
-            const criteria: any = { folio };
-            if (selectedRaffleId) {
-                criteria.raffleId = selectedRaffleId;
-            }
-            const result = await searchTickets(criteria);
-            setResultados(result);
-            
-            if (!result.clientes || result.clientes.length === 0) {
-                toast.info('Sin resultados', 'No se encontraron boletos para este código QR');
-            } else {
-                toast.success('Éxito', 'Código QR escaneado correctamente');
-            }
-        } catch (error: any) {
-            console.error('Error scanning QR:', error);
-            toast.error('Error al escanear QR', error.message || 'Error al procesar el código QR');
-            setResultados(null);
-        } finally {
-            setIsLoading(false);
+            } catch { /* no es URL válida; se intenta como JSON */ }
         }
+        if (!folio) {
+            try { folio = JSON.parse(qrData).folio; } catch { /* no es JSON */ }
+        }
+        if (!folio) {
+            toast.error('Código QR no válido', 'Escanea el QR del boleto digital o del comprobante.');
+            return;
+        }
+        setSearchType('folio');
+        setSearchValue(folio);
+        await runSearch({ folio }, { empty: 'No se encontraron boletos para este código QR', found: 'Código QR leído', errorTitle: 'Error al escanear QR' });
     };
 
     const toggleOrden = (ordenId: string) => {
-        const newExpanded = new Set(expandedOrdenes);
-        if (newExpanded.has(ordenId)) {
-            newExpanded.delete(ordenId);
-        } else {
-            newExpanded.add(ordenId);
-        }
-        setExpandedOrdenes(newExpanded);
+        setExpandedOrdenes(prev => {
+            const next = new Set(prev);
+            if (next.has(ordenId)) next.delete(ordenId); else next.add(ordenId);
+            return next;
+        });
     };
 
+    const hasResults = !isLoading && resultados?.clientes?.length > 0;
+    const noResults = !isLoading && resultados && (!resultados.clientes || resultados.clientes.length === 0);
 
     return (
         <PageAnimator>
-            <ToastContainer />
-            <div className="container mx-auto px-4 max-w-5xl py-12">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-4">Verificador de Boletos</h1>
-                    <p className="text-slate-300">Busca tus boletos por número de boleto, folio o escanea el código QR</p>
-                </div>
-                
-                {/* Formulario de búsqueda */}
-                <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg mb-8">
-                    <form onSubmit={handleSearch} className="flex flex-col gap-4">
-                        {/* Filtro por rifa (opcional) */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm text-slate-300">Filtrar por rifa (opcional)</label>
-                            <select
-                                value={selectedRaffleId}
-                                onChange={(e) => setSelectedRaffleId(e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-md py-3 px-4 text-white focus:ring-accent focus:border-accent text-sm"
-                            >
-                                <option value="">Todas las rifas</option>
+            <div className="container mx-auto px-4 sm:px-6 max-w-3xl pt-8 md:pt-14">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Boletos</p>
+                <h1 className="text-display font-extrabold text-white">Verificar boleto</h1>
+                <p className="mt-3 text-slate-400 max-w-xl">Busca por folio o por número de boleto, o escanea el código QR de tu comprobante.</p>
+
+                <Card className="mt-6">
+                    <form onSubmit={handleSearch} className="space-y-4" noValidate>
+                        <div className="inline-flex p-1 rounded-xl bg-white/[0.05] border border-white/10" role="radiogroup" aria-label="Buscar por">
+                            {SEARCH_TYPES.map(type => (
+                                <button
+                                    key={type.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={searchType === type.value}
+                                    onClick={() => { setSearchType(type.value); setSearchValue(''); }}
+                                    className={`h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${searchType === type.value ? 'bg-action text-white' : 'text-slate-300 hover:text-white'}`}
+                                >
+                                    {type.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                            <Field id="search-value" label={searchType === 'folio' ? 'Folio' : 'Número de boleto'} className="flex-1">
+                                <input
+                                    type={searchType === 'numero_boleto' ? 'number' : 'text'}
+                                    inputMode={searchType === 'numero_boleto' ? 'numeric' : 'text'}
+                                    value={searchValue}
+                                    onChange={(e) => setSearchValue(e.target.value)}
+                                    placeholder={searchType === 'folio' ? 'Ej. LKSNP-XXXXX' : 'Ej. 123'}
+                                    className={`${inputClass} tnum`}
+                                    autoComplete="off"
+                                    required
+                                />
+                            </Field>
+                            <Button type="submit" loading={isLoading} icon={<Search className="w-4 h-4" aria-hidden />} className="sm:flex-shrink-0">
+                                Buscar
+                            </Button>
+                        </div>
+
+                        <Field id="raffle-filter" label="Sorteo" optional>
+                            <select value={selectedRaffleId} onChange={(e) => setSelectedRaffleId(e.target.value)} className={inputClass}>
+                                <option value="">Todos los sorteos</option>
                                 {loadingRaffles ? (
-                                    <option disabled>Cargando rifas...</option>
+                                    <option disabled>Cargando sorteos…</option>
                                 ) : (
-                                    raffles.map((raffle) => (
-                                        <option key={raffle.id} value={raffle.id}>
-                                            {raffle.title}
-                                        </option>
-                                    ))
+                                    raffles.map(raffle => <option key={raffle.id} value={raffle.id}>{raffle.title}</option>)
                                 )}
                             </select>
-                        </div>
-                        
-                        {/* Métodos de búsqueda manual */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="flex-shrink-0 w-full sm:w-auto">
-                                <select
-                                    value={searchType}
-                                    onChange={(e) => setSearchType(e.target.value as SearchType)}
-                                    className="w-full sm:w-48 bg-slate-800 border border-slate-700 rounded-md py-3 px-4 text-white focus:ring-accent focus:border-accent text-sm"
-                                >
-                                    <option value="numero_boleto">Número de boleto</option>
-                                    <option value="folio">Folio</option>
-                                </select>
-                            </div>
-                            <input
-                                type={searchType === 'numero_boleto' ? 'number' : 'text'}
-                                value={searchValue}
-                                onChange={(e) => setSearchValue(e.target.value)}
-                                placeholder={getPlaceholder()}
-                                className="flex-grow bg-slate-800 border border-slate-700 rounded-md py-3 px-4 text-white focus:ring-accent focus:border-accent"
-                                required
-                            />
-                            <button 
-                                type="submit" 
-                                disabled={isLoading}
-                                className="bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                <Search className="w-4 h-4" />
-                                Buscar
-                            </button>
-                        </div>
-                        
-                        {/* Separador con QR */}
-                        <div className="flex items-center gap-4 my-2">
-                            <div className="flex-grow border-t border-slate-700"></div>
-                            <span className="text-slate-400 text-sm">o</span>
-                            <div className="flex-grow border-t border-slate-700"></div>
-                        </div>
-                        
-                        {/* Botón QR destacado */}
-                        <button
-                            type="button"
-                            onClick={() => setShowQRScanner(true)}
-                            className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-4 px-6 rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg flex items-center justify-center gap-3"
-                        >
-                            <QrCode className="w-6 h-6" />
-                            <span>Escanear Código QR del Boleto</span>
-                        </button>
-                    </form>
-                </div>
+                        </Field>
 
-                {/* Resultados */}
-                <div className="space-y-6">
+                        <div className="flex items-center gap-3" aria-hidden>
+                            <div className="flex-grow border-t border-white/[0.08]" />
+                            <span className="text-xs font-semibold text-slate-400">o</span>
+                            <div className="flex-grow border-t border-white/[0.08]" />
+                        </div>
+
+                        <Button type="button" variant="secondary" fullWidth onClick={() => setShowQRScanner(true)} icon={<QrCode className="w-5 h-5" aria-hidden />}>
+                            Escanear código QR
+                        </Button>
+                    </form>
+                </Card>
+
+                <div className="mt-6 space-y-4" aria-live="polite">
                     {isLoading && (
-                        <div className="text-center py-12">
+                        <div className="py-10 text-center">
                             <Spinner />
-                            <p className="text-slate-400 mt-4">Buscando boletos...</p>
+                            <p className="text-sm text-slate-400">Buscando boletos…</p>
                         </div>
                     )}
-                    
-                    {!isLoading && resultados && resultados.clientes && resultados.clientes.length > 0 && (
+
+                    {hasResults && (
                         <>
-                            <div className="text-center mb-4">
-                                <p className="text-slate-400">
-                                    Se encontraron <span className="text-white font-semibold">{resultados.totalClientes}</span> cliente(s) con{' '}
-                                    <span className="text-white font-semibold">{resultados.totalOrdenes}</span> orden(es)
-                                </p>
-                            </div>
-                            
+                            <p className="text-sm text-slate-400">
+                                {pluralize(resultados.totalOrdenes, 'orden', 'órdenes')} encontradas
+                                {resultados.totalClientes > 1 && ` · ${pluralize(resultados.totalClientes, 'cliente')}`}
+                            </p>
                             {resultados.clientes.map((cliente: any) => (
-                                <div key={cliente.clienteId} className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg">
-                                    {/* Encabezado del Cliente */}
-                                    <div className="mb-5 pb-5 border-b border-slate-700">
-                                        <h3 className="text-xl font-bold text-white mb-2">{cliente.nombre}</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-slate-300">
-                                            <p className="flex items-center gap-2">
-                                                📊 {cliente.totalOrdenes} orden(es) • {cliente.totalBoletos} boletos
-                                            </p>
+                                <Card key={cliente.clienteId}>
+                                    <div className="flex flex-wrap items-start justify-between gap-2 pb-4 mb-4 border-b border-white/[0.08]">
+                                        <div>
+                                            <h2 className="text-lg font-extrabold text-white">{cliente.nombre}</h2>
+                                            <p className="tnum text-sm text-slate-400">{pluralize(cliente.totalOrdenes, 'orden', 'órdenes')} · {pluralize(cliente.totalBoletos, 'boleto')}</p>
                                         </div>
                                         {cliente.totalPagado > 0 && (
-                                            <p className="text-green-400 font-semibold mt-3">
-                                                💰 Total pagado: L. {cliente.totalPagado.toFixed(2)}
+                                            <p className="text-right">
+                                                <span className="block text-xs font-semibold text-slate-400">Total pagado</span>
+                                                <span className="tnum font-extrabold text-accent">{formatMoney(cliente.totalPagado)}</span>
                                             </p>
                                         )}
                                     </div>
-                                    
-                                    {/* Lista de Órdenes */}
                                     <div className="space-y-3">
                                         {cliente.ordenes.map((orden: any) => (
                                             <OrdenCard
@@ -347,28 +243,22 @@ const VerifierPage = () => {
                                             />
                                         ))}
                                     </div>
-                                </div>
+                                </Card>
                             ))}
                         </>
                     )}
-                    
-                    {!isLoading && resultados && resultados.clientes && resultados.clientes.length === 0 && (
-                        <div className="bg-yellow-900/30 border border-yellow-700/50 text-yellow-300 p-6 rounded-lg text-center">
-                            <p className="font-semibold mb-2">No se encontraron resultados</p>
-                            <p className="text-sm text-yellow-200/80">
-                                Verifica que los datos ingresados sean correctos e intenta de nuevo.
-                            </p>
-                        </div>
+
+                    {noResults && (
+                        <Card tone="subtle" className="text-center">
+                            <p className="font-extrabold text-white">Sin resultados</p>
+                            <p className="mt-1 text-sm text-slate-400">Revisa que el folio o el número estén bien escritos e intenta de nuevo.</p>
+                        </Card>
                     )}
                 </div>
             </div>
 
-            {/* QR Scanner Modal */}
             {showQRScanner && (
-                <QRScanner
-                    onScan={handleQRScan}
-                    onClose={() => setShowQRScanner(false)}
-                />
+                <QRScanner onScan={handleQRScan} onClose={() => setShowQRScanner(false)} />
             )}
         </PageAnimator>
     );

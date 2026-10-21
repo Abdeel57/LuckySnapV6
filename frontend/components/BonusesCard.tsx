@@ -1,45 +1,28 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Gift } from 'lucide-react';
 
 interface BonusesCardProps {
     bonuses: string[];
     className?: string;
 }
 
+/** Premios o bonos adicionales configurados por el admin para el sorteo. */
 const BonusesCard: React.FC<BonusesCardProps> = ({ bonuses, className = '' }) => {
-    if (!bonuses || bonuses.length === 0) {
-        return null;
-    }
+    if (!bonuses || bonuses.length === 0) return null;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className={`bg-gradient-to-br from-background-secondary to-background-primary rounded-2xl border border-slate-700/50 shadow-xl p-6 ${className}`}
-        >
-            <div className="mb-4">
-                <h3 className="text-xl font-bold text-white mb-1">Bonos y Premios Adicionales</h3>
-                <div className="h-1 w-16 bg-gradient-to-r from-accent to-action rounded-full"></div>
-            </div>
-            
-            <div className="space-y-3">
+        <div className={className}>
+            <h3 className="text-base font-extrabold text-white mb-3">Premios adicionales</h3>
+            <ul className="space-y-2">
                 {bonuses.map((bonus, index) => (
-                    <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="flex items-start space-x-3 bg-background-primary/50 rounded-lg p-4 border border-slate-700/30 hover:border-accent/50 transition-all duration-200"
-                    >
-                        <div className="flex-shrink-0 w-2 h-2 bg-accent rounded-full mt-2"></div>
-                        <p className="text-slate-200 text-base leading-relaxed flex-1">{bonus}</p>
-                    </motion.div>
+                    <li key={index} className="flex items-start gap-3 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+                        <Gift className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" aria-hidden />
+                        <p className="text-[15px] text-slate-200">{bonus}</p>
+                    </li>
                 ))}
-            </div>
-        </motion.div>
+            </ul>
+        </div>
     );
 };
 
 export default BonusesCard;
-

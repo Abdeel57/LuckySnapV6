@@ -1,148 +1,76 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { ChevronUp, X } from 'lucide-react';
+import Button from './ui/Button';
+import PurchaseSummary, { PurchaseSummaryProps } from './PurchaseSummary';
+import { formatMoney, pluralize } from '../utils/format';
+import { buildCheckoutUrl, packTicketCount } from '../utils/checkout';
 
-import { Raffle, Pack } from '../types';
+type StickyPurchaseBarProps = Omit<PurchaseSummaryProps, 'hideAction'>;
 
-interface StickyPurchaseBarProps {
-    raffleSlug: string;
-    selectedTickets: number[];
-    totalPrice: number;
-    onRemoveTicket: (ticket: number) => void;
-    isSubmitting: boolean;
-    raffle?: Raffle;
-    selectedPack?: Pack | null;
-    packQuantity?: number;
-    onClearPack?: () => void;
-    matchedPack?: Pack | null;
-    savingsFromPack?: number;
-}
+/**
+ * Barra fija inferior para móvil/tablet: resumen en una línea + continuar.
+ * Tocar el resumen abre una hoja con el detalle y permite quitar boletos.
+ */
+const StickyPurchaseBar: React.FC<StickyPurchaseBarProps> = (props) => {
+    const { raffle, selectedTickets, selectedPack, packQuantity, totalPrice, boletosAdicionales } = props;
+    const [isOpen, setIsOpen] = useState(false);
 
-const StickyPurchaseBar = ({ 
-    raffleSlug, 
-    selectedTickets, 
-    totalPrice, 
-    onRemoveTicket, 
-    isSubmitting, 
-    raffle,
-    selectedPack,
-    packQuantity = 1,
-    onClearPack,
-    matchedPack,
-    savingsFromPack = 0
-}: StickyPurchaseBarProps) => {
-    const navigate = useNavigate();
+    const ticketsCount = selectedPack ? packTicketCount(selectedPack) * packQuantity : selectedTickets.length;
+    const shouldShow = ticketsCount > 0;
+    const checkoutUrl = buildCheckoutUrl(raffle.slug || '', selectedPack, packQuantity, selectedTickets);
 
-    const handlePurchase = () => {
-       const params = new URLSearchParams();
-       if (selectedPack) {
-           params.append('pack', selectedPack.name || 'pack');
-           params.append('quantity', packQuantity.toString());
-       } else {
-           params.append('tickets', selectedTickets.join(','));
-       }
-       navigate(`/comprar/${raffleSlug}?${params.toString()}`);
-    }
-
-    // Calcular boletos según si es paquete o selección individual
-    const ticketsCount = selectedPack 
-        ? (selectedPack.tickets || selectedPack.q || 1) * packQuantity
-        : selectedTickets.length;
-
-    // Calcular boletos de regalo si el sorteo tiene oportunidades
-    const boletosAdicionales = raffle?.boletosConOportunidades && raffle?.numeroOportunidades > 1
-        ? ticketsCount * (raffle.numeroOportunidades - 1)
-        : 0;
-    
-    const totalBoletos = ticketsCount + boletosAdicionales;
-
-    const shouldShow = selectedTickets.length > 0 || selectedPack !== null;
+    useEffect(() => { if (!shouldShow) setIsOpen(false); }, [shouldShow]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isOpen]);
 
     return (
         <AnimatePresence>
             {shouldShow && (
                 <motion.div
-                    initial={{ y: "100%" }}
-                    animate={{ y: "0%" }}
-                    exit={{ y: "100%" }}
-                    transition={{ type: "tween", ease: "easeInOut" }}
-                    className="fixed bottom-0 left-0 right-0 bg-background-secondary/90 backdrop-blur-sm p-4 border-t border-slate-700 shadow-lg z-40"
+                    key="sticky-bar"
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: 'tween', duration: 0.2, ease: 'easeOut' }}
+                    className="lg:hidden fixed inset-x-0 bottom-0 z-40"
                 >
-                    <div className="container mx-auto px-4">
-                        <div className="text-center mb-2">
-                            {selectedPack ? (
-                                <>
-                                    <p className="text-sm text-slate-300">
-                                        Paquete: <span className="font-semibold text-white">{selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`}</span>
-                                    </p>
-                                    <p className="text-xs text-slate-400">
-                                        Cantidad: {packQuantity} paquete(s) = {ticketsCount} boleto(s)
-                                        {boletosAdicionales > 0 && (
-                                            <span className="text-green-400 font-semibold"> + {boletosAdicionales} de regalo</span>
-                                        )}
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-sm text-slate-300">
-                                        Has seleccionado {selectedTickets.length} boleto(s)
-                                        {boletosAdicionales > 0 && (
-                                            <span className="text-green-400 font-semibold"> + {boletosAdicionales} de regalo</span>
-                                        )}
-                                    </p>
-                                    {matchedPack && savingsFromPack > 0 && (
-                                        <p className="text-xs text-green-400 font-semibold mt-1">
-                                            🎁 Descuento aplicado: -LPS {savingsFromPack.toFixed(2)}
-                                        </p>
-                                    )}
-                                </>
-                            )}
-                            <p className="font-bold text-white text-lg">
-                                LPS {totalPrice.toFixed(2)}
-                                {boletosAdicionales > 0 && (
-                                    <span className="text-xs text-green-400 block mt-1">
-                                        Recibirás {totalBoletos} boletos en total
-                                    </span>
-                                )}
-                            </p>
-                        </div>
-                        
-                        {selectedPack ? (
-                            <div className="text-center mb-3">
-                                <button 
-                                    onClick={onClearPack}
-                                    className="bg-gradient-to-r from-accent to-action text-white text-sm font-semibold px-6 py-2 rounded-full hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-                                >
-                                    {selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`} × {packQuantity}
-                                    <span className="text-lg">&times;</span>
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-wrap justify-center gap-1 mb-3 max-h-20 overflow-y-auto no-scrollbar">
-                                {/* Boletos comprados */}
-                                {selectedTickets.map(ticket => (
-                                    <button key={ticket} onClick={() => onRemoveTicket(ticket)} className="bg-blue-600 text-xs text-white px-2 py-1 rounded-full hover:bg-blue-700 transition-colors">
-                                        {ticket} &times;
+                    {isOpen && (
+                        <div className="fixed inset-0 bg-black/60" onClick={() => setIsOpen(false)} aria-hidden />
+                    )}
+                    <div className="relative bg-background-secondary border-t border-white/10 shadow-raised">
+                        {isOpen && (
+                            <div role="dialog" aria-label="Detalle de tu selección" className="max-h-[60vh] overflow-y-auto px-4 pt-4 pb-2">
+                                <div className="flex justify-end -mt-1 mb-1">
+                                    <button type="button" onClick={() => setIsOpen(false)} className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08]" aria-label="Cerrar detalle">
+                                        <X className="w-5 h-5" />
                                     </button>
-                                ))}
+                                </div>
+                                <PurchaseSummary {...props} hideAction />
                             </div>
                         )}
-                        
-                        {/* Boletos de regalo - mensaje compacto */}
-                        {boletosAdicionales > 0 && !selectedPack && (
-                            <div className="text-center mb-3">
-                                <span className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-semibold px-4 py-2 rounded-full inline-flex items-center gap-2 shadow-lg">
-                                    🎁 + {boletosAdicionales} boletos de regalo
+                        <div className="flex items-center gap-3 px-4 pt-3 pb-safe">
+                            <button
+                                type="button"
+                                onClick={() => setIsOpen(open => !open)}
+                                className="flex-1 min-w-0 text-left rounded-xl -mx-2 px-2 py-1"
+                                aria-expanded={isOpen}
+                            >
+                                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                                    {pluralize(ticketsCount, 'boleto')}
+                                    {boletosAdicionales > 0 && <span className="text-accent">+{boletosAdicionales} regalo</span>}
+                                    <ChevronUp className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
                                 </span>
-                            </div>
-                        )}
-                        <button 
-                            onClick={handlePurchase} 
-                            disabled={isSubmitting}
-                            className="w-full text-center bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                        >
-                            {isSubmitting ? 'Procesando...' : selectedPack ? 'Comprar Paquete' : 'Comprar Boletos'}
-                        </button>
+                                <span className="tnum block text-xl font-extrabold text-white leading-tight">{formatMoney(totalPrice)}</span>
+                            </button>
+                            <Button to={checkoutUrl} size="md" className="flex-shrink-0 px-6">
+                                Continuar
+                            </Button>
+                        </div>
                     </div>
                 </motion.div>
             )}

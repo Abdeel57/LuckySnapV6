@@ -368,133 +368,107 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
         }
     };
 
+    const primaryButton = 'w-full h-12 rounded-xl bg-action text-white font-semibold hover:brightness-110 transition';
+    const secondaryButton = 'w-full h-12 rounded-xl bg-white/[0.06] border border-white/10 text-white font-semibold hover:bg-white/10 transition';
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[100] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+            <div className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-background-secondary border border-white/10 shadow-2xl p-5 sm:p-6 pb-safe">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Escanear Código QR</h3>
+                    <h3 id="qr-title" className="text-lg font-extrabold text-white">Escanear código QR</h3>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                        className="-mr-2 inline-flex items-center justify-center w-11 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                        aria-label="Cerrar"
                     >
-                        <X className="w-5 h-5 text-gray-500" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
-                
+
                 {/* Estado: Solicitando permisos */}
                 {permissionStatus === 'requesting' && (
-                    <div className="text-center py-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                            <Camera className="w-8 h-8 text-blue-600 animate-pulse" />
+                    <div className="text-center py-8" role="status">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-action/15 rounded-full mb-4">
+                            <Camera className="w-8 h-8 text-white animate-pulse" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h4 className="text-lg font-extrabold text-white mb-2">
                             Solicitando permiso de cámara
                         </h4>
-                        <p className="text-sm text-gray-600">
-                            Por favor, permite el acceso a la cámara cuando tu navegador lo solicite.
+                        <p className="text-sm text-slate-400">
+                            Permite el acceso a la cámara cuando tu navegador lo pida.
                         </p>
-                        <div className="mt-4 flex justify-center space-x-2">
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                        </div>
                     </div>
                 )}
 
                 {/* Estado: Permisos concedidos - Mostrar escáner */}
                 {permissionStatus === 'granted' && (
                     <>
-                        <div className="text-center mb-4">
-                            <QrCode className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">
-                                Apunta la cámara hacia el código QR del boleto
-                            </p>
-                        </div>
+                        <p className="text-sm text-slate-400 text-center mb-4">
+                            Apunta la cámara al código QR del boleto o del comprobante.
+                        </p>
 
                         {/* Contenedor relativo para posicionar el botón de voltear */}
-                        <div className="relative">
+                        <div className="relative rounded-xl overflow-hidden bg-black">
                             <div id="qr-reader" ref={readerElementRef} className="w-full min-h-[300px]"></div>
-                            
+
                             {/* Botón para voltear la cámara - Solo en dispositivos móviles con múltiples cámaras */}
                             {isMobileDevice && availableCameras.length > 1 && (
                                 <button
+                                    type="button"
                                     onClick={handleFlipCamera}
-                                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-3 rounded-full shadow-lg transition-all hover:scale-110 z-10 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={useBackCamera ? "Cambiar a cámara frontal" : "Cambiar a cámara trasera"}
+                                    className="absolute top-3 right-3 inline-flex items-center justify-center w-11 h-11 bg-black/60 text-white rounded-full border border-white/15 backdrop-blur-sm hover:bg-black/80 transition-colors z-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    aria-label={useBackCamera ? "Cambiar a cámara frontal" : "Cambiar a cámara trasera"}
                                     disabled={!isScanning || permissionStatus !== 'granted'}
                                 >
                                     <RotateCcw className="w-5 h-5" />
                                 </button>
                             )}
                         </div>
-                        
+
                         {isScanning && (
-                            <div className="mt-4 text-center">
-                                <div className="inline-flex items-center space-x-2 text-green-600">
-                                    <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
-                                    <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                                    <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                                    <span className="text-sm">Escaneando...</span>
-                                </div>
-                            </div>
+                            <p className="mt-4 text-center text-sm text-slate-400 inline-flex w-full items-center justify-center gap-2" role="status">
+                                <span className="w-2 h-2 rounded-full bg-accent animate-pulse" aria-hidden />
+                                Escaneando…
+                            </p>
                         )}
                     </>
                 )}
 
                 {/* Estado: Permisos denegados */}
                 {permissionStatus === 'denied' && (
-                    <div className="text-center py-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-                            <AlertCircle className="w-8 h-8 text-red-600" />
+                    <div className="text-center py-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/15 rounded-full mb-4">
+                            <AlertCircle className="w-8 h-8 text-red-400" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h4 className="text-lg font-extrabold text-white mb-2">
                             Permiso de cámara denegado
                         </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                            {errorMessage || 'No se pudo acceder a la cámara. Por favor, permite el acceso a la cámara en la configuración de tu navegador.'}
+                        <p className="text-sm text-slate-400 mb-5">
+                            {errorMessage || 'No se pudo acceder a la cámara. Permite el acceso en la configuración de tu navegador.'}
                         </p>
                         <div className="space-y-2">
-                            <button
-                                onClick={handleRetry}
-                                className="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Intentar de nuevo
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                            >
-                                Cerrar
-                            </button>
+                            <button type="button" onClick={handleRetry} className={primaryButton}>Intentar de nuevo</button>
+                            <button type="button" onClick={onClose} className={secondaryButton}>Cerrar</button>
                         </div>
                     </div>
                 )}
 
                 {/* Estado: Error */}
                 {permissionStatus === 'error' && (
-                    <div className="text-center py-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-                            <AlertCircle className="w-8 h-8 text-yellow-600" />
+                    <div className="text-center py-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-400/15 rounded-full mb-4">
+                            <AlertCircle className="w-8 h-8 text-amber-300" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                            Error al acceder a la cámara
+                        <h4 className="text-lg font-extrabold text-white mb-2">
+                            No se pudo usar la cámara
                         </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                            {errorMessage || 'No se pudo acceder a la cámara. Por favor, verifica que tengas una cámara conectada y disponible.'}
+                        <p className="text-sm text-slate-400 mb-5">
+                            {errorMessage || 'Verifica que tengas una cámara conectada y disponible.'}
                         </p>
                         <div className="space-y-2">
-                            <button
-                                onClick={handleRetry}
-                                className="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Intentar de nuevo
-                            </button>
-                            <button
-                                onClick={onClose}
-                                className="w-full bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                            >
-                                Cerrar
-                            </button>
+                            <button type="button" onClick={handleRetry} className={primaryButton}>Intentar de nuevo</button>
+                            <button type="button" onClick={onClose} className={secondaryButton}>Cerrar</button>
                         </div>
                     </div>
                 )}

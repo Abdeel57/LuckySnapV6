@@ -1,47 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Search } from 'lucide-react';
 import PageAnimator from '../components/PageAnimator';
-import { adminGetAllOrders } from '../services/api'; // Using admin for demo
-import { Order } from '../types';
-import OrderHistoryCard from '../components/OrderHistoryCard';
-import Spinner from '../components/Spinner';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
-const AccountsPage = () => {
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        // In a real app, this would be getOrdersByUserId() or similar
-        // For this demo, we fetch all and filter client-side to simulate a user's orders
-        adminGetAllOrders().then(data => {
-            // This filtering is a stand-in for fetching a specific user's data
-            setOrders(data.filter(o => o.folio.endsWith('0') || o.folio.endsWith('5')));
-            setLoading(false);
-        }).catch(err => {
-            console.error("Failed to fetch orders", err);
-            setLoading(false);
-        });
-    }, []);
-
-  return (
-    <PageAnimator>
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <h1 className="text-3xl font-bold text-center text-white mb-8">Mi Cuenta</h1>
-        
-        <div className="bg-background-secondary p-6 rounded-lg border border-slate-700/50 shadow-lg">
-             <h2 className="text-xl font-bold text-white mb-4">Mi Historial de Boletos</h2>
-            {loading ? <Spinner /> : (
-                <div className="space-y-4">
-                    {orders.length > 0 ? (
-                        orders.map(order => <OrderHistoryCard key={order.folio} order={order} />)
-                    ) : (
-                        <p className="text-slate-400">Aún no has participado en ningún sorteo.</p>
-                    )}
-                </div>
-            )}
-        </div>
-      </div>
-    </PageAnimator>
-  );
-};
+/**
+ * Ruta /mis-cuentas. La versión anterior listaba órdenes de todos los clientes
+ * (vía /admin/orders) como demostración; se reemplaza por un acceso al
+ * verificador, donde cada persona consulta sus boletos con su propio folio.
+ */
+const AccountsPage = () => (
+  <PageAnimator>
+    <div className="container mx-auto px-4 sm:px-6 max-w-lg pt-10 md:pt-16">
+      <Card className="text-center py-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Mis boletos</p>
+        <h1 className="text-title font-extrabold text-white">Consulta tus boletos con tu folio</h1>
+        <p className="mt-2 text-slate-400">El folio está en tu apartado y en el mensaje de WhatsApp. También puedes buscar por número de boleto o escanear el QR del comprobante.</p>
+        <Button to="/verificador" size="lg" className="mt-6" icon={<Search className="w-5 h-5" aria-hidden />}>Ir al verificador</Button>
+      </Card>
+    </div>
+  </PageAnimator>
+);
 
 export default AccountsPage;

@@ -1,6 +1,45 @@
 /* Importar sistema de Design Tokens */
 @import './styles/design-tokens.css';
 
+/* ═══════════════════════════════════════════════════════════
+   BASE DEL SITIO PÚBLICO
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Cifras tabulares para precios, fechas y números de boleto */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
 /* Mobile optimization utilities */
 .line-clamp-2 {
   display: -webkit-box;
@@ -18,34 +57,54 @@
 
 /* Touch-friendly improvements */
 @media (max-width: 768px) {
-  /* Larger touch targets */
   button, a, input, select, textarea {
     min-height: 44px;
   }
-  
-  /* Better spacing for mobile */
+
   .mobile-spacing {
     padding: 1rem;
   }
-  
-  /* Improved readability */
-  body {
-    font-size: 16px;
-    line-height: 1.5;
-  }
 }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+/* Área segura inferior (notch / barra de gestos) */
+.pb-safe {
+  padding-bottom: calc(0.75rem + var(--safe-bottom));
 }
 
-/* Focus improvements for accessibility */
+/* Boleto vendido: patrón rayado para no depender solo del color */
+.ticket-sold {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 5px,
+    rgb(255 255 255 / 0.07) 5px 6px
+  );
+}
+
+/* Focus visible con el color de acción de la marca */
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #ec4899;
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid rgb(var(--color-action));
   outline-offset: 2px;
+}
+
+/* Select nativo en tema oscuro */
+select option {
+  background-color: rgb(var(--color-background-secondary));
+  color: #fff;
+}
+
+/* Respetar la preferencia de menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

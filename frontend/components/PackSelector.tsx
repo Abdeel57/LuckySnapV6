@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo } from 'react';
+import { Check, Minus, Plus } from 'lucide-react';
 import { Pack } from '../types';
+import { formatMoney, pluralize } from '../utils/format';
+import { packLabel, packTicketCount } from '../utils/checkout';
 
 interface PackSelectorProps {
     packs: Pack[];
@@ -8,159 +10,101 @@ interface PackSelectorProps {
     onPackSelect: (pack: Pack | null, quantity: number) => void;
     selectedPack: Pack | null;
     selectedQuantity: number;
+    /** Boletos disponibles; limita cuántos paquetes se pueden pedir. */
+    availableTickets?: number;
     className?: string;
 }
 
-const PackSelector: React.FC<PackSelectorProps> = ({
-    packs,
-    pricePerTicket,
-    onPackSelect,
-    selectedPack,
-    selectedQuantity,
-    className = ''
-}) => {
-    const [selectedPackIndex, setSelectedPackIndex] = useState<number | null>(null);
+const isSamePack = (a: Pack | null, b: Pack) => !!a && (a === b || (a.name === b.name && a.price === b.price && packTicketCount(a) === packTicketCount(b)));
 
-    // Si no hay paquetes, no mostrar el selector
-    if (!packs || packs.length === 0) {
-        return null;
-    }
+const optionClass = (selected: boolean) =>
+    `w-full text-left rounded-xl border-2 p-3.5 sm:p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-secondary ${
+        selected ? 'border-action bg-action/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+    }`;
 
-    // Calcular descuentos para cada paquete
-    const packsWithDiscount = useMemo(() => {
-        return packs.map((pack) => {
-            const ticketCount = pack.tickets || pack.q || 1;
-            const individualPrice = ticketCount * pricePerTicket;
-            const packPrice = pack.price;
-            const discount = individualPrice - packPrice;
-            const discountPercent = ticketCount > 0 ? ((discount / individualPrice) * 100) : 0;
-            
-            return {
-                ...pack,
-                ticketCount,
-                individualPrice,
-                discount,
-                discountPercent: discountPercent > 0 ? discountPercent : 0,
-                pricePerTicketInPack: ticketCount > 0 ? packPrice / ticketCount : packPrice
-            };
-        });
-    }, [packs, pricePerTicket]);
+const RadioMark = ({ checked }: { checked: boolean }) => (
+    <span className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${checked ? 'border-action bg-action' : 'border-slate-500'}`} aria-hidden>
+        {checked && <Check className="w-3 h-3 text-white" />}
+    </span>
+);
 
-    const handlePackClick = (pack: Pack, index: number) => {
-        if (selectedPackIndex === index) {
-            // Si ya está seleccionado, deseleccionar
-            setSelectedPackIndex(null);
-            onPackSelect(null, 1);
-        } else {
-            setSelectedPackIndex(index);
-            onPackSelect(pack, 1);
-        }
-    };
+const PackSelector: React.FC<PackSelectorProps> = ({ packs, pricePerTicket, onPackSelect, selectedPack, selectedQuantity, availableTickets, className = '' }) => {
+    const packsWithDiscount = useMemo(() => packs.map(pack => {
+        const ticketCount = packTicketCount(pack);
+        const individualPrice = ticketCount * pricePerTicket;
+        const discount = individualPrice - pack.price;
+        const discountPercent = individualPrice > 0 && discount > 0 ? (discount / individualPrice) * 100 : 0;
+        return { pack, ticketCount, discount, discountPercent, perTicket: ticketCount > 0 ? pack.price / ticketCount : pack.price };
+    }), [packs, pricePerTicket]);
+
+    if (!packs || packs.length === 0) return null;
+
+    const maxQuantity = selectedPack && availableTickets !== undefined
+        ? Math.max(1, Math.floor(availableTickets / packTicketCount(selectedPack)))
+        : 99;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className={`bg-gradient-to-br from-background-secondary to-background-primary rounded-2xl border border-slate-700/50 shadow-xl p-6 ${className}`}
-        >
-            <div className="mb-6">
-                <h3 className="text-xl font-bold text-white mb-1">Precios y Paquetes</h3>
-                <div className="h-1 w-16 bg-gradient-to-r from-accent to-action rounded-full"></div>
-                <p className="text-slate-400 text-sm mt-2">Selecciona un paquete para ahorrar en tu compra</p>
-            </div>
-
-            <div className="space-y-3">
-                {/* Opción de boleto individual */}
-                <motion.button
-                    onClick={() => {
-                        setSelectedPackIndex(null);
-                        onPackSelect(null, 1);
-                    }}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
-                        selectedPackIndex === null
-                            ? 'border-accent bg-accent/10 shadow-lg'
-                            : 'border-slate-700/50 bg-background-primary/50 hover:border-slate-600'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="font-semibold text-white">Boleto Individual</p>
-                            <p className="text-sm text-slate-400">1 boleto</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="font-bold text-accent text-lg">LPS {pricePerTicket.toFixed(2)}</p>
-                            <p className="text-xs text-slate-400">por boleto</p>
+        <div className={className} role="radiogroup" aria-label="Forma de compra">
+            <div className="space-y-2">
+                <button type="button" role="radio" aria-checked={!selectedPack} onClick={() => onPackSelect(null, 1)} className={optionClass(!selectedPack)}>
+                    <div className="flex items-start gap-3">
+                        <RadioMark checked={!selectedPack} />
+                        <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                            <div>
+                                <p className="font-semibold text-white">Boletos individuales</p>
+                                <p className="text-sm text-slate-400">Elige tus números en la tabla</p>
+                            </div>
+                            <p className="tnum text-right flex-shrink-0">
+                                <span className="block font-extrabold text-accent">{formatMoney(pricePerTicket)}</span>
+                                <span className="block text-xs text-slate-400">por boleto</span>
+                            </p>
                         </div>
                     </div>
-                </motion.button>
+                </button>
 
-                {/* Paquetes disponibles */}
-                {packsWithDiscount.map((pack, index) => {
-                    const isSelected = selectedPackIndex === index;
-                    const packName = pack.name || `Pack de ${pack.ticketCount} boletos`;
-                    
+                {packsWithDiscount.map(({ pack, ticketCount, discount, discountPercent, perTicket }, index) => {
+                    const checked = isSamePack(selectedPack, pack);
                     return (
-                        <motion.button
-                            key={index}
-                            onClick={() => handlePackClick(pack, index)}
-                            className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
-                                isSelected
-                                    ? 'border-accent bg-accent/10 shadow-lg'
-                                    : 'border-slate-700/50 bg-background-primary/50 hover:border-slate-600'
-                            }`}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <div>
-                                    <p className="font-semibold text-white">{packName}</p>
-                                    <p className="text-sm text-slate-400">{pack.ticketCount} boletos</p>
+                        <div key={`${pack.name || 'pack'}-${index}`} className={optionClass(checked)}>
+                            <button type="button" role="radio" aria-checked={checked} onClick={() => onPackSelect(checked ? null : pack, 1)} className="w-full text-left focus-visible:outline-none">
+                                <div className="flex items-start gap-3">
+                                    <RadioMark checked={checked} />
+                                    <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="font-semibold text-white">{packLabel(pack)}</p>
+                                            <p className="text-sm text-slate-400">
+                                                {pluralize(ticketCount, 'boleto')} · números al azar
+                                                {discount > 0 && <span className="text-accent font-semibold"> · ahorras {formatMoney(discount)} ({discountPercent.toFixed(0)} %)</span>}
+                                            </p>
+                                        </div>
+                                        <p className="tnum text-right flex-shrink-0">
+                                            <span className="block font-extrabold text-accent">{formatMoney(pack.price)}</span>
+                                            <span className="block text-xs text-slate-400">{formatMoney(perTicket)} c/u</span>
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-accent text-lg">LPS {pack.price.toFixed(2)}</p>
-                                    <p className="text-xs text-slate-400">
-                                        LPS {(pack.pricePerTicketInPack || 0).toFixed(2)} por boleto
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            {pack.discountPercent > 0 && (
-                                <div className="mt-2 pt-2 border-t border-slate-700/30">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-green-400 font-medium">
-                                            Ahorras LPS {pack.discount.toFixed(2)}
-                                        </span>
-                                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full font-semibold">
-                                            {pack.discountPercent.toFixed(0)}% OFF
-                                        </span>
+                            </button>
+
+                            {checked && (
+                                <div className="mt-3 ml-8 flex items-center justify-between gap-3">
+                                    <span className="text-sm text-slate-300">Cantidad de paquetes</span>
+                                    <div className="inline-flex items-center rounded-xl border border-white/10 bg-background-primary" role="group" aria-label="Cantidad de paquetes">
+                                        <button type="button" onClick={() => onPackSelect(pack, Math.max(1, selectedQuantity - 1))} disabled={selectedQuantity <= 1} className="w-11 h-11 inline-flex items-center justify-center rounded-l-xl text-white disabled:opacity-40 hover:bg-white/[0.06]" aria-label="Menos paquetes">
+                                            <Minus className="w-4 h-4" />
+                                        </button>
+                                        <span className="tnum w-10 text-center font-extrabold text-white" aria-live="polite">{selectedQuantity}</span>
+                                        <button type="button" onClick={() => onPackSelect(pack, Math.min(maxQuantity, selectedQuantity + 1))} disabled={selectedQuantity >= maxQuantity} className="w-11 h-11 inline-flex items-center justify-center rounded-r-xl text-white disabled:opacity-40 hover:bg-white/[0.06]" aria-label="Más paquetes">
+                                            <Plus className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             )}
-                        </motion.button>
+                        </div>
                     );
                 })}
             </div>
-
-            {selectedPack && (
-                <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 p-4 bg-accent/10 border border-accent/30 rounded-xl"
-                >
-                    <p className="text-sm text-slate-300">
-                        <span className="font-semibold text-white">Paquete seleccionado:</span>{' '}
-                        {selectedPack.name || `Pack de ${selectedPack.tickets || selectedPack.q || 1} boletos`} - 
-                        <span className="text-accent font-bold"> LPS {selectedPack.price.toFixed(2)}</span>
-                    </p>
-                </motion.div>
-            )}
-        </motion.div>
+        </div>
     );
 };
 
 export default PackSelector;
-

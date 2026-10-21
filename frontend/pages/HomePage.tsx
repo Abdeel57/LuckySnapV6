@@ -1,19 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { getActiveRaffles, getPastWinners, getSettings } from '../services/api';
 import { Raffle, Winner } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import RaffleCard from '../components/RaffleCard';
-import Spinner from '../components/Spinner';
 import WinnerCard from '../components/WinnerCard';
 import HowItWorks from '../components/HowItWorks';
 import Faq from '../components/Faq';
-import CountdownTimer from '../components/CountdownTimer';
 import HeroRaffle from '../components/HeroRaffle';
+import SectionHeading from '../components/ui/SectionHeading';
+import Card from '../components/ui/Card';
 import { useAnalytics } from '../contexts/AnalyticsContext';
-import { Trophy, Gift, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useOptimizedAnimations } from '../utils/deviceDetection';
+
+const HeroSkeleton = () => (
+    <div className="container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-busy="true" aria-label="Cargando sorteos">
+        <div className="grid gap-6 lg:grid-cols-12 lg:gap-10 animate-pulse">
+            <div className="lg:col-span-7 rounded-2xl bg-white/[0.06] aspect-[4/3]" />
+            <div className="lg:col-span-5 space-y-4">
+                <div className="h-3 w-24 rounded bg-white/[0.08]" />
+                <div className="h-10 w-4/5 rounded bg-white/[0.08]" />
+                <div className="h-10 w-3/5 rounded bg-white/[0.08]" />
+                <div className="grid grid-cols-4 gap-2 pt-4">
+                    {[0, 1, 2, 3].map(i => <div key={i} className="h-16 rounded-xl bg-white/[0.06]" />)}
+                </div>
+                <div className="h-14 rounded-xl bg-white/[0.08]" />
+            </div>
+        </div>
+    </div>
+);
 
 const HomePage = () => {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
@@ -22,7 +35,6 @@ const HomePage = () => {
     // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
     const [showSoldPercentage, setShowSoldPercentage] = useState(false);
     const { trackPageView } = useAnalytics();
-    const reduceAnimations = useOptimizedAnimations();
 
     useEffect(() => {
         getSettings()
@@ -33,43 +45,12 @@ const HomePage = () => {
     useEffect(() => {
         setLoading(true);
         trackPageView('/');
-        
-        // CRÍTICO: Cargar datos de forma secuencial en móviles (no paralelo)
-        // Promise.all puede sobrecargar móviles de gama baja
-        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-        
-        if (isMobile) {
-            // Móviles: Cargar secuencialmente (más lento pero más estable)
-            getActiveRaffles()
-                .then(raffleData => {
-                    setRaffles(raffleData);
-                    return getPastWinners();
-                })
-                .then(winnerData => {
-                    setWinners(winnerData);
-                })
-                .catch(err => {
-                    setRaffles([]);
-                    setWinners([]);
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
-        } else {
-            // Desktop: Cargar en paralelo (más rápido)
-            Promise.all([
-                getActiveRaffles(),
-                getPastWinners()
-            ]).then(([raffleData, winnerData]) => {
-                setRaffles(raffleData);
-                setWinners(winnerData);
-            }).catch(err => {
-                setRaffles([]);
-                setWinners([]);
-            }).finally(() => {
-                setLoading(false);
-            });
-        }
+        Promise.allSettled([getActiveRaffles(), getPastWinners()])
+            .then(([raffleResult, winnerResult]) => {
+                setRaffles(raffleResult.status === 'fulfilled' ? raffleResult.value : []);
+                setWinners(winnerResult.status === 'fulfilled' ? winnerResult.value : []);
+            })
+            .finally(() => setLoading(false));
     }, [trackPageView]);
 
     const mainRaffle = raffles.length > 0 ? raffles[0] : null;
@@ -77,187 +58,47 @@ const HomePage = () => {
 
     return (
         <PageAnimator>
-            {/* Hero Section - Main Raffle */}
             {loading ? (
-                <div className="py-16 md:py-20 flex justify-center">
-                    <div className="text-center">
-                        <Spinner />
-                        <p className="text-muted mt-4">Cargando sorteos...</p>
-                    </div>
-                </div>
+                <HeroSkeleton />
             ) : mainRaffle ? (
-                <HeroRaffle raffle={mainRaffle} />
-            ) : null}
+                <HeroRaffle raffle={mainRaffle} showSoldPercentage={showSoldPercentage} />
+            ) : (
+                <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-8 md:pt-14">
+                    <Card className="max-w-xl mx-auto text-center py-10">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Sorteos</p>
+                        <h1 className="text-title font-extrabold text-white">No hay sorteos activos por ahora</h1>
+                        <p className="mt-2 text-slate-400">Vuelve pronto o síguenos en redes para enterarte del próximo.</p>
+                    </Card>
+                </section>
+            )}
 
-            {/* Other Active Raffles */}
             {!loading && otherRaffles.length > 0 && (
-                <section className="relative py-16 md:py-24 overflow-hidden">
-                    {/* Fondo con efectos decorativos */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-action/5 to-background-primary" />
-                    {!reduceAnimations && (
-                        <div className="absolute inset-0 opacity-20">
-                            <div className="absolute top-20 left-10 w-96 h-96 bg-action/20 rounded-full blur-3xl" />
-                            <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
-                        </div>
-                    )}
-                    
-                    <div className="container mx-auto px-4 max-w-7xl relative z-10">
-                        {/* Header mejorado */}
-                        <motion.div
-                            initial={reduceAnimations ? {} : { opacity: 0, y: 30 }}
-                            whileInView={reduceAnimations ? {} : { opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={reduceAnimations ? {} : { duration: 0.6 }}
-                            className="text-center mb-16"
-                        >
-                            <div className="inline-flex items-center justify-center gap-3 mb-6">
-                                <div className="p-3 bg-gradient-to-br from-action to-accent rounded-2xl shadow-lg">
-                                    <Gift className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                                </div>
-                                <div className="p-3 bg-gradient-to-br from-accent to-action rounded-2xl shadow-lg">
-                                    <Zap className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                                </div>
-                            </div>
-                            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
-                                Más Sorteos Disponibles
-                            </h2>
-                            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
-                                Explora todos nuestros sorteos activos y encuentra el premio perfecto para ti
-                            </p>
-                        </motion.div>
-                        
-                        {/* Grid con animaciones escalonadas */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                            {otherRaffles.map((raffle, index) => (
-                                <motion.div
-                                    key={raffle.id}
-                                    initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 40, scale: 0.9 }}
-                                    whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                                    viewport={{ once: true, amount: 0.2 }}
-                                    transition={reduceAnimations ? { 
-                                        duration: 0.3, 
-                                        delay: Math.min(index * 0.08, 0.4)
-                                    } : { 
-                                        duration: 0.5, 
-                                        delay: Math.min(index * 0.1, 0.6),
-                                        type: "spring",
-                                        stiffness: 100
-                                    }}
-                                >
-                                    <RaffleCard raffle={raffle} showSoldPercentage={showSoldPercentage} />
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
-            
-            {/* Empty State */}
-            {!loading && raffles.length === 0 && (
-                <section className="py-16 md:py-24">
-                    <div className="container mx-auto px-4 max-w-4xl text-center">
-                        <div className="card max-w-2xl mx-auto">
-                            <div className="text-8xl mb-8">🎯</div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
-                                ¡Próximamente!
-                            </h2>
-                            <p className="text-lg md:text-xl text-secondary mb-8 leading-relaxed">
-                                Estamos preparando nuevos sorteos increíbles para ti.
-                            </p>
-                            <p className="text-muted">
-                                ¡Vuelve pronto para participar!
-                            </p>
-                        </div>
+                <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-14 md:pt-20" aria-labelledby="more-raffles">
+                    <SectionHeading title="Más sorteos activos" />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {otherRaffles.map(raffle => (
+                            <RaffleCard key={raffle.id} raffle={raffle} showSoldPercentage={showSoldPercentage} />
+                        ))}
                     </div>
                 </section>
             )}
 
-            {/* How It Works Section */}
-            <section className="py-12 md:py-16 lg:py-24 bg-secondary/5 relative z-10 overflow-visible">
+            <section className="pt-14 md:pt-20">
                 <HowItWorks />
             </section>
 
-            {/* Past Winners */}
             {!loading && winners.length > 0 && (
-                <section className="relative py-16 md:py-24 overflow-visible z-10">
-                    {/* Fondo con efecto - reducido en móviles */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-background-primary via-purple-900/10 to-background-primary pointer-events-none z-0" />
-                    {!reduceAnimations && (
-                        <div className="absolute inset-0 opacity-30 pointer-events-none z-0">
-                            <div className="absolute top-20 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl" />
-                            <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
-                        </div>
-                    )}
-                    
-                    <div className="container mx-auto px-4 max-w-7xl relative z-30">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.3 }}
-                            className="text-center mb-16"
-                        >
-                            <div className="inline-flex items-center justify-center gap-3 mb-6">
-                                <div className="p-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg">
-                                    <Trophy className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                                </div>
-                            </div>
-                            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
-                                Nuestros Últimos Ganadores
-                            </h2>
-                            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
-                                Conoce a las personas afortunadas que ya han ganado increíbles premios
-                            </p>
-                        </motion.div>
-                        
-                        <div className={`${
-                            winners.length === 1 
-                                ? 'flex justify-center max-w-md mx-auto' 
-                                : winners.length === 2 
-                                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 max-w-5xl mx-auto' 
-                                    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10'
-                        } relative z-30`}>
-                            {winners.map((winner, index) => (
-                                <motion.div
-                                    key={winner.id}
-                                    initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 30 }}
-                                    whileInView={reduceAnimations ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.4, delay: Math.min(index * 0.1, 0.5) }}
-                                >
-                                    <WinnerCard winner={winner} />
-                                </motion.div>
-                            ))}
-                        </div>
+                <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-14 md:pt-20">
+                    <SectionHeading title="Ganadores recientes" />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {winners.map(winner => <WinnerCard key={winner.id} winner={winner} />)}
                     </div>
                 </section>
             )}
 
-            {/* Empty Winners State */}
-            {!loading && winners.length === 0 && (
-                <section className="py-16 md:py-24 bg-tertiary">
-                    <div className="container mx-auto px-4 max-w-4xl text-center">
-                        <div className="card max-w-2xl mx-auto">
-                            <div className="text-8xl mb-8">🏆</div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
-                                ¡Sé el Primer Ganador!
-                            </h2>
-                            <p className="text-lg md:text-xl text-secondary mb-8 leading-relaxed">
-                                Aún no tenemos ganadores, pero eso puede cambiar pronto.
-                            </p>
-                            <p className="text-muted">
-                                ¡Participa en nuestros sorteos y podrías ser el primero!
-                            </p>
-                        </div>
-                    </div>
-                </section>
-            )}
-            
-            {/* FAQ Section */}
-            <section className="py-16 md:py-24 bg-secondary/5">
+            <section className="pt-14 md:pt-20">
                 <Faq />
             </section>
-
         </PageAnimator>
     );
 };

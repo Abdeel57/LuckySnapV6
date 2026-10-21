@@ -1,205 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo, useState } from 'react';
+import { Calendar, Gift, Ticket } from 'lucide-react';
 import { Raffle } from '../types';
 import CountdownTimer from './CountdownTimer';
-// Removed ShoppingBag import - no longer needed
 import ResponsiveImage from './ResponsiveImage';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
+import { formatDate, formatMoney } from '../utils/format';
 
 interface HeroRaffleProps {
     raffle: Raffle;
+    showSoldPercentage?: boolean;
 }
 
-const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle }) => {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=900&fit=crop';
 
-    // Preparar imágenes: incluir imagen principal + galería (evitando duplicados)
-    const allImages = (() => {
-        const images: string[] = [];
-        
-        // Agregar imageUrl si existe
-        if (raffle.imageUrl) {
-            images.push(raffle.imageUrl);
-        }
-        
-        // Agregar heroImage si existe y no está duplicado
-        if (raffle.heroImage && !images.includes(raffle.heroImage)) {
-            images.push(raffle.heroImage);
-        }
-        
-        // Agregar galería si existe (evitando duplicados)
-        if (raffle.gallery && raffle.gallery.length > 0) {
-            raffle.gallery.forEach(img => {
-                if (!images.includes(img)) {
-                    images.push(img);
-                }
-            });
-        }
-        
-        // Si no hay ninguna imagen, usar default
-        if (images.length === 0) {
-            return ['https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=1200&h=600&fit=crop'];
-        }
-        
-        return images;
-    })();
+export const collectRaffleImages = (raffle: Raffle): string[] => {
+    const images: string[] = [];
+    if (raffle.imageUrl) images.push(raffle.imageUrl);
+    if (raffle.heroImage && !images.includes(raffle.heroImage)) images.push(raffle.heroImage);
+    raffle.gallery?.forEach(img => { if (img && !images.includes(img)) images.push(img); });
+    return images.length > 0 ? images : [FALLBACK_IMAGE];
+};
 
-    // Cambio automático DESACTIVADO en móviles para mejor rendimiento
-    useEffect(() => {
-        // Solo activar en desktop
-        if (allImages.length > 1 && window.innerWidth >= 768) {
-            const interval = setInterval(() => {
-                setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-            }, 5000);
-            return () => clearInterval(interval);
-        }
-    }, [allImages.length]);
+const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = false }) => {
+    const images = useMemo(() => collectRaffleImages(raffle), [raffle.id, raffle.imageUrl, raffle.heroImage, raffle.gallery?.length]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
-    // Detectar móvil para desactivar animaciones
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const hasOpportunities = Boolean(raffle.boletosConOportunidades && raffle.numeroOportunidades > 1);
+    const hasPacks = Boolean(raffle.packs && raffle.packs.length > 0);
+    const isLongDescription = (raffle.description?.length || 0) > 160;
+    const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
+    const progress = raffle.tickets > 0 ? Math.max(0, Math.min(100, (sold / raffle.tickets) * 100)) : 0;
+    const detailUrl = `/sorteo/${raffle.slug}`;
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-secondary to-tertiary">
-            {/* Imagen principal como fondo de pantalla completa */}
-            <div className="absolute inset-0 w-full h-full">
-                {isMobile ? (
-                    // Móvil: Imagen estática con fade-in suave
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="w-full h-full"
-                    >
+        <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-labelledby="hero-title">
+            <div className="grid gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
+                {/* Imagen */}
+                <div className="lg:col-span-7">
+                    <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
                         <ResponsiveImage
-                            src={allImages[currentImageIndex]}
+                            key={images[currentIndex]}
+                            src={images[currentIndex]}
                             alt={raffle.title}
-                            widths={[1200, 1920]}
-                            sizesHint="100vw"
+                            widths={[640, 960, 1280, 1600]}
+                            sizesHint="(min-width: 1024px) 700px, 100vw"
                             preferFormat="auto"
                             loading="eager"
                             decoding="async"
                             fetchPriority="high"
                             className="w-full h-full object-cover"
                         />
-                    </motion.div>
-                ) : (
-                    // Desktop: Con animaciones
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={currentImageIndex}
-                            className="w-full h-full"
-                            initial={{ opacity: 0, scale: 1.1 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <ResponsiveImage
-                                src={allImages[currentImageIndex]}
-                                alt={raffle.title}
-                                widths={[1920, 2560]}
-                                sizesHint="100vw"
-                                preferFormat="auto"
-                                loading="eager"
-                                decoding="async"
-                                fetchPriority="high"
-                                className="w-full h-full object-cover"
-                            />
-                        </motion.div>
-                    </AnimatePresence>
-                )}
-                
-                {/* Overlay oscuro para legibilidad */}
-                <div className="absolute inset-0 bg-black/35"></div>
-                
-                {/* Patrón de textura deshabilitado (se removió la marca de agua) */}
-            </div>
-
-            {/* Contenido centrado sobre la imagen */}
-            <div className="container mx-auto px-4 relative z-10 min-h-screen flex flex-col justify-center py-8">
-                <motion.div
-                    initial={isMobile ? { opacity: 0 } : { opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={isMobile ? { duration: 0.4 } : { duration: 0.8 }}
-                    className="flex flex-col items-center text-center space-y-6 sm:space-y-8"
-                >
-                    {/* Título */}
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight max-w-4xl">
-                        {raffle.title}
-                    </h1>
-
-                    {/* Descripción (solo si existe) */}
-                    {raffle.description && (
-                        <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-black tracking-wide max-w-2xl">
-                            {raffle.description}
-                        </p>
-                    )}
-
-                    {/* Espacio adicional para mover elementos más abajo */}
-                    <div className="h-4 sm:h-6 md:h-8"></div>
-
-                    {/* Precio - Simplificado */}
-                    <div className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 bg-accent rounded-full">
-                        <span className="text-white text-lg sm:text-xl font-bold">L. {raffle.price}</span>
                     </div>
-
-                    {/* Botón principal - Comprar Boletos - Más delgado, sin ícono */}
-                    <Link
-                        to={`/sorteo/${raffle.slug}`}
-                        className="inline-flex items-center justify-center gap-0 bg-accent hover:bg-accent/90 text-white font-bold text-base sm:text-lg px-8 sm:px-10 py-2.5 sm:py-3 rounded-2xl shadow-2xl hover:shadow-accent/50 hover:scale-105 transition-all duration-300"
-                    >
-                        <span>COMPRAR BOLETOS</span>
-                    </Link>
-
-                    {/* Contador de tiempo */}
-                    <motion.div
-                        initial={isMobile ? { opacity: 0 } : { opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={isMobile ? { duration: 0.4, delay: 0.1 } : { duration: 0.8, delay: 0.2 }}
-                        className="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-3xl p-6 sm:p-8 border border-white/20 mt-8"
-                    >
-                        <div className="mb-4">
-                            <p className="text-white/80 text-sm sm:text-base font-medium">El sorteo termina en:</p>
-                        </div>
-                        <CountdownTimer targetDate={raffle.drawDate} />
-                    </motion.div>
-
-                    {/* Galería de miniaturas (si hay múltiples imágenes) */}
-                    {allImages.length > 1 && (
-                        <div className="mt-6 flex gap-2 sm:gap-3">
-                            {allImages.slice(0, 4).map((img, index) => (
+                    {images.length > 1 && (
+                        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Fotos del premio">
+                            {images.map((img, index) => (
                                 <button
-                                    key={index}
-                                    onClick={() => setCurrentImageIndex(index)}
-                                    className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                                        index === currentImageIndex 
-                                            ? 'border-accent scale-110 shadow-lg shadow-accent/50' 
-                                            : 'border-white/40 opacity-60 hover:opacity-100'
+                                    key={img}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={index === currentIndex}
+                                    aria-label={`Foto ${index + 1} de ${images.length}`}
+                                    onClick={() => setCurrentIndex(index)}
+                                    className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
+                                        index === currentIndex ? 'border-accent' : 'border-transparent opacity-70 hover:opacity-100'
                                     }`}
                                 >
-                                    <ResponsiveImage
-                                        src={img}
-                                        alt={`Vista ${index + 1}`}
-                                        widths={[240, 320, 480, 640]}
-                                        sizesHint="96px"
-                                        preferFormat="auto"
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <ResponsiveImage src={img} alt="" widths={[160, 240, 320]} sizesHint="64px" preferFormat="auto" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                 </button>
                             ))}
-                            {allImages.length > 4 && (
-                                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/20 flex items-center justify-center text-white text-xs border-2 border-white/40">
-                                    +{allImages.length - 4}
-                                </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Contenido */}
+                <div className="lg:col-span-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Sorteo activo</p>
+                    <h1 id="hero-title" className="text-display font-extrabold text-white">{raffle.title}</h1>
+
+                    <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3">
+                        <div>
+                            <dt className="text-xs font-semibold text-slate-400">Precio por boleto</dt>
+                            <dd className="tnum text-2xl font-extrabold text-accent leading-tight">{formatMoney(raffle.price)}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-xs font-semibold text-slate-400">Fecha del sorteo</dt>
+                            <dd className="flex items-center gap-1.5 text-sm font-semibold text-white mt-1"><Calendar className="w-4 h-4 text-slate-400" aria-hidden />{formatDate(raffle.drawDate)}</dd>
+                        </div>
+                    </dl>
+
+                    {(hasOpportunities || hasPacks) && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {hasOpportunities && <Badge tone="accent" icon={<Gift className="w-3.5 h-3.5" aria-hidden />}>{raffle.numeroOportunidades} oportunidades por boleto</Badge>}
+                            {hasPacks && <Badge tone="neutral" icon={<Ticket className="w-3.5 h-3.5" aria-hidden />}>Paquetes con descuento</Badge>}
+                        </div>
+                    )}
+
+                    <div className="mt-5">
+                        <p className="text-xs font-semibold text-slate-400 mb-2">Cierra en</p>
+                        <CountdownTimer targetDate={raffle.drawDate} variant="blocks" />
+                    </div>
+
+                    {showSoldPercentage && (
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
+                                <span>{progress.toFixed(0)} % vendido</span>
+                                <span className="tnum">{sold.toLocaleString('es-HN')} / {raffle.tickets.toLocaleString('es-HN')}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Boletos vendidos">
+                                <div className="h-full rounded-full bg-accent" style={{ width: `${progress}%` }} />
+                            </div>
+                        </div>
+                    )}
+
+                    <Button to={detailUrl} size="lg" fullWidth className="mt-6" icon={<Ticket className="w-5 h-5" aria-hidden />}>
+                        Comprar boletos
+                    </Button>
+
+                    {raffle.description && (
+                        <div className="mt-5">
+                            <p className={`text-[15px] text-slate-300 whitespace-pre-line ${isLongDescription && !descriptionExpanded ? 'line-clamp-3' : ''}`}>
+                                {raffle.description}
+                            </p>
+                            {isLongDescription && (
+                                <button
+                                    type="button"
+                                    onClick={() => setDescriptionExpanded(v => !v)}
+                                    className="mt-1 h-10 text-sm font-semibold text-accent hover:underline"
+                                    aria-expanded={descriptionExpanded}
+                                >
+                                    {descriptionExpanded ? 'Leer menos' : 'Leer más'}
+                                </button>
                             )}
                         </div>
                     )}
-                </motion.div>
+                </div>
             </div>
         </section>
     );
 };
 
 export default HeroRaffle;
-

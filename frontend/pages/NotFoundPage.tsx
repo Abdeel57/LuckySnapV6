@@ -1,27 +1,19 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import PageAnimator from '../components/PageAnimator';
+import Button from '../components/ui/Button';
 
-const NotFoundPage = () => {
-  return (
-    <PageAnimator>
-      <div className="text-center py-20">
-        <h1 className="text-6xl font-extrabold text-accent">404</h1>
-        <h2 className="mt-4 text-3xl font-bold text-white">Página no encontrada</h2>
-        <p className="mt-4 text-lg text-slate-400">
-          Lo sentimos, la página que buscas no existe o fue movida.
-        </p>
-        <div className="mt-8">
-          <Link
-            to="/"
-            className="bg-action text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Volver al Inicio
-          </Link>
-        </div>
+const NotFoundPage = () => (
+  <PageAnimator>
+    <div className="container mx-auto px-4 max-w-lg py-20 md:py-28 text-center">
+      <p className="tnum text-6xl font-extrabold text-accent">404</p>
+      <h1 className="mt-3 text-title font-extrabold text-white">Página no encontrada</h1>
+      <p className="mt-2 text-slate-400">El enlace no existe o fue movido.</p>
+      <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+        <Button to="/">Ver sorteos activos</Button>
+        <Button to="/verificador" variant="secondary">Verificar un boleto</Button>
       </div>
-    </PageAnimator>
-  );
-};
+    </div>
+  </PageAnimator>
+);
 
 export default NotFoundPage;

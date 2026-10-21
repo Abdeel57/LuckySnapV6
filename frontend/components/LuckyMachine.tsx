@@ -1,9 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Gift, Zap, Coins } from 'lucide-react';
+import { ArrowRight, RotateCcw, Shuffle, X } from 'lucide-react';
+import Button from './ui/Button';
+import { formatMoney, formatTicket, pluralize } from '../utils/format';
+import { useOptimizedAnimations } from '../utils/deviceDetection';
 
 interface LuckyMachineProps {
+    open: boolean;
+    onClose: () => void;
     totalTickets: number;
     occupiedTickets: number[];
     pricePerTicket: number;
@@ -13,346 +18,165 @@ interface LuckyMachineProps {
 
 const QUANTITY_OPTIONS = [1, 3, 5, 10, 25, 50, 100, 150, 200, 250];
 
-const LuckyMachine: React.FC<LuckyMachineProps> = ({
-    totalTickets,
-    occupiedTickets,
-    pricePerTicket,
-    onTicketsSelected,
-    raffleSlug
-}) => {
+/** Modal "Elegir al azar": escoge N boletos entre los disponibles. */
+const LuckyMachine: React.FC<LuckyMachineProps> = ({ open, onClose, totalTickets, occupiedTickets, pricePerTicket, onTicketsSelected, raffleSlug }) => {
     const navigate = useNavigate();
-    const [isOpen, setIsOpen] = useState(false);
+    const reduceAnimations = useOptimizedAnimations();
     const [selectedQuantity, setSelectedQuantity] = useState<number | null>(null);
     const [isSpinning, setIsSpinning] = useState(false);
     const [generatedTickets, setGeneratedTickets] = useState<number[]>([]);
-    const [showResults, setShowResults] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(true);
+    const dialogRef = useRef<HTMLDivElement>(null);
 
     const occupiedSet = useMemo(() => new Set(occupiedTickets), [occupiedTickets]);
-    
-    // Generar lista de boletos disponibles
-    const availableTickets = useMemo(() => {
-        const allTickets = Array.from({ length: totalTickets }, (_, i) => i + 1);
-        return allTickets.filter(ticket => !occupiedSet.has(ticket));
-    }, [totalTickets, occupiedSet]);
+    const availableTickets = useMemo(
+        () => Array.from({ length: totalTickets }, (_, i) => i + 1).filter(ticket => !occupiedSet.has(ticket)),
+        [totalTickets, occupiedSet]
+    );
 
-    const handleQuantitySelect = (quantity: number) => {
-        if (quantity > availableTickets.length) {
-            alert(`Solo hay ${availableTickets.length} boletos disponibles. No puedes seleccionar ${quantity}.`);
-            return;
-        }
-        setSelectedQuantity(quantity);
-    };
+    const reset = () => { setSelectedQuantity(null); setGeneratedTickets([]); setIsSpinning(false); };
 
-    const spinMachine = () => {
-        if (!selectedQuantity || selectedQuantity > availableTickets.length) return;
-        
-        setIsSpinning(true);
-        setShowResults(false);
-        setGeneratedTickets([]);
-
-        // Animación de 2-3 segundos
-        setTimeout(() => {
-            // Generar boletos aleatorios
-            const shuffled = [...availableTickets].sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, selectedQuantity);
-            setGeneratedTickets(selected.sort((a, b) => a - b));
-            setIsSpinning(false);
-            setShowResults(true);
-        }, 2500);
-    };
-
-    const handlePurchase = () => {
-        if (generatedTickets.length > 0) {
-            // Notificar al componente padre
-            onTicketsSelected(generatedTickets);
-            // Redirigir a la página de compra con los boletos seleccionados
-            const ticketsParam = generatedTickets.join(',');
-            navigate(`/comprar/${raffleSlug}?tickets=${ticketsParam}`);
-            // Resetear estado
-            setIsOpen(false);
-            setSelectedQuantity(null);
-            setGeneratedTickets([]);
-            setShowResults(false);
-        }
-    };
-
-    const totalPrice = useMemo(() => {
-        return generatedTickets.length * pricePerTicket;
-    }, [generatedTickets.length, pricePerTicket]);
-
-    // Ocultar tooltip después de 3 segundos
+    // Cerrar con Escape, bloquear scroll de fondo y enfocar el diálogo al abrir
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setShowTooltip(false);
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (!open) { reset(); return; }
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !isSpinning) onClose(); };
+        window.addEventListener('keydown', onKey);
+        document.body.style.overflow = 'hidden';
+        dialogRef.current?.focus();
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            document.body.style.overflow = '';
+        };
+    }, [open, isSpinning, onClose]);
+
+    const spin = () => {
+        if (!selectedQuantity || selectedQuantity > availableTickets.length) return;
+        setIsSpinning(true);
+        setGeneratedTickets([]);
+        const pick = () => {
+            const shuffled = [...availableTickets].sort(() => Math.random() - 0.5);
+            setGeneratedTickets(shuffled.slice(0, selectedQuantity).sort((a, b) => a - b));
+            setIsSpinning(false);
+        };
+        if (reduceAnimations) pick(); else setTimeout(pick, 1200);
+    };
+
+    const applySelection = () => { onTicketsSelected(generatedTickets); onClose(); };
+    const goToCheckout = () => {
+        onTicketsSelected(generatedTickets);
+        navigate(`/comprar/${raffleSlug}?tickets=${generatedTickets.join(',')}`);
+        onClose();
+    };
+
+    const totalPrice = generatedTickets.length * pricePerTicket;
+    const hasResults = generatedTickets.length > 0;
 
     return (
-        <>
-            {/* Botón flotante de la máquina de la suerte */}
-            <motion.div
-                className="fixed bottom-6 right-6 z-40"
-                initial={{ x: 100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-            >
-                {/* Mensaje explicativo con flecha */}
-                <AnimatePresence>
-                    {showTooltip && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.3 }}
-                            className="absolute right-full mr-3 bottom-1/2 transform translate-y-1/2 w-56 z-50"
-                        >
-                            <div className="bg-background-secondary border-2 border-purple-500/50 rounded-lg p-3 shadow-xl relative">
-                                <p className="text-sm text-white font-medium leading-tight">
-                                    ¡Máquina de la Suerte! Deja que el azar elija tus boletos
-                                </p>
-                                {/* Flecha apuntando al botón */}
-                                <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
-                                    <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[10px] border-l-purple-500/50 border-b-[10px] border-b-transparent"></div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Botón flotante circular */}
-                <motion.button
-                    onClick={() => setIsOpen(true)}
-                    className="relative w-16 h-16 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 rounded-full shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 group overflow-hidden flex items-center justify-center"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    aria-label="Abrir Máquina de la Suerte"
+        <AnimatePresence>
+            {open && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="fixed inset-0 z-[100] bg-black/70 flex items-end sm:items-center justify-center sm:p-4"
+                    onClick={() => !isSpinning && onClose()}
                 >
-                    {/* Efecto de brillo animado */}
                     <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full"
-                        animate={{
-                            x: ['-100%', '200%'],
-                        }}
-                        transition={{
-                            repeat: Infinity,
-                            duration: 2,
-                            ease: 'linear'
-                        }}
-                    />
-                    
-                    <Coins className="w-8 h-8 text-yellow-300 relative z-10" />
-                </motion.button>
-            </motion.div>
-
-            {/* Modal */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-                        onClick={() => !isSpinning && setIsOpen(false)}
+                        ref={dialogRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="lucky-title"
+                        tabIndex={-1}
+                        initial={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduceAnimations ? { opacity: 0 } : { opacity: 0, y: 24 }}
+                        transition={{ duration: 0.18 }}
+                        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-background-secondary border border-white/10 shadow-2xl focus:outline-none"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            className="bg-background-secondary rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-purple-500/50"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="p-6">
-                                {/* Header */}
-                                <div className="text-center mb-6">
-                                    <div className="flex justify-center space-x-2 mb-3">
-                                        <Sparkles className="w-10 h-10 text-yellow-400" />
-                                        <Gift className="w-10 h-10 text-pink-400" />
-                                        <Zap className="w-10 h-10 text-orange-400" />
-                                    </div>
-                                    <h2 className="text-3xl font-bold text-white mb-2">🎰 Máquina de la Suerte</h2>
-                                    <p className="text-slate-300">Selecciona cuántos boletos quieres y deja que la suerte decida</p>
+                        <div className="p-5 sm:p-6 pb-safe">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 id="lucky-title" className="text-xl font-extrabold text-white flex items-center gap-2">
+                                        <Shuffle className="w-5 h-5 text-accent" aria-hidden /> Elegir al azar
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-400">Indica cuántos boletos quieres; los números se escogen entre los disponibles.</p>
                                 </div>
-
-                                {/* Selector de cantidad */}
-                                {!showResults && (
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-semibold text-white mb-4 text-center">
-                                            ¿Cuántos boletos quieres comprar?
-                                        </h3>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                            {QUANTITY_OPTIONS.map((quantity) => {
-                                                const isAvailable = quantity <= availableTickets.length;
-                                                return (
-                                                    <motion.button
-                                                        key={quantity}
-                                                        onClick={() => handleQuantitySelect(quantity)}
-                                                        disabled={!isAvailable || isSpinning}
-                                                        className={`p-4 rounded-lg font-bold text-lg transition-all ${
-                                                            selectedQuantity === quantity
-                                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50 scale-105'
-                                                                : isAvailable
-                                                                ? 'bg-background-primary text-slate-300 hover:bg-slate-700 border border-slate-600'
-                                                                : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
-                                                        }`}
-                                                        whileHover={isAvailable && selectedQuantity !== quantity ? { scale: 1.05 } : {}}
-                                                        whileTap={isAvailable ? { scale: 0.95 } : {}}
-                                                    >
-                                                        {quantity}
-                                                    </motion.button>
-                                                );
-                                            })}
-                                        </div>
-                                        {availableTickets.length < 1000 && (
-                                            <p className="text-sm text-slate-400 text-center mt-3">
-                                                Boletos disponibles: {availableTickets.length}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Botón de tirar */}
-                                {selectedQuantity && !showResults && (
-                                    <motion.button
-                                        onClick={spinMachine}
-                                        disabled={isSpinning}
-                                        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xl"
-                                        whileHover={!isSpinning ? { scale: 1.02 } : {}}
-                                        whileTap={!isSpinning ? { scale: 0.98 } : {}}
-                                    >
-                                        {isSpinning ? '🎰 Girando...' : '🎰 ¡Tirar de la Máquina!'}
-                                    </motion.button>
-                                )}
-
-                                {/* Animación de giro */}
-                                {isSpinning && (
-                                    <motion.div
-                                        className="my-8 flex flex-col items-center justify-center space-y-4"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                    >
-                                        <motion.div
-                                            animate={{
-                                                rotate: [0, 360],
-                                                scale: [1, 1.2, 1],
-                                            }}
-                                            transition={{
-                                                rotate: {
-                                                    repeat: Infinity,
-                                                    duration: 0.5,
-                                                    ease: 'linear'
-                                                },
-                                                scale: {
-                                                    repeat: Infinity,
-                                                    duration: 1,
-                                                    ease: 'easeInOut'
-                                                }
-                                            }}
-                                            className="w-32 h-32 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 rounded-full flex items-center justify-center shadow-2xl"
-                                        >
-                                            <Sparkles className="w-16 h-16 text-yellow-300" />
-                                        </motion.div>
-                                        <motion.p
-                                            animate={{ opacity: [0.5, 1, 0.5] }}
-                                            transition={{ repeat: Infinity, duration: 1 }}
-                                            className="text-xl font-bold text-white"
-                                        >
-                                            La suerte está decidiendo...
-                                        </motion.p>
-                                    </motion.div>
-                                )}
-
-                                {/* Resultados */}
-                                {showResults && generatedTickets.length > 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="space-y-4"
-                                    >
-                                        <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border-2 border-green-500/50 rounded-xl p-4 text-center">
-                                            <h3 className="text-2xl font-bold text-green-400 mb-2">
-                                                ¡Boletos Asignados! 🎉
-                                            </h3>
-                                            <p className="text-white">
-                                                La máquina de la suerte ha seleccionado {generatedTickets.length} boleto{generatedTickets.length > 1 ? 's' : ''} para ti
-                                            </p>
-                                        </div>
-
-                                        {/* Lista de boletos */}
-                                        <div className="bg-background-primary rounded-lg p-4 max-h-60 overflow-y-auto">
-                                            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                                                {generatedTickets.map((ticket) => (
-                                                    <motion.div
-                                                        key={ticket}
-                                                        initial={{ scale: 0, rotate: -180 }}
-                                                        animate={{ scale: 1, rotate: 0 }}
-                                                        transition={{ type: 'spring', stiffness: 200 }}
-                                                        className="bg-gradient-to-br from-purple-600 to-pink-600 text-white font-bold text-sm p-2 rounded text-center shadow-lg"
-                                                    >
-                                                        {ticket}
-                                                    </motion.div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Resumen de precio */}
-                                        <div className="bg-background-primary rounded-lg p-4 border border-slate-700">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-slate-300">Boletos seleccionados:</span>
-                                                <span className="text-white font-bold">{generatedTickets.length}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-slate-300">Precio por boleto:</span>
-                                                <span className="text-white font-bold">LPS {pricePerTicket.toFixed(2)}</span>
-                                            </div>
-                                            <div className="border-t border-slate-700 pt-2 flex justify-between items-center">
-                                                <span className="text-white font-bold text-lg">Total:</span>
-                                                <span className="text-accent font-bold text-xl">LPS {totalPrice.toFixed(2)}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Botón de compra */}
-                                        <motion.button
-                                            onClick={handlePurchase}
-                                            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-green-500/50 transition-all text-xl"
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                        >
-                                            🛒 Proceder a Comprar
-                                        </motion.button>
-
-                                        {/* Botón para volver a tirar */}
-                                        <button
-                                            onClick={() => {
-                                                setShowResults(false);
-                                                setSelectedQuantity(null);
-                                                setGeneratedTickets([]);
-                                            }}
-                                            className="w-full bg-slate-700 text-white font-semibold py-3 px-6 rounded-xl hover:bg-slate-600 transition-all"
-                                        >
-                                            🔄 Intentar de Nuevo
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                {/* Botón cerrar */}
-                                {!isSpinning && (
-                                    <button
-                                        onClick={() => setIsOpen(false)}
-                                        className="w-full mt-4 bg-slate-700 text-white font-semibold py-3 px-6 rounded-xl hover:bg-slate-600 transition-all"
-                                    >
-                                        Cerrar
-                                    </button>
-                                )}
+                                <button type="button" onClick={onClose} disabled={isSpinning} className="-mr-2 -mt-2 inline-flex items-center justify-center w-11 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] disabled:opacity-40" aria-label="Cerrar">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                        </motion.div>
+
+                            {!hasResults && !isSpinning && (
+                                <div className="mt-5">
+                                    <p className="text-sm font-semibold text-slate-200 mb-2">¿Cuántos boletos?</p>
+                                    <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Cantidad de boletos">
+                                        {QUANTITY_OPTIONS.map(quantity => {
+                                            const isAvailable = quantity <= availableTickets.length;
+                                            const checked = selectedQuantity === quantity;
+                                            return (
+                                                <button
+                                                    key={quantity}
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={checked}
+                                                    onClick={() => setSelectedQuantity(quantity)}
+                                                    disabled={!isAvailable}
+                                                    className={`tnum h-12 rounded-xl border-2 font-extrabold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                                                        checked ? 'border-action bg-action text-white' : 'border-white/10 bg-white/[0.04] text-slate-200 hover:border-white/30'
+                                                    }`}
+                                                >
+                                                    {quantity}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="tnum mt-3 text-xs text-slate-400">{availableTickets.length.toLocaleString('es-HN')} boletos disponibles</p>
+                                    <Button onClick={spin} disabled={!selectedQuantity} size="lg" fullWidth className="mt-5" icon={<Shuffle className="w-5 h-5" aria-hidden />}>
+                                        {selectedQuantity ? `Elegir ${pluralize(selectedQuantity, 'boleto')}` : 'Elige una cantidad'}
+                                    </Button>
+                                </div>
+                            )}
+
+                            {isSpinning && (
+                                <div className="my-10 flex flex-col items-center gap-4" role="status" aria-live="polite">
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                                        className="w-16 h-16 rounded-full border-4 border-white/10 border-t-accent"
+                                        aria-hidden
+                                    />
+                                    <p className="font-semibold text-white">Escogiendo tus números…</p>
+                                </div>
+                            )}
+
+                            {hasResults && (
+                                <div className="mt-5">
+                                    <p className="text-sm font-semibold text-slate-200">Tus {pluralize(generatedTickets.length, 'boleto')}</p>
+                                    <ul className="mt-2 max-h-48 overflow-y-auto flex flex-wrap gap-2 rounded-xl bg-background-primary p-3 border border-white/[0.06]" aria-label="Boletos elegidos">
+                                        {generatedTickets.map(ticket => (
+                                            <li key={ticket} className="tnum inline-flex items-center h-9 px-3 rounded-lg bg-action/15 border border-action/40 text-sm font-semibold text-white">
+                                                {formatTicket(ticket, totalTickets)}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <dl className="mt-4 space-y-1.5 text-sm">
+                                        <div className="flex justify-between"><dt className="text-slate-400">{generatedTickets.length} × {formatMoney(pricePerTicket)}</dt><dd className="tnum text-white font-semibold">{formatMoney(totalPrice)}</dd></div>
+                                        <div className="flex justify-between items-baseline border-t border-white/[0.08] pt-2"><dt className="font-extrabold text-white">Total</dt><dd className="tnum text-xl font-extrabold text-accent">{formatMoney(totalPrice)}</dd></div>
+                                    </dl>
+                                    <div className="mt-5 space-y-2">
+                                        <Button onClick={goToCheckout} size="lg" fullWidth icon={<ArrowRight className="w-5 h-5" aria-hidden />}>Continuar al pago</Button>
+                                        <Button onClick={applySelection} variant="secondary" fullWidth>Usar estos boletos y seguir viendo</Button>
+                                        <Button onClick={reset} variant="ghost" fullWidth icon={<RotateCcw className="w-4 h-4" aria-hidden />}>Elegir otros</Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-        </>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 };
 
 export default LuckyMachine;
-
