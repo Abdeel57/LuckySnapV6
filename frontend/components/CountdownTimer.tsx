@@ -80,14 +80,15 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = '
                 {units.map((u, i) => (
                     <React.Fragment key={u.label}>
                         <div className="glow-border-soft flex-1 min-w-0 rounded-xl py-2.5 sm:py-3 text-center">
-                            {/* key por valor: el dígito "salta" al cambiar */}
-                            <div key={u.value} className="tnum font-display neon-text text-[1.35rem] sm:text-3xl font-bold text-white leading-none animate-pop">
+                            {/* key por valor: el dígito "salta" al cambiar. Los segundos no saltan ni llevan halo:
+                                re-renderizar con animación y text-shadow cada segundo costaba ~130 ms/s con CPU lenta */}
+                            <div key={u.value} className={`tnum font-display text-[1.35rem] sm:text-3xl font-bold text-white leading-none ${u.label === 'seg' ? '' : 'neon-text animate-pop'}`}>
                                 {String(u.value).padStart(u.pad, '0')}
                             </div>
                             <div className="mt-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">{u.label}</div>
                         </div>
                         {i < units.length - 1 && (
-                            <span className="self-center -mt-4 text-xl font-extrabold text-accent animate-blink" aria-hidden>:</span>
+                            <span className="self-center -mt-4 text-xl font-extrabold text-accent/70" aria-hidden>:</span>
                         )}
                     </React.Fragment>
                 ))}

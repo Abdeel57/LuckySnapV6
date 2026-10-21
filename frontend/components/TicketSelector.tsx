@@ -48,11 +48,11 @@ const VirtualTicketCell: React.FC<GridChildComponentProps<ScrollGridData>> = ({ 
     );
 };
 
-// Celdas con forma de boleto (muescas laterales). El brillo del seleccionado va por dentro
-// (ring-inset) porque la máscara recorta cualquier sombra exterior.
-const CELL_BASE = 'tnum ticket-shape relative w-full h-full flex items-center justify-center rounded-lg text-sm font-bold border transition-[background-color,border-color,color,transform] duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70';
+// Sin máscaras ni transform en las 50 celdas: con CPU lenta cada toque costaba el doble
+// (recálculo de estilos y pintado). El "pop" solo corre una vez en la celda que se selecciona.
+const CELL_BASE = 'tnum relative w-full h-full flex items-center justify-center rounded-lg text-sm font-bold border transition-[background-color,border-color,color] duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70';
 const CELL_STATES = {
-    available: 'bg-white/[0.05] border-white/10 text-slate-200 hover:border-action hover:bg-action/15 hover:-translate-y-0.5 active:translate-y-0 active:bg-action/25',
+    available: 'bg-white/[0.05] border-white/10 text-slate-200 hover:border-action hover:bg-action/15 active:bg-action/25',
     selected: 'bg-gradient-to-br from-action to-action/70 border-action text-white ring-2 ring-inset ring-white/40 animate-pop',
     occupied: 'ticket-sold bg-transparent border-white/[0.05] text-slate-600 line-through cursor-not-allowed',
 };
@@ -87,9 +87,9 @@ const TicketCell = React.memo(({ ticket, label, isOccupied, isSelected, onTicket
 
 const Legend = () => (
     <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-400" aria-label="Leyenda">
-        <li className="flex items-center gap-2"><span className="ticket-shape w-6 h-5 rounded-md border bg-white/[0.05] border-white/10" aria-hidden /> Disponible</li>
-        <li className="flex items-center gap-2"><span className="ticket-shape w-6 h-5 rounded-md border bg-action border-action flex items-center justify-center text-white" aria-hidden><Check className="w-3 h-3" /></span> Seleccionado</li>
-        <li className="flex items-center gap-2"><span className="ticket-shape ticket-sold w-6 h-5 rounded-md border border-white/[0.08]" aria-hidden /> Vendido</li>
+        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md border bg-white/[0.05] border-white/10" aria-hidden /> Disponible</li>
+        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md border bg-action border-action flex items-center justify-center text-white" aria-hidden><Check className="w-3 h-3" /></span> Seleccionado</li>
+        <li className="flex items-center gap-2"><span className="ticket-sold w-5 h-5 rounded-md border border-white/[0.08]" aria-hidden /> Vendido</li>
     </ul>
 );
 
