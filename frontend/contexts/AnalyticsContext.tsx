@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 
 interface AnalyticsData {
     // Métricas de usuarios
@@ -133,7 +133,7 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const loadAnalyticsData = async () => {
+    const loadAnalyticsData = useCallback(async () => {
         setIsLoading(true);
         try {
             // Simular delay de carga
@@ -145,33 +145,35 @@ export const AnalyticsProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         await loadAnalyticsData();
-    };
+    }, [loadAnalyticsData]);
 
-    const trackPageView = (page: string) => {
+    // Referencias estables: HomePage usa trackPageView como dependencia de su efecto de carga;
+    // si cambiara en cada render del proveedor, la home volvería a pedir sorteos y ganadores.
+    const trackPageView = useCallback((page: string) => {
         // En producción, esto enviaría datos a un servicio de analytics
         console.log('Page view tracked:', page);
-    };
+    }, []);
 
-    const trackEvent = (event: string, data?: any) => {
+    const trackEvent = useCallback((event: string, data?: any) => {
         // En producción, esto enviaría eventos a un servicio de analytics
         console.log('Event tracked:', event, data);
-    };
+    }, []);
 
     useEffect(() => {
         loadAnalyticsData();
-    }, []);
+    }, [loadAnalyticsData]);
 
-    const value: AnalyticsContextType = {
+    const value: AnalyticsContextType = useMemo(() => ({
         data,
         isLoading,
         refreshData,
         trackPageView,
         trackEvent,
-    };
+    }), [data, isLoading, refreshData, trackPageView, trackEvent]);
 
     return (
         <AnalyticsContext.Provider value={value}>

@@ -196,10 +196,6 @@ export class AdminService implements OnModuleInit {
       
       // Transformar los datos para que coincidan con el frontend
       const transformedOrders = orders.map(order => {
-        // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/2db1715e-cfcb-4080-ae03-a6764011ef8d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'admin.service.ts:141',message:'Transformando orden',data:{orderId:order.id,folio:order.folio,paymentMethod:order.paymentMethod,hasUser:!!order.user,userId:order.userId,status:order.status},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        
         // Si no hay usuario, intentar obtenerlo o crear un customer por defecto
         let customer;
         if (order.user) {

@@ -13,6 +13,11 @@ import {
 // En producción: se toma de la variable de entorno VITE_API_URL
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
 
+// Los datos locales de ejemplo (localApi) solo se usan en desarrollo. En producción
+// mostrar un sorteo, precio, disponibilidad o cuenta bancaria inventados cuando el
+// backend falla es peor que mostrar un error: las páginas públicas manejan el fallo.
+const USE_LOCAL_FALLBACK = Boolean((import.meta as any).env?.DEV);
+
 // Debug logging removed for production performance
 
 /**
@@ -126,8 +131,8 @@ export const getActiveRaffles = async (): Promise<Raffle[]> => {
         const response = await fetch(`${API_URL}/public/raffles/active`);
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Backend raffles loaded successfully:', data);
-            
+            console.log('✅ Backend raffles loaded successfully:', Array.isArray(data) ? data.length : data?.raffles?.length);
+
             // Ensure we return an array
             if (Array.isArray(data)) {
                 return data.map(parseRaffleDates);
@@ -139,11 +144,13 @@ export const getActiveRaffles = async (): Promise<Raffle[]> => {
             }
         } else {
             console.log('❌ Backend returned error status:', response.status);
+            if (!USE_LOCAL_FALLBACK) throw new Error(`Error ${response.status} al cargar los sorteos`);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        if (!USE_LOCAL_FALLBACK) throw error;
     }
-    
+
     // Fallback to local data
     console.log('🔄 Using local data for active raffles');
     const { localApi } = await import('./localApi');
@@ -154,13 +161,16 @@ export const getRaffleBySlug = async (slug: string): Promise<Raffle | undefined>
     try {
         console.log('🔍 Trying backend for raffle by slug:', slug);
         const response = await fetch(`${API_URL}/public/raffles/slug/${slug}`);
+        // 404 = el sorteo no existe (distinto de un fallo de red, que se propaga)
+        if (response.status === 404) return undefined;
         const raffle = await handleResponse(response);
         console.log('✅ Backend raffle by slug loaded successfully:', { id: raffle?.id, title: raffle?.title });
         return parseDates(raffle, ['drawDate', 'createdAt', 'updatedAt']);
     } catch (error) {
         console.error('❌ Backend error for raffle by slug:', error);
+        if (!USE_LOCAL_FALLBACK) throw error;
     }
-    
+
     // Fallback to local data
     console.log('🔄 Using local data for raffle by slug');
     const { localApi } = await import('./localApi');
@@ -239,8 +249,10 @@ export const getOccupiedTickets = async (
         return normalized;
     } catch (error) {
         console.error('❌ Backend error for occupied tickets:', error);
+        // Sin esta lista todos los boletos parecerían disponibles: el llamador debe saberlo
+        if (!USE_LOCAL_FALLBACK) throw error;
     }
-    
+
     // Fallback to local data
     console.log('🔄 Using local data for occupied tickets');
     return {
@@ -257,8 +269,9 @@ export const getPastWinners = async (): Promise<Winner[]> => {
         const response = await fetch(`${API_URL}/public/winners`);
         if (response.ok) {
             const data = await response.json();
-            console.log('✅ Backend winners loaded successfully:', data);
-            
+            // Solo el conteo: el payload puede incluir imágenes base64 de varios MB
+            console.log('✅ Backend winners loaded successfully:', Array.isArray(data) ? data.length : data?.winners?.length);
+
             // Ensure we return an array
             if (Array.isArray(data)) {
                 return data.map(parseWinnerDates);
@@ -270,9 +283,11 @@ export const getPastWinners = async (): Promise<Winner[]> => {
             }
         } else {
             console.log('❌ Backend returned error status:', response.status);
+            if (!USE_LOCAL_FALLBACK) throw new Error(`Error ${response.status} al cargar los ganadores`);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
+        if (!USE_LOCAL_FALLBACK) throw error;
     }
     
     // Fallback to local data
@@ -281,25 +296,46 @@ export const getPastWinners = async (): Promise<Winner[]> => {
     return localApi.getWinners();
 };
 
+// /public/settings pesa ~200 KB (logo y favicon en base64) y lo piden a la vez ThemeContext,
+// Footer, Faq y la página activa. Se comparte la petición en curso y se reutiliza la respuesta
+// durante un minuto; quien necesite el dato recién leído (pago) pasa { fresh: true }.
+const SETTINGS_TTL_MS = 60_000;
+let settingsCache: { data: Settings; at: number } | null = null;
+let settingsInFlight: Promise<Settings> | null = null;
+
+/** Settings públicos del backend. A diferencia de getSettings, lanza error si fallan. */
+export const fetchPublicSettings = (options: { fresh?: boolean } = {}): Promise<Settings> => {
+    if (!options.fresh && settingsCache && Date.now() - settingsCache.at < SETTINGS_TTL_MS) {
+        return Promise.resolve(settingsCache.data);
+    }
+    if (!settingsInFlight) {
+        console.log('Trying backend for settings...');
+        settingsInFlight = fetch(`${API_URL}/public/settings`)
+            .then(async response => {
+                if (!response.ok) throw new Error(`Error ${response.status} al cargar la configuración`);
+                const data: Settings = await response.json();
+                console.log('✅ Backend settings loaded successfully');
+                settingsCache = { data, at: Date.now() };
+                return data;
+            })
+            .finally(() => { settingsInFlight = null; });
+    }
+    return settingsInFlight;
+};
+
 export const getSettings = async (): Promise<Settings> => {
     try {
-        console.log('Trying backend for settings...');
-        const response = await fetch(`${API_URL}/public/settings`);
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Backend settings loaded successfully');
-            return data;
-        } else {
-            console.log('❌ Backend returned error status:', response.status);
-        }
+        return await fetchPublicSettings();
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
     }
-    
+
     // Fallback to local data
     console.log('🔄 Using local data for settings');
     const { localApi } = await import('./localApi');
-    return localApi.getSettings();
+    const localSettings = await localApi.getSettings();
+    // Nunca mostrar en producción las cuentas bancarias de ejemplo como si fueran reales
+    return USE_LOCAL_FALLBACK ? localSettings : { ...localSettings, paymentAccounts: [] };
 };
 
 export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
@@ -313,6 +349,7 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
         if (response.ok) {
             const data = await response.json();
             console.log('✅ Backend settings updated successfully');
+            settingsCache = null;
             return data;
         } else {
             console.log('❌ Backend returned error status:', response.status);
@@ -986,7 +1023,13 @@ export const createOrder = async (order: Omit<Order, 'id' | 'folio' | 'createdAt
             console.log('❌ Backend returned error status:', response.status);
             const errorText = await response.text();
             console.log('❌ Error details:', errorText);
-            throw new Error(`Backend error: ${response.status} - ${errorText}`);
+            // El backend responde { message } legible (p. ej. boletos ya ocupados): mostrar eso
+            let message = `Backend error: ${response.status} - ${errorText}`;
+            try {
+                const parsed = JSON.parse(errorText);
+                if (typeof parsed?.message === 'string' && parsed.message) message = parsed.message;
+            } catch { /* respuesta no JSON: se conserva el texto crudo */ }
+            throw new Error(message);
         }
     } catch (error) {
         console.log('❌ Backend failed with exception:', error);
@@ -1249,7 +1292,9 @@ export const adminUpdateSettings = async (settings: Settings): Promise<Settings>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
     });
-    return handleResponse(response);
+    const saved = await handleResponse(response);
+    settingsCache = null;
+    return saved;
 }
 
 // Admin Authentication

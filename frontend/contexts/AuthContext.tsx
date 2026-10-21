@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AdminUser } from '../types';
-import { getUsers, adminLogin } from '../services/api';
+import { adminLogin } from '../services/api';
 
 interface AuthContextType {
     user: AdminUser | null;
@@ -24,29 +24,6 @@ const SUPER_ADMIN: AdminUser = {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<AdminUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // Lista de usuarios (incluyendo el superadmin)
-    const [allUsers, setAllUsers] = useState<AdminUser[]>([SUPER_ADMIN]);
-
-    // Cargar usuarios del backend al iniciar
-    useEffect(() => {
-        const loadUsers = async () => {
-            try {
-                const backendUsers = await getUsers();
-                console.log('🔍 DEBUG - Usuarios recibidos del backend:', backendUsers);
-                
-                // Combinar superadmin con usuarios del backend
-                setAllUsers([SUPER_ADMIN, ...backendUsers]);
-                console.log('✅ Usuarios cargados del backend:', backendUsers.length);
-                console.log('📋 Todos los usuarios disponibles:', [SUPER_ADMIN, ...backendUsers]);
-            } catch (error) {
-                console.error('Error loading users from backend:', error);
-                // Si falla, usar solo el superadmin
-            }
-        };
-        
-        loadUsers();
-    }, []);
 
     // Verificar si hay sesión guardada al cargar
     useEffect(() => {

@@ -51,15 +51,16 @@ const WinnerForm: React.FC<WinnerFormProps> = ({ raffles, onSave, onCancel }) =>
                 return;
             }
 
-            // Convertir imagen a base64 si existe
+            // Subir la imagen como archivo (igual que las de sorteos). Guardarla en base64 dentro
+            // del ganador hacía que /public/winners pesara varios MB en la página de inicio.
             let imageUrl = selectedRaffle.heroImage || '';
             if (formData.imageFile) {
                 try {
-                    const base64 = await convertFileToBase64(formData.imageFile);
-                    imageUrl = `data:${formData.imageFile.type};base64,${base64}`;
+                    imageUrl = await uploadImage(formData.imageFile);
                 } catch (error) {
-                    console.error('Error converting image:', error);
-                    alert('Error al procesar la imagen. Usando imagen por defecto.');
+                    console.error('Error uploading image:', error);
+                    alert(`No se pudo subir la imagen: ${error instanceof Error ? error.message : 'error desconocido'}. Inténtalo de nuevo.`);
+                    return;
                 }
             } else if (formData.imagePreview) {
                 imageUrl = formData.imagePreview;
@@ -84,18 +85,24 @@ const WinnerForm: React.FC<WinnerFormProps> = ({ raffles, onSave, onCancel }) =>
         }
     };
 
-    const convertFileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
+    const uploadImage = async (file: File): Promise<string> => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => {
-                const base64 = reader.result as string;
-                // Remover el prefijo "data:image/...;base64,"
-                const base64Data = base64.split(',')[1];
-                resolve(base64Data);
-            };
+            reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsDataURL(file);
         });
+        const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
+        const response = await fetch(`${API_URL}/upload/image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageData: dataUrl }),
+        });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result?.success || !result?.url) {
+            throw new Error(result?.message || `Error ${response.status}`);
+        }
+        return result.url;
     };
 
     return (

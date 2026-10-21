@@ -12,9 +12,14 @@ interface PixelEvent {
   sessionId?: string;
 }
 
+// ID de ejemplo que devuelve el backend cuando no hay pixel configurado. Facebook descarta sus
+// eventos, así que no vale la pena descargar fbevents.js (~118 KB) en detalle y compra.
+const PLACEHOLDER_PIXEL_ID = '1234567890123456';
+
 class MetaPixelService {
   private pixelId: string | null = null;
   private isInitialized: boolean = false;
+  private isDisabled: boolean = false;
   private eventQueue: PixelEvent[] = [];
 
   constructor() {
@@ -26,14 +31,21 @@ class MetaPixelService {
       const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api';
       const response = await fetch(`${API_URL}/admin/meta/pixel-config`);
       const config = await response.json();
+      if (!config.pixelId || config.pixelId === PLACEHOLDER_PIXEL_ID) {
+        this.disable();
+        return;
+      }
       this.pixelId = config.pixelId;
       this.initializePixel();
     } catch (error) {
-      // Error logging removed for production
-      // Usar ID por defecto si falla
-      this.pixelId = '1234567890123456';
-      this.initializePixel();
+      // Sin configuración no hay pixel real al que enviar eventos
+      this.disable();
     }
+  }
+
+  private disable() {
+    this.isDisabled = true;
+    this.eventQueue = [];
   }
 
   private initializePixel() {
@@ -86,6 +98,7 @@ class MetaPixelService {
   }
 
   private trackEventDirect(event: PixelEvent) {
+    if (this.isDisabled) return;
     if (!window.fbq || !this.isInitialized) {
       console.warn('Meta Pixel not initialized, queuing event:', event);
       this.eventQueue.push(event);
