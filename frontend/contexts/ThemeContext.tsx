@@ -25,6 +25,9 @@ const defaultAppearance: AppearanceSettings = {
   }
 };
 
+// Debe coincidir con la clave que lee el script inline de index.html
+const THEME_COLORS_STORAGE_KEY = 'ls_theme_colors';
+
 const hexToRgb = (hex: string): string => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -91,6 +94,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         root.style.setProperty('--color-background-secondary', hexToRgb(bgSecondary));
         root.style.setProperty('--color-accent', hexToRgb(accentColor));
         root.style.setProperty('--color-action', hexToRgb(primaryColor));
+
+        // index.html aplica estos colores antes del primer pintado en la próxima visita
+        try {
+          localStorage.setItem(THEME_COLORS_STORAGE_KEY, JSON.stringify({ backgroundPrimary: bgPrimary, backgroundSecondary: bgSecondary, accent: accentColor, action: primaryColor }));
+        } catch {
+          // Almacenamiento no disponible (modo privado, cuota): solo se pierde la mejora
+        }
         
         // Aplicar colores semánticos generados (Nivel 2)
         root.style.setProperty('--bg-primary', textOnPrimary === '#FFFFFF' ? '#000000' : '#FFFFFF');

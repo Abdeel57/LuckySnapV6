@@ -9,7 +9,9 @@ import Spinner from './components/Spinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './hooks/useToast';
-import ToastContainer from './components/ToastContainer';
+
+// Diferido: sus animaciones dependen de framer-motion y no hace falta para el primer pintado
+const ToastContainer = lazy(() => import('./components/ToastContainer'));
 
 // Public Pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -42,7 +44,9 @@ const App: React.FC = () => {
           <AuthProvider>
             <AnalyticsProvider>
               <Router>
-                <ToastContainer />
+                <Suspense fallback={null}>
+                  <ToastContainer />
+                </Suspense>
                 <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
                   <Routes>
               {/* Public Routes - Receipt page sin layout para mejor impresión */}

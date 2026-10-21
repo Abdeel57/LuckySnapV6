@@ -1,0 +1,5 @@
+/* Se enlaza después de styles.css para conservar la cascada que tenía el Play CDN
+   (las utilidades de Tailwind ganan a design-tokens.css con igual especificidad). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

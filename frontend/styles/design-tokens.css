@@ -140,11 +140,15 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  /* Mapeo de variables actuales a nuevo sistema */
-  --color-background-primary: var(--color-neutral-gray-900);
-  --color-background-secondary: var(--color-neutral-gray-800);
-  --color-accent: var(--color-brand-accent);
-  --color-action: var(--color-brand-primary);
+  /* Mapeo de variables actuales a nuevo sistema.
+     Tripletes RGB (no hex): Tailwind los usa como rgb(var(--color-accent) / <alpha>).
+     Con un hex la regla queda inválida y fondo/marca se pintan transparentes (página en
+     blanco) hasta que ThemeContext aplica los colores de /public/settings.
+     Valores = gray-900, gray-800, brand-accent y brand-primary. */
+  --color-background-primary: 17 24 39;
+  --color-background-secondary: 31 41 55;
+  --color-accent: 16 185 129;
+  --color-action: 59 130 246;
 }
 
 /* ═══════════════════════════════════════════════════════════
