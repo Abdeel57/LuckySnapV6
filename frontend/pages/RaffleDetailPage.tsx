@@ -16,7 +16,7 @@ import LuckyMachine from '../components/LuckyMachine';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
-import { collectRaffleImages } from '../components/HeroRaffle';
+import { collectRaffleImages, LiveDot } from '../components/HeroRaffle';
 import metaPixelService from '../services/metaPixel';
 import { useToast } from '../hooks/useToast';
 import { formatDate, formatMoney } from '../utils/format';
@@ -248,7 +248,7 @@ const RaffleDetailPage = () => {
                         <section className="order-3" id="boletos" aria-labelledby="tickets-title">
                             <Card>
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <h2 id="tickets-title" className="text-lg font-extrabold text-white">Elige tus boletos</h2>
+                                    <h2 id="tickets-title" className="text-lg font-extrabold text-white flex items-center gap-2"><span className="h-5 w-1 rounded-full bg-gradient-to-b from-action to-accent" aria-hidden />Elige tus boletos</h2>
                                     {!selectedPack && (
                                         <Button variant="secondary" size="sm" onClick={() => setLuckyOpen(true)} disabled={occupiedStatus !== 'ready'} icon={<Shuffle className="w-4 h-4" aria-hidden />}>
                                             Elegir al azar
@@ -309,16 +309,16 @@ const RaffleDetailPage = () => {
                         <div className="contents lg:block lg:sticky lg:top-20 lg:space-y-5">
                             {/* Título y datos clave */}
                             <div className="order-2">
-                                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Sorteo activo</p>
-                                <h1 className="text-title font-extrabold text-white">{raffle.title}</h1>
+                                <p className="inline-flex items-center text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2"><LiveDot />Sorteo activo</p>
+                                <h1 className="text-title neon-text font-extrabold text-white">{raffle.title}</h1>
                                 <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
                                     <div>
-                                        <dt className="text-xs font-semibold text-slate-400">Precio por boleto</dt>
-                                        <dd className="tnum text-2xl font-extrabold text-accent leading-tight">{formatMoney(pricePerTicket)}</dd>
+                                        <dt className="text-xs font-bold text-slate-400">Precio por boleto</dt>
+                                        <dd className="tnum neon-accent-text text-2xl font-extrabold text-accent leading-tight">{formatMoney(pricePerTicket)}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-xs font-semibold text-slate-400">Fecha del sorteo</dt>
-                                        <dd className="flex items-center gap-1.5 text-sm font-semibold text-white mt-1"><Calendar className="w-4 h-4 text-slate-400" aria-hidden />{formatDate(raffle.drawDate)}</dd>
+                                        <dt className="text-xs font-bold text-slate-400">Fecha del sorteo</dt>
+                                        <dd className="flex items-center gap-1.5 text-sm font-bold text-white mt-1"><Calendar className="w-4 h-4 text-accent" aria-hidden />{formatDate(raffle.drawDate)}</dd>
                                     </div>
                                 </dl>
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -340,7 +340,7 @@ const RaffleDetailPage = () => {
                                             <span>{progress.toFixed(0)} % vendido</span>
                                         </div>
                                         <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Boletos vendidos">
-                                            <div className="h-full rounded-full bg-accent" style={{ width: `${progress}%` }} />
+                                            <div className="h-full rounded-full bg-gradient-to-r from-accent to-action shadow-neon-accent" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
                                 )}
@@ -348,7 +348,7 @@ const RaffleDetailPage = () => {
 
                             {/* Resumen (solo escritorio; en móvil vive en la barra inferior) */}
                             <div className="hidden lg:block">
-                                <Card>
+                                <Card glow className={hasSelection ? 'shadow-glow-action' : ''}>
                                     <PurchaseSummary {...summaryProps} />
                                 </Card>
                             </div>

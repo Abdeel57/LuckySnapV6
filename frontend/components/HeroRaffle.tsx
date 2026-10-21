@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Gift, Ticket } from 'lucide-react';
+import { Calendar, Gift, Sparkles, Ticket } from 'lucide-react';
 import { Raffle } from '../types';
 import CountdownTimer from './CountdownTimer';
 import ResponsiveImage from './ResponsiveImage';
@@ -22,6 +22,14 @@ export const collectRaffleImages = (raffle: Raffle): string[] => {
     return images.length > 0 ? images : [FALLBACK_IMAGE];
 };
 
+/** Punto "en vivo": halo que se expande (1 elemento en bucle). */
+export const LiveDot = () => (
+    <span className="relative inline-flex w-2.5 h-2.5 mr-2" aria-hidden>
+        <span className="absolute inset-0 rounded-full bg-accent animate-pulse-ring" />
+        <span className="relative rounded-full w-2.5 h-2.5 bg-accent shadow-neon-accent" />
+    </span>
+);
+
 const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = false }) => {
     const images = useMemo(() => collectRaffleImages(raffle), [raffle.id, raffle.imageUrl, raffle.heroImage, raffle.gallery?.length]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,25 +43,47 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
     const detailUrl = `/sorteo/${raffle.slug}`;
 
     return (
-        <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-labelledby="hero-title">
+        <section className="relative container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-labelledby="hero-title">
+            {/* Foco de escenario detrás del héroe (degradado estático, sin filtros) */}
+            <div className="pointer-events-none absolute -z-10 inset-x-0 -top-10 h-[540px] bg-[radial-gradient(40rem_22rem_at_28%_10%,rgb(var(--color-action)/0.28),transparent_62%),radial-gradient(28rem_18rem_at_85%_30%,rgb(var(--color-accent)/0.16),transparent_60%)]" aria-hidden />
+
             {/* grid-cols-1 = minmax(0,1fr): sin él la fila de miniaturas ensancha la columna en móvil (360 px) */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
                 {/* Imagen */}
-                <div className="lg:col-span-7">
-                    <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
-                        <ResponsiveImage
-                            key={images[currentIndex]}
-                            src={images[currentIndex]}
-                            alt={raffle.title}
-                            widths={[640, 960, 1280, 1600]}
-                            sizesHint="(min-width: 1024px) 700px, 100vw"
-                            preferFormat="auto"
-                            loading="eager"
-                            decoding="async"
-                            fetchPriority="high"
-                            className="w-full h-full object-cover"
-                        />
+                <div className="lg:col-span-7 animate-fade-up">
+                    <div className="relative">
+                        {/* Aro de ruleta girando (decorativo, escritorio) */}
+                        <svg className="hidden lg:block pointer-events-none absolute -top-9 -right-9 w-40 h-40 text-action/60 animate-spin-slow" viewBox="0 0 100 100" fill="none" aria-hidden>
+                            <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 7" />
+                            <circle cx="50" cy="50" r="34" stroke="rgb(var(--color-accent) / 0.5)" strokeWidth="1" strokeDasharray="2 6" />
+                        </svg>
+
+                        <div className="glow-border relative rounded-[20px] p-1.5 shadow-glow-action">
+                            <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
+                                <ResponsiveImage
+                                    key={images[currentIndex]}
+                                    src={images[currentIndex]}
+                                    alt={raffle.title}
+                                    widths={[640, 960, 1280, 1600]}
+                                    sizesHint="(min-width: 1024px) 700px, 100vw"
+                                    preferFormat="auto"
+                                    loading="eager"
+                                    decoding="async"
+                                    fetchPriority="high"
+                                    className="w-full h-full object-cover"
+                                />
+                                {/* Viñeta inferior para que el chip de precio lea bien sobre cualquier foto */}
+                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 to-transparent" aria-hidden />
+                                <div className="absolute left-4 bottom-4 flex items-end gap-2">
+                                    <div className="ticket-shape rounded-lg bg-background-primary/90 backdrop-blur-sm border border-white/10 px-5 py-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Boleto</p>
+                                        <p className="tnum neon-accent-text text-2xl sm:text-3xl font-extrabold text-accent leading-none">{formatMoney(raffle.price)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                     {images.length > 1 && (
                         <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Fotos del premio">
                             {images.map((img, index) => (
@@ -64,8 +94,8 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                                     aria-selected={index === currentIndex}
                                     aria-label={`Foto ${index + 1} de ${images.length}`}
                                     onClick={() => setCurrentIndex(index)}
-                                    className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
-                                        index === currentIndex ? 'border-accent' : 'border-transparent opacity-70 hover:opacity-100'
+                                    className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-[border-color,opacity,transform] duration-200 ${
+                                        index === currentIndex ? 'border-accent shadow-glow-accent scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                                     }`}
                                 >
                                     {/* El backend no genera miniaturas: son las fotos completas; prioridad baja para no competir con la principal (LCP) */}
@@ -77,46 +107,48 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                 </div>
 
                 {/* Contenido */}
-                <div className="lg:col-span-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Sorteo activo</p>
-                    <h1 id="hero-title" className="text-display font-extrabold text-white">{raffle.title}</h1>
+                <div className="lg:col-span-5 animate-fade-up" style={{ animationDelay: '120ms' }}>
+                    <p className="inline-flex items-center text-xs font-bold uppercase tracking-[0.16em] text-accent mb-3">
+                        <LiveDot />Sorteo activo
+                    </p>
+                    <h1 id="hero-title" className="text-display neon-text font-extrabold text-white">{raffle.title}</h1>
 
                     <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3">
                         <div>
-                            <dt className="text-xs font-semibold text-slate-400">Precio por boleto</dt>
-                            <dd className="tnum text-2xl font-extrabold text-accent leading-tight">{formatMoney(raffle.price)}</dd>
+                            <dt className="text-xs font-bold text-slate-400">Precio por boleto</dt>
+                            <dd className="tnum neon-accent-text text-2xl font-extrabold text-accent leading-tight">{formatMoney(raffle.price)}</dd>
                         </div>
                         <div>
-                            <dt className="text-xs font-semibold text-slate-400">Fecha del sorteo</dt>
-                            <dd className="flex items-center gap-1.5 text-sm font-semibold text-white mt-1"><Calendar className="w-4 h-4 text-slate-400" aria-hidden />{formatDate(raffle.drawDate)}</dd>
+                            <dt className="text-xs font-bold text-slate-400">Fecha del sorteo</dt>
+                            <dd className="flex items-center gap-1.5 text-sm font-bold text-white mt-1"><Calendar className="w-4 h-4 text-accent" aria-hidden />{formatDate(raffle.drawDate)}</dd>
                         </div>
                     </dl>
 
                     {(hasOpportunities || hasPacks) && (
                         <div className="mt-3 flex flex-wrap gap-2">
                             {hasOpportunities && <Badge tone="accent" icon={<Gift className="w-3.5 h-3.5" aria-hidden />}>{raffle.numeroOportunidades} oportunidades por boleto</Badge>}
-                            {hasPacks && <Badge tone="neutral" icon={<Ticket className="w-3.5 h-3.5" aria-hidden />}>Paquetes con descuento</Badge>}
+                            {hasPacks && <Badge tone="gold" icon={<Sparkles className="w-3.5 h-3.5" aria-hidden />}>Paquetes con descuento</Badge>}
                         </div>
                     )}
 
                     <div className="mt-5">
-                        <p className="text-xs font-semibold text-slate-400 mb-2">Cierra en</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 mb-2">Cierra en</p>
                         <CountdownTimer targetDate={raffle.drawDate} variant="blocks" />
                     </div>
 
                     {showSoldPercentage && (
                         <div className="mt-4">
-                            <div className="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
+                            <div className="flex justify-between text-xs font-bold text-slate-400 mb-1.5">
                                 <span>{progress.toFixed(0)} % vendido</span>
                                 <span className="tnum">{sold.toLocaleString('es-HN')} / {raffle.tickets.toLocaleString('es-HN')}</span>
                             </div>
                             <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Boletos vendidos">
-                                <div className="h-full rounded-full bg-accent" style={{ width: `${progress}%` }} />
+                                <div className="h-full rounded-full bg-gradient-to-r from-accent to-action shadow-neon-accent" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
                     )}
 
-                    <Button to={detailUrl} size="lg" fullWidth className="mt-6" icon={<Ticket className="w-5 h-5" aria-hidden />}>
+                    <Button to={detailUrl} size="lg" fullWidth shine className="mt-6" icon={<Ticket className="w-5 h-5" aria-hidden />}>
                         Comprar boletos
                     </Button>
 
@@ -129,7 +161,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                                 <button
                                     type="button"
                                     onClick={() => setDescriptionExpanded(v => !v)}
-                                    className="mt-1 h-10 text-sm font-semibold text-accent hover:underline"
+                                    className="mt-1 h-10 text-sm font-bold text-accent hover:underline"
                                     aria-expanded={descriptionExpanded}
                                 >
                                     {descriptionExpanded ? 'Leer menos' : 'Leer más'}

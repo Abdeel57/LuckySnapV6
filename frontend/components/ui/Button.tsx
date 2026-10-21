@@ -10,6 +10,8 @@ interface BaseProps {
     size?: Size;
     fullWidth?: boolean;
     loading?: boolean;
+    /** Destello continuo (solo para la acción principal de la página). */
+    shine?: boolean;
     icon?: React.ReactNode;
     className?: string;
     children: React.ReactNode;
@@ -21,13 +23,13 @@ type ButtonAsAnchor = BaseProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElem
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsAnchor;
 
-const BASE = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl whitespace-nowrap select-none transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-primary';
+const BASE = 'inline-flex items-center justify-center gap-2 font-bold rounded-xl whitespace-nowrap select-none transition-[background-color,color,box-shadow,transform,filter] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-primary';
 
 const VARIANTS: Record<Variant, string> = {
-    primary: 'bg-action text-white shadow-action hover:brightness-110',
-    secondary: 'bg-white/[0.06] text-white border border-white/10 hover:bg-white/10',
+    primary: 'btn-shine bg-gradient-to-r from-action to-action/80 text-white shadow-glow-action hover:brightness-110 hover:-translate-y-0.5',
+    secondary: 'btn-shine bg-white/[0.06] text-white border border-white/15 hover:bg-white/10 hover:border-white/30',
     ghost: 'text-slate-300 hover:text-white hover:bg-white/[0.06]',
-    whatsapp: 'bg-[#25D366] text-[#073b1c] hover:brightness-105',
+    whatsapp: 'btn-shine bg-[#25D366] text-[#073b1c] shadow-[0_0_28px_rgb(37_211_102/0.35)] hover:brightness-105 hover:-translate-y-0.5',
 };
 
 const SIZES: Record<Size, string> = {
@@ -37,8 +39,8 @@ const SIZES: Record<Size, string> = {
 };
 
 const Button: React.FC<ButtonProps> = (props) => {
-    const { variant = 'primary', size = 'md', fullWidth, loading, icon, className = '', children, ...rest } = props as BaseProps & Record<string, any>;
-    const classes = `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${fullWidth ? 'w-full' : ''} ${className}`;
+    const { variant = 'primary', size = 'md', fullWidth, loading, shine, icon, className = '', children, ...rest } = props as BaseProps & Record<string, any>;
+    const classes = `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${fullWidth ? 'w-full' : ''} ${shine ? 'btn-shine-loop' : ''} ${className}`;
     const content = (
         <>
             {loading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden /> : icon}

@@ -34,19 +34,20 @@ const Footer = () => {
     const hasSocial = Boolean(socialLinks?.facebookUrl || socialLinks?.instagramUrl || socialLinks?.tiktokUrl);
 
     return (
-        <footer className="mt-16 md:mt-24 border-t border-white/[0.06] bg-background-secondary/60">
+        <footer className="relative mt-16 md:mt-24 bg-background-secondary/60">
+            <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" aria-hidden />
             <div className="container mx-auto px-4 sm:px-6 max-w-6xl py-10 md:py-14">
                 <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
                     <div>
                         <Link to="/" className="inline-flex items-center gap-2.5 rounded-lg">
-                            {appearance?.logo && <img src={appearance.logo} alt="" className="h-12 w-12 object-contain" />}
+                            {appearance?.logo && <img src={appearance.logo} alt="" className="h-12 w-12 object-contain drop-shadow-[0_0_10px_rgb(var(--color-action)/0.45)]" />}
                             <span className="text-lg font-extrabold text-white tracking-tight">{siteName}</span>
                         </Link>
                     </div>
 
                     {hasContact && (
                         <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-2">Contacto</h2>
+                            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Contacto</h2>
                             <ul>
                                 {contactInfo?.whatsapp && (
                                     <li>
@@ -68,7 +69,7 @@ const Footer = () => {
 
                     {hasSocial && (
                         <div>
-                            <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-2">Síguenos</h2>
+                            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Síguenos</h2>
                             <ul>
                                 {socialLinks?.facebookUrl && (
                                     <li><a href={socialLinks.facebookUrl} target="_blank" rel="noopener noreferrer" className={rowClass}><Facebook className="w-4 h-4" aria-hidden /> Facebook</a></li>
@@ -84,7 +85,7 @@ const Footer = () => {
                     )}
 
                     <div>
-                        <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-2">Enlaces</h2>
+                        <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Enlaces</h2>
                         <ul>
                             {FOOTER_LINKS.map(link => (
                                 <li key={link.to}><Link to={link.to} className={rowClass}>{link.text}</Link></li>

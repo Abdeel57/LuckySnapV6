@@ -64,7 +64,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
                             <button
                                 type="button"
                                 onClick={() => onRemoveTicket(ticket)}
-                                className="tnum inline-flex items-center gap-1 h-9 pl-3 pr-2 rounded-lg bg-action/15 border border-action/40 text-sm font-semibold text-white hover:bg-action/25"
+                                className="tnum ticket-shape inline-flex items-center gap-1 h-9 pl-4 pr-3 rounded-lg bg-action/20 border border-action/50 text-sm font-bold text-white hover:bg-action/35 animate-drop-in"
                                 aria-label={`Quitar boleto ${formatTicket(ticket, raffle.tickets)}`}
                             >
                                 {formatTicket(ticket, raffle.tickets)}
@@ -93,7 +93,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
                     )}
                     <div className="flex items-baseline justify-between gap-4 border-t border-white/[0.08] pt-3">
                         <dt className="text-base font-extrabold text-white">Total</dt>
-                        <dd className="tnum text-2xl font-extrabold text-accent">{formatMoney(totalPrice)}</dd>
+                        <dd key={totalPrice} className="tnum neon-accent-text text-2xl font-extrabold text-accent animate-pop">{formatMoney(totalPrice)}</dd>
                     </div>
                     {boletosAdicionales > 0 && (
                         <p className="text-xs text-slate-400">Recibirás {ticketsCount + boletosAdicionales} boletos en total ({ticketsCount} comprados + {boletosAdicionales} de regalo).</p>
@@ -102,7 +102,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
             )}
 
             {!hideAction && (
-                <Button to={checkoutUrl} size="lg" fullWidth className="mt-5" disabled={!hasSelection} icon={<ArrowRight className="w-5 h-5" aria-hidden />}>
+                <Button to={checkoutUrl} size="lg" fullWidth shine={hasSelection} className="mt-5" disabled={!hasSelection} icon={<ArrowRight className="w-5 h-5" aria-hidden />}>
                     Continuar al pago
                 </Button>
             )}

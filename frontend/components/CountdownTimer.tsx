@@ -47,26 +47,26 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = '
 
     if (timeLeft.finished) {
         return (
-            <p className={`inline-flex items-center h-9 px-3 rounded-full bg-white/[0.08] text-sm font-semibold text-white ${className}`}>
+            <p className={`inline-flex items-center h-9 px-3 rounded-full bg-white/[0.08] text-sm font-bold text-white ${className}`}>
                 Sorteo finalizado
             </p>
         );
     }
 
     const units = [
-        { label: 'días', value: timeLeft.days, pad: timeLeft.days > 99 ? 3 : 2 },
-        { label: 'horas', value: timeLeft.hours, pad: 2 },
-        { label: 'min', value: timeLeft.minutes, pad: 2 },
-        { label: 'seg', value: timeLeft.seconds, pad: 2 },
+        { label: 'días', short: 'd', value: timeLeft.days, pad: timeLeft.days > 99 ? 3 : 2 },
+        { label: 'horas', short: 'h', value: timeLeft.hours, pad: 2 },
+        { label: 'min', short: 'm', value: timeLeft.minutes, pad: 2 },
+        { label: 'seg', short: 's', value: timeLeft.seconds, pad: 2 },
     ];
     const accessible = `Faltan ${timeLeft.days} días, ${timeLeft.hours} horas y ${timeLeft.minutes} minutos. Sorteo: ${formatDateTime(target)}`;
 
     if (variant === 'inline') {
         return (
-            <span className={`tnum inline-flex items-baseline gap-1.5 font-semibold text-white ${className}`} aria-label={accessible} title={formatDateTime(target)}>
+            <span className={`tnum inline-flex items-baseline gap-1.5 font-bold text-white ${className}`} aria-label={accessible} title={formatDateTime(target)}>
                 {units.map((u, i) => (
                     <span key={u.label} className="inline-flex items-baseline">
-                        {String(u.value).padStart(u.pad, '0')}<span className="text-slate-400 font-medium text-[0.85em] ml-0.5">{u.label === 'días' ? 'd' : u.label === 'horas' ? 'h' : u.label === 'min' ? 'm' : 's'}</span>
+                        {String(u.value).padStart(u.pad, '0')}<span className="text-slate-400 font-semibold text-[0.85em] ml-0.5">{u.short}</span>
                         {i < units.length - 1 && <span className="sr-only">, </span>}
                     </span>
                 ))}
@@ -76,14 +76,20 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = '
 
     return (
         <div className={className} role="timer" aria-live="off" aria-label={accessible}>
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                {units.map(u => (
-                    <div key={u.label} className="rounded-xl bg-white/[0.06] border border-white/[0.06] py-2.5 sm:py-3 text-center">
-                        <div className="tnum text-2xl sm:text-3xl font-extrabold text-white leading-none">
-                            {String(u.value).padStart(u.pad, '0')}
+            <div className="flex items-stretch justify-between gap-1.5 sm:gap-2">
+                {units.map((u, i) => (
+                    <React.Fragment key={u.label}>
+                        <div className="glow-border-soft flex-1 min-w-0 rounded-xl py-2.5 sm:py-3 text-center">
+                            {/* key por valor: el dígito "salta" al cambiar */}
+                            <div key={u.value} className="tnum neon-text text-2xl sm:text-3xl font-extrabold text-white leading-none animate-pop">
+                                {String(u.value).padStart(u.pad, '0')}
+                            </div>
+                            <div className="mt-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">{u.label}</div>
                         </div>
-                        <div className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{u.label}</div>
-                    </div>
+                        {i < units.length - 1 && (
+                            <span className="self-center -mt-4 text-xl font-extrabold text-accent animate-blink" aria-hidden>:</span>
+                        )}
+                    </React.Fragment>
                 ))}
             </div>
         </div>

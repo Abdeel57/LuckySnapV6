@@ -7,20 +7,27 @@ interface SectionHeadingProps {
     lead?: string;
     align?: 'left' | 'center';
     as?: 'h1' | 'h2';
+    /** Tono del acento decorativo. */
+    tone?: 'action' | 'gold';
     className?: string;
     /** Acción alineada a la derecha en escritorio (p. ej. "Ver todos"). */
     action?: React.ReactNode;
 }
 
-const SectionHeading: React.FC<SectionHeadingProps> = ({ eyebrow, title, lead, align = 'left', as: Tag = 'h2', className = '', action }) => (
-    <div className={`${align === 'center' ? 'text-center' : 'sm:flex sm:items-end sm:justify-between sm:gap-6'} mb-6 md:mb-8 ${className}`}>
-        <div className={align === 'center' ? 'max-w-2xl mx-auto' : 'max-w-2xl'}>
-            {eyebrow && <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">{eyebrow}</p>}
-            <Tag className={`${Tag === 'h1' ? 'text-display' : 'text-title'} font-extrabold text-white`}>{title}</Tag>
-            {lead && <p className="mt-2 text-base text-slate-400">{lead}</p>}
+const SectionHeading: React.FC<SectionHeadingProps> = ({ eyebrow, title, lead, align = 'left', as: Tag = 'h2', tone = 'action', className = '', action }) => {
+    const dash = tone === 'gold' ? 'from-amber-300 to-amber-300/0' : 'from-action to-accent/0';
+    const eyebrowColor = tone === 'gold' ? 'text-amber-300' : 'text-accent';
+    return (
+        <div className={`${align === 'center' ? 'text-center' : 'sm:flex sm:items-end sm:justify-between sm:gap-6'} mb-6 md:mb-8 ${className}`}>
+            <div className={align === 'center' ? 'max-w-2xl mx-auto' : 'max-w-2xl'}>
+                <span className={`block h-1 w-12 rounded-full bg-gradient-to-r ${dash} mb-3 ${align === 'center' ? 'mx-auto' : ''}`} aria-hidden />
+                {eyebrow && <p className={`text-xs font-bold uppercase tracking-[0.16em] ${eyebrowColor} mb-2`}>{eyebrow}</p>}
+                <Tag className={`${Tag === 'h1' ? 'text-display neon-text' : 'text-title'} font-extrabold text-white`}>{title}</Tag>
+                {lead && <p className="mt-2 text-base text-slate-400">{lead}</p>}
+            </div>
+            {action && <div className="mt-4 sm:mt-0 flex-shrink-0">{action}</div>}
         </div>
-        {action && <div className="mt-4 sm:mt-0 flex-shrink-0">{action}</div>}
-    </div>
-);
+    );
+};
 
 export default SectionHeading;

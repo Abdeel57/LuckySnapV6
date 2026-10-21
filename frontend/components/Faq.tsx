@@ -26,7 +26,7 @@ const Faq = () => {
 
     return (
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-            <SectionHeading title="Preguntas frecuentes" />
+            <SectionHeading eyebrow="Dudas" title="Preguntas frecuentes" />
             <div className="max-w-3xl space-y-2">
                 {faqs.map((faq, index) => {
                     const faqId = faq.id || `faq-${index}`;

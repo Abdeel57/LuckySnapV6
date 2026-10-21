@@ -42,7 +42,8 @@ const StickyPurchaseBar: React.FC<StickyPurchaseBarProps> = (props) => {
                     {isOpen && (
                         <div className="fixed inset-0 bg-black/60" onClick={() => setIsOpen(false)} aria-hidden />
                     )}
-                    <div className="relative bg-background-secondary border-t border-white/10 shadow-raised">
+                    <div className="relative bg-background-secondary shadow-raised">
+                        <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-action via-accent to-action" aria-hidden />
                         {isOpen && (
                             <div role="dialog" aria-label="Detalle de tu selección" className="max-h-[60vh] overflow-y-auto px-4 pt-4 pb-2">
                                 <div className="flex justify-end -mt-1 mb-1">
@@ -65,9 +66,10 @@ const StickyPurchaseBar: React.FC<StickyPurchaseBarProps> = (props) => {
                                     {boletosAdicionales > 0 && <span className="text-accent">+{boletosAdicionales} regalo</span>}
                                     <ChevronUp className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
                                 </span>
-                                <span className="tnum block text-xl font-extrabold text-white leading-tight">{formatMoney(totalPrice)}</span>
+                                {/* key por total: el importe "salta" al cambiar la selección */}
+                                <span key={totalPrice} className="tnum neon-accent-text block text-xl font-extrabold text-accent leading-tight animate-pop">{formatMoney(totalPrice)}</span>
                             </button>
-                            <Button to={checkoutUrl} size="md" className="flex-shrink-0 px-6">
+                            <Button to={checkoutUrl} size="md" shine className="flex-shrink-0 px-6">
                                 Continuar
                             </Button>
                         </div>

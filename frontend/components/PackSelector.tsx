@@ -18,8 +18,8 @@ interface PackSelectorProps {
 const isSamePack = (a: Pack | null, b: Pack) => !!a && (a === b || (a.name === b.name && a.price === b.price && packTicketCount(a) === packTicketCount(b)));
 
 const optionClass = (selected: boolean) =>
-    `w-full text-left rounded-xl border-2 p-3.5 sm:p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-secondary ${
-        selected ? 'border-action bg-action/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+    `w-full text-left rounded-xl border-2 p-3.5 sm:p-4 transition-[border-color,background-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-secondary ${
+        selected ? 'border-action bg-action/10 shadow-glow-action' : 'border-white/10 bg-white/[0.03] hover:border-white/25 hover:-translate-y-0.5'
     }`;
 
 const RadioMark = ({ checked }: { checked: boolean }) => (

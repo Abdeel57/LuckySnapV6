@@ -329,7 +329,7 @@ const PurchasePage = () => {
             <PageAnimator>
                 <div className="container mx-auto px-4 sm:px-6 max-w-2xl pt-6 md:pt-10">
                     <div className="text-center mb-6">
-                        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 ${isPaid ? 'bg-emerald-500/15 text-emerald-400' : 'bg-action/15 text-white'}`}>
+                        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 animate-pop ${isPaid ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_28px_rgb(16_185_129/0.45)]' : 'bg-action/15 text-white shadow-glow-action'}`}>
                             {isPaid ? <CheckCircle2 className="w-7 h-7" aria-hidden /> : <Clock className="w-7 h-7" aria-hidden />}
                         </div>
                         <h1 className="text-title font-extrabold text-white">{isPaid ? 'Pago completado' : 'Boletos apartados'}</h1>
@@ -338,7 +338,10 @@ const PurchasePage = () => {
                         </p>
                     </div>
 
-                    <Card className="mb-4">
+                    <Card glow className="relative overflow-hidden mb-4">
+                        {isPaid && (
+                            <div className="confetti" aria-hidden>{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div>
+                        )}
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
                                 <p className="text-xs font-semibold text-slate-400">Folio del apartado</p>
@@ -481,7 +484,7 @@ const PurchasePage = () => {
 
     // ─────────────────────────── Formulario de confirmación ───────────────────────────
     const summary = (
-        <Card>
+        <Card glow>
             <div className="flex gap-3">
                 {/* Es la foto completa (~0.7 MB, sin miniatura en el backend): decodificación asíncrona
                     para no retener el pintado de la página mientras se decodifica */}
