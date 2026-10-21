@@ -224,6 +224,40 @@ p {
 .confetti > i:nth-child(11) { left: 87%; animation-delay: 70ms;  }
 .confetti > i:nth-child(12) { left: 94%; animation-delay: 190ms; }
 
+/* Tipografía de rótulo: Unbounded es ancha; un poco más apretada en títulos */
+.font-display {
+  letter-spacing: -0.015em;
+}
+
+/* Marquesina: dos capas de bombillas alternas (acento y ámbar) alrededor del marco del premio.
+   Solo cambia la opacidad: la posición de cada capa es fija. */
+.marquee-frame {
+  position: relative;
+}
+.marquee-frame::before,
+.marquee-frame::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 30px;
+  pointer-events: none;
+  --bulb: rgb(var(--color-accent));
+  background-image:
+    radial-gradient(circle, var(--bulb) 0 2.2px, transparent 3px),
+    radial-gradient(circle, var(--bulb) 0 2.2px, transparent 3px),
+    radial-gradient(circle, var(--bulb) 0 2.2px, transparent 3px),
+    radial-gradient(circle, var(--bulb) 0 2.2px, transparent 3px);
+  background-size: 22px 8px, 22px 8px, 8px 22px, 8px 22px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  animation: bulbs 1.2s ease-in-out infinite;
+}
+.marquee-frame::after {
+  --bulb: #fbbf24;
+  background-position: 11px 0, 11px 100%, 0 11px, 100% 11px;
+  animation-delay: -0.6s;
+}
+
 /* Focus visible con el color de acción de la marca */
 button:focus-visible,
 a:focus-visible,

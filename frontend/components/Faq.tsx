@@ -6,7 +6,12 @@ import FaqItem from './FaqItem';
 import SectionHeading from './ui/SectionHeading';
 import Button from './ui/Button';
 
-const Faq = () => {
+interface FaqProps {
+    /** Pregunta que ya se muestra en otra sección (p. ej. "¿Qué es Lucky Snap?"). */
+    excludeQuestion?: string;
+}
+
+const Faq: React.FC<FaqProps> = ({ excludeQuestion }) => {
     const [faqs, setFaqs] = useState<FaqItemData[]>([]);
     const [whatsapp, setWhatsapp] = useState<string>('');
     const [openFaqId, setOpenFaqId] = useState<string | null>(null);
@@ -22,13 +27,16 @@ const Faq = () => {
 
     const toggleFaq = (id: string) => setOpenFaqId(prev => (prev === id ? null : id));
 
-    if (faqs.length === 0) return null;
+    const excluded = excludeQuestion?.trim().toLowerCase();
+    const visibleFaqs = excluded ? faqs.filter(faq => faq.question.trim().toLowerCase() !== excluded) : faqs;
+
+    if (visibleFaqs.length === 0) return null;
 
     return (
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
             <SectionHeading eyebrow="Dudas" title="Preguntas frecuentes" />
             <div className="max-w-3xl space-y-2">
-                {faqs.map((faq, index) => {
+                {visibleFaqs.map((faq, index) => {
                     const faqId = faq.id || `faq-${index}`;
                     return (
                         <FaqItem

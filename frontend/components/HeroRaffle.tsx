@@ -37,47 +37,50 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
 
     const hasOpportunities = Boolean(raffle.boletosConOportunidades && raffle.numeroOportunidades > 1);
     const hasPacks = Boolean(raffle.packs && raffle.packs.length > 0);
-    const isLongDescription = (raffle.description?.length || 0) > 160;
+    const isLongDescription = (raffle.description?.length || 0) > 220;
     const sold = typeof raffle.sold === 'number' && raffle.sold >= 0 ? raffle.sold : 0;
     const progress = raffle.tickets > 0 ? Math.max(0, Math.min(100, (sold / raffle.tickets) * 100)) : 0;
     const detailUrl = `/sorteo/${raffle.slug}`;
 
     return (
-        <section className="relative container mx-auto px-4 sm:px-6 max-w-6xl pt-5 md:pt-10" aria-labelledby="hero-title">
+        <section className="relative container mx-auto px-4 sm:px-6 max-w-6xl pt-6 md:pt-12" aria-labelledby="hero-title">
             {/* Foco de escenario detrás del héroe (degradado estático, sin filtros) */}
             <div className="pointer-events-none absolute -z-10 inset-x-0 -top-10 h-[540px] bg-[radial-gradient(40rem_22rem_at_28%_10%,rgb(var(--color-action)/0.28),transparent_62%),radial-gradient(28rem_18rem_at_85%_30%,rgb(var(--color-accent)/0.16),transparent_60%)]" aria-hidden />
 
             {/* grid-cols-1 = minmax(0,1fr): sin él la fila de miniaturas ensancha la columna en móvil (360 px) */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
+            <div className="grid grid-cols-1 gap-7 lg:grid-cols-12 lg:gap-10 lg:items-start">
                 {/* Imagen */}
                 <div className="lg:col-span-7 animate-fade-up">
                     <div className="relative">
                         {/* Aro de ruleta girando (decorativo, escritorio) */}
-                        <svg className="hidden lg:block pointer-events-none absolute -top-9 -right-9 w-40 h-40 text-action/60 animate-spin-slow" viewBox="0 0 100 100" fill="none" aria-hidden>
+                        <svg className="hidden lg:block pointer-events-none absolute -top-12 -right-12 w-44 h-44 text-action/60 animate-spin-slow" viewBox="0 0 100 100" fill="none" aria-hidden>
                             <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 7" />
                             <circle cx="50" cy="50" r="34" stroke="rgb(var(--color-accent) / 0.5)" strokeWidth="1" strokeDasharray="2 6" />
                         </svg>
 
-                        <div className="glow-border relative rounded-[20px] p-1.5 shadow-glow-action">
-                            <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
-                                <ResponsiveImage
-                                    key={images[currentIndex]}
-                                    src={images[currentIndex]}
-                                    alt={raffle.title}
-                                    widths={[640, 960, 1280, 1600]}
-                                    sizesHint="(min-width: 1024px) 700px, 100vw"
-                                    preferFormat="auto"
-                                    loading="eager"
-                                    decoding="async"
-                                    fetchPriority="high"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Viñeta inferior para que el chip de precio lea bien sobre cualquier foto */}
-                                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 to-transparent" aria-hidden />
-                                <div className="absolute left-4 bottom-4 flex items-end gap-2">
-                                    <div className="ticket-shape rounded-lg bg-background-primary/90 backdrop-blur-sm border border-white/10 px-5 py-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Boleto</p>
-                                        <p className="tnum neon-accent-text text-2xl sm:text-3xl font-extrabold text-accent leading-none">{formatMoney(raffle.price)}</p>
+                        {/* Marquesina de bombillas alrededor del premio */}
+                        <div className="marquee-frame mx-2.5 my-2.5">
+                            <div className="glow-border relative rounded-[20px] p-1.5 shadow-glow-action">
+                                <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
+                                    <ResponsiveImage
+                                        key={images[currentIndex]}
+                                        src={images[currentIndex]}
+                                        alt={raffle.title}
+                                        widths={[640, 960, 1280, 1600]}
+                                        sizesHint="(min-width: 1024px) 700px, 100vw"
+                                        preferFormat="auto"
+                                        loading="eager"
+                                        decoding="async"
+                                        fetchPriority="high"
+                                        className="w-full h-full object-cover"
+                                    />
+                                    {/* Viñeta inferior para que el chip de precio lea bien sobre cualquier foto */}
+                                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 to-transparent" aria-hidden />
+                                    <div className="absolute left-4 bottom-4 flex items-end gap-2">
+                                        <div className="ticket-shape rounded-lg bg-background-primary/90 backdrop-blur-sm border border-white/10 px-5 py-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-300">Boleto</p>
+                                            <p className="tnum font-display neon-accent-text text-2xl sm:text-3xl font-bold text-accent leading-none">{formatMoney(raffle.price)}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -85,7 +88,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                     </div>
 
                     {images.length > 1 && (
-                        <div className="mt-3 flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Fotos del premio">
+                        <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar" role="tablist" aria-label="Fotos del premio">
                             {images.map((img, index) => (
                                 <button
                                     key={img}
@@ -111,12 +114,12 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                     <p className="inline-flex items-center text-xs font-bold uppercase tracking-[0.16em] text-accent mb-3">
                         <LiveDot />Sorteo activo
                     </p>
-                    <h1 id="hero-title" className="text-display neon-text font-extrabold text-white">{raffle.title}</h1>
+                    <h1 id="hero-title" className="font-display neon-text text-[clamp(1.7rem,3.6vw+0.6rem,2.6rem)] leading-[1.1] font-bold text-white">{raffle.title}</h1>
 
                     <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3">
                         <div>
                             <dt className="text-xs font-bold text-slate-400">Precio por boleto</dt>
-                            <dd className="tnum neon-accent-text text-2xl font-extrabold text-accent leading-tight">{formatMoney(raffle.price)}</dd>
+                            <dd className="tnum font-display neon-accent-text text-2xl font-bold text-accent leading-tight">{formatMoney(raffle.price)}</dd>
                         </div>
                         <div>
                             <dt className="text-xs font-bold text-slate-400">Fecha del sorteo</dt>
@@ -129,6 +132,11 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                             {hasOpportunities && <Badge tone="accent" icon={<Gift className="w-3.5 h-3.5" aria-hidden />}>{raffle.numeroOportunidades} oportunidades por boleto</Badge>}
                             {hasPacks && <Badge tone="gold" icon={<Sparkles className="w-3.5 h-3.5" aria-hidden />}>Paquetes con descuento</Badge>}
                         </div>
+                    )}
+                    {hasOpportunities && (
+                        <p className="mt-2 text-sm text-slate-300">
+                            Con cada boleto juegas con <span className="tnum font-bold text-white">{raffle.numeroOportunidades}</span> números: {raffle.numeroOportunidades - 1} de regalo.
+                        </p>
                     )}
 
                     <div className="mt-5">
@@ -152,9 +160,12 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                         Comprar boletos
                     </Button>
 
+                    {/* La historia del sorteo, con voz propia (texto del admin) */}
                     {raffle.description && (
-                        <div className="mt-5">
-                            <p className={`text-[15px] text-slate-300 whitespace-pre-line ${isLongDescription && !descriptionExpanded ? 'line-clamp-3' : ''}`}>
+                        <div className="relative mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 pl-6">
+                            <span className="font-display absolute -top-3 left-4 text-5xl leading-none text-accent/80 select-none" aria-hidden>“</span>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Sobre este sorteo</p>
+                            <p className={`text-[15px] text-slate-200 whitespace-pre-line ${isLongDescription && !descriptionExpanded ? 'line-clamp-4' : ''}`}>
                                 {raffle.description}
                             </p>
                             {isLongDescription && (
@@ -164,7 +175,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                                     className="mt-1 h-10 text-sm font-bold text-accent hover:underline"
                                     aria-expanded={descriptionExpanded}
                                 >
-                                    {descriptionExpanded ? 'Leer menos' : 'Leer más'}
+                                    {descriptionExpanded ? 'Leer menos' : 'Leer la historia completa'}
                                 </button>
                             )}
                         </div>

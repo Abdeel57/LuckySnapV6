@@ -22,7 +22,7 @@ const SectionHeading: React.FC<SectionHeadingProps> = ({ eyebrow, title, lead, a
             <div className={align === 'center' ? 'max-w-2xl mx-auto' : 'max-w-2xl'}>
                 <span className={`block h-1 w-12 rounded-full bg-gradient-to-r ${dash} mb-3 ${align === 'center' ? 'mx-auto' : ''}`} aria-hidden />
                 {eyebrow && <p className={`text-xs font-bold uppercase tracking-[0.16em] ${eyebrowColor} mb-2`}>{eyebrow}</p>}
-                <Tag className={`${Tag === 'h1' ? 'text-display neon-text' : 'text-title'} font-extrabold text-white`}>{title}</Tag>
+                <Tag className={`font-display font-bold text-white ${Tag === 'h1' ? 'text-[clamp(1.7rem,3.6vw+0.6rem,2.6rem)] leading-[1.1] neon-text' : 'text-[clamp(1.35rem,1.8vw+0.6rem,1.9rem)] leading-[1.15]'}`}>{title}</Tag>
                 {lead && <p className="mt-2 text-base text-slate-400">{lead}</p>}
             </div>
             {action && <div className="mt-4 sm:mt-0 flex-shrink-0">{action}</div>}

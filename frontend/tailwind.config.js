@@ -16,6 +16,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Manrope', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Rótulos: títulos, cifras grandes (estilo marquesina)
+        display: ['Unbounded', 'Manrope', 'system-ui', 'sans-serif'],
       },
       colors: {
         'background-primary': 'rgb(var(--color-background-primary) / <alpha-value>)',
@@ -58,6 +60,8 @@ export default {
         'logo-rotate': { '0%, 100%': { transform: 'rotate(-7deg)' }, '50%': { transform: 'rotate(7deg)' } },
         'logo-pulse': { '0%, 100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.08)' } },
         'logo-bounce': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
+        // Bombillas de marquesina (dos capas alternas → efecto de luces corriendo)
+        'bulbs': { '0%, 100%': { opacity: '0.2' }, '50%': { opacity: '1' } },
       },
       animation: {
         'page-in': 'page-in 0.2s ease-out both',
@@ -80,6 +84,7 @@ export default {
         'logo-rotate': 'logo-rotate 3.6s ease-in-out infinite',
         'logo-pulse': 'logo-pulse 2.6s ease-in-out infinite',
         'logo-bounce': 'logo-bounce 2.2s ease-in-out infinite',
+        'bulbs': 'bulbs 1.2s ease-in-out infinite',
       },
     },
   },

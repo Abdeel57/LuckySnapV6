@@ -1,19 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Calendar, Gift, Sparkles, Ticket, Trophy } from 'lucide-react';
 import { getActiveRaffles, getPastWinners, getSettings } from '../services/api';
-import { Raffle, Winner } from '../types';
+import { FaqItemData, Raffle, Winner } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import RaffleCard from '../components/RaffleCard';
-import WinnerCard from '../components/WinnerCard';
+import WinnersShowcase from '../components/WinnersShowcase';
 import HowItWorks from '../components/HowItWorks';
 import Faq from '../components/Faq';
-import HeroRaffle from '../components/HeroRaffle';
+import HeroRaffle, { collectRaffleImages } from '../components/HeroRaffle';
 import TickerStrip, { TickerItem } from '../components/TickerStrip';
+import PrizeGallery from '../components/PrizeGallery';
+import BrandStory from '../components/BrandStory';
+import ClosingCta from '../components/ClosingCta';
 import SectionHeading from '../components/ui/SectionHeading';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Reveal from '../components/ui/Reveal';
 import { useAnalytics } from '../contexts/AnalyticsContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { formatDate, formatMoney } from '../utils/format';
 import { packLabel } from '../utils/checkout';
 
@@ -61,11 +65,18 @@ const HomePage = () => {
     const winnersRequestedRef = useRef(false);
     // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
     const [showSoldPercentage, setShowSoldPercentage] = useState(false);
+    const [faqs, setFaqs] = useState<FaqItemData[]>([]);
+    const [whatsapp, setWhatsapp] = useState('');
     const { trackPageView } = useAnalytics();
+    const { appearance } = useTheme();
 
     useEffect(() => {
         getSettings()
-            .then(settings => setShowSoldPercentage((settings as any)?.displayPreferences?.showSoldPercentage !== false))
+            .then(settings => {
+                setShowSoldPercentage((settings as any)?.displayPreferences?.showSoldPercentage !== false);
+                setFaqs(settings.faqs || []);
+                setWhatsapp(settings.contactInfo?.whatsapp || '');
+            })
             .catch(() => setShowSoldPercentage(true));
     }, []);
 
@@ -115,6 +126,9 @@ const HomePage = () => {
 
     const mainRaffle = raffles.length > 0 ? raffles[0] : null;
     const otherRaffles = raffles.length > 1 ? raffles.slice(1) : [];
+    const prizeImages = useMemo(() => (mainRaffle ? collectRaffleImages(mainRaffle) : []), [mainRaffle]);
+    // "¿Qué es Lucky Snap?": la presentación de la marca con las palabras del admin
+    const brandFaq = useMemo(() => faqs.find(faq => /^¿?\s*qu[eé] es\b/i.test(faq.question.trim())), [faqs]);
 
     return (
         <PageAnimator>
@@ -131,7 +145,7 @@ const HomePage = () => {
                 <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-8 md:pt-14">
                     <Card className="max-w-xl mx-auto text-center py-10" role="alert">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2">Sorteos</p>
-                        <h1 className="text-title font-extrabold text-white">No pudimos cargar los sorteos</h1>
+                        <h1 className="font-display text-title font-bold text-white">No pudimos cargar los sorteos</h1>
                         <p className="mt-2 text-slate-400">Revisa tu conexión e inténtalo de nuevo.</p>
                         <Button variant="secondary" className="mt-6" onClick={loadRaffles}>Reintentar</Button>
                     </Card>
@@ -140,10 +154,16 @@ const HomePage = () => {
                 <section className="container mx-auto px-4 sm:px-6 max-w-6xl pt-8 md:pt-14">
                     <Card glow className="max-w-xl mx-auto text-center py-10">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2">Sorteos</p>
-                        <h1 className="text-title neon-text font-extrabold text-white">Próximo sorteo en preparación</h1>
+                        <h1 className="font-display text-title neon-text font-bold text-white">Próximo sorteo en preparación</h1>
                         <p className="mt-2 text-slate-400">Vuelve pronto o síguenos en redes para enterarte del próximo.</p>
                     </Card>
                 </section>
+            )}
+
+            {rafflesStatus === 'ready' && mainRaffle && prizeImages.length > 1 && (
+                <Reveal as="section" className="pt-14 md:pt-20">
+                    <PrizeGallery images={prizeImages} title={mainRaffle.title} />
+                </Reveal>
             )}
 
             {rafflesStatus === 'ready' && otherRaffles.length > 0 && (
@@ -165,24 +185,32 @@ const HomePage = () => {
             {winners.length > 0 && (
                 <Reveal as="section" className="relative pt-14 md:pt-20">
                     {/* Banda dorada estática detrás de los ganadores */}
-                    <div className="pointer-events-none absolute inset-x-0 top-10 -z-10 h-[420px] bg-[radial-gradient(42rem_18rem_at_50%_30%,rgb(251_191_36/0.12),transparent_65%)]" aria-hidden />
-                    <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
-                        <SectionHeading eyebrow="Ya ganaron" title="Ganadores recientes" tone="gold" />
-                        {/* grid-cols-1: el nombre con truncate no debe ensanchar la columna en móvil */}
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {winners.map((winner, index) => (
-                                <Reveal key={winner.id} delay={index * 90}>
-                                    <WinnerCard winner={winner} />
-                                </Reveal>
-                            ))}
-                        </div>
-                    </div>
+                    <div className="pointer-events-none absolute inset-x-0 top-10 -z-10 h-[460px] bg-[radial-gradient(42rem_18rem_at_50%_30%,rgb(251_191_36/0.12),transparent_65%)]" aria-hidden />
+                    <WinnersShowcase winners={winners} />
+                </Reveal>
+            )}
+
+            {brandFaq && (
+                <Reveal as="section" className="pt-14 md:pt-20">
+                    <BrandStory
+                        question={brandFaq.question}
+                        answer={brandFaq.answer}
+                        siteName={appearance?.siteName || 'Lucky Snap'}
+                        logo={appearance?.logo}
+                        whatsapp={whatsapp}
+                    />
                 </Reveal>
             )}
 
             <Reveal as="section" className="pt-14 md:pt-20">
-                <Faq />
+                <Faq excludeQuestion={brandFaq?.question} />
             </Reveal>
+
+            {rafflesStatus === 'ready' && mainRaffle && (
+                <Reveal as="section" className="pt-14 md:pt-20">
+                    <ClosingCta raffle={mainRaffle} />
+                </Reveal>
+            )}
         </PageAnimator>
     );
 };

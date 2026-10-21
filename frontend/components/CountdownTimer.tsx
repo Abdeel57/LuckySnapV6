@@ -81,7 +81,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = '
                     <React.Fragment key={u.label}>
                         <div className="glow-border-soft flex-1 min-w-0 rounded-xl py-2.5 sm:py-3 text-center">
                             {/* key por valor: el dígito "salta" al cambiar */}
-                            <div key={u.value} className="tnum neon-text text-2xl sm:text-3xl font-extrabold text-white leading-none animate-pop">
+                            <div key={u.value} className="tnum font-display neon-text text-[1.35rem] sm:text-3xl font-bold text-white leading-none animate-pop">
                                 {String(u.value).padStart(u.pad, '0')}
                             </div>
                             <div className="mt-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">{u.label}</div>

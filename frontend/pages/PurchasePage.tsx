@@ -332,10 +332,19 @@ const PurchasePage = () => {
                         <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 animate-pop ${isPaid ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_28px_rgb(16_185_129/0.45)]' : 'bg-action/15 text-white shadow-glow-action'}`}>
                             {isPaid ? <CheckCircle2 className="w-7 h-7" aria-hidden /> : <Clock className="w-7 h-7" aria-hidden />}
                         </div>
-                        <h1 className="text-title font-extrabold text-white">{isPaid ? 'Pago completado' : 'Boletos apartados'}</h1>
-                        <p className="mt-2 text-slate-400">
-                            {isPaid ? 'Tu compra quedó confirmada.' : isPaypalPayment ? 'Completa el pago con tarjeta para confirmar tus boletos.' : 'Completa el pago para confirmar tus boletos.'}
-                        </p>
+                        {/* Saludo con el nombre de pila: el apartado es de una persona, no de un folio */}
+                        {(() => {
+                            const firstName = (customerData?.name || '').trim().split(/\s+/)[0] || '';
+                            const greeting = firstName ? `, ${firstName}` : '';
+                            return (
+                                <>
+                                    <h1 className="font-display text-[clamp(1.5rem,2.4vw+0.6rem,2.25rem)] leading-[1.1] font-bold text-white neon-text">{isPaid ? `¡Pago confirmado${greeting}!` : `¡Listo${greeting}!`}</h1>
+                                    <p className="mt-2 text-slate-300">
+                                        {isPaid ? 'Tu compra quedó confirmada. Mucha suerte en el sorteo.' : isPaypalPayment ? 'Tus boletos quedaron apartados a tu nombre. Completa el pago con tarjeta para confirmarlos.' : 'Tus boletos quedaron apartados a tu nombre. Completa el pago para confirmarlos.'}
+                                    </p>
+                                </>
+                            );
+                        })()}
                     </div>
 
                     <Card glow className="relative overflow-hidden mb-4">
