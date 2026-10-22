@@ -83,7 +83,7 @@ const MobileAdminNavGrouped = ({ navLinks }: MobileAdminNavGroupedProps) => {
                         }`}
                     >
                         <div className="flex items-center gap-1 mb-1">
-                            {items[0].icon && <items[0].icon className="w-4 h-4" />}
+                            {items[0].icon && React.createElement(items[0].icon, { className: 'w-4 h-4' })}
                             {activeGroup === groupName ? (
                                 <ChevronUp className="w-3 h-3" />
                             ) : (
