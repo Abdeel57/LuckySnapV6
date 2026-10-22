@@ -260,7 +260,8 @@ const PurchasePage = () => {
                 notes: orderNotes,
                 userData,
             };
-            const newOrder = await createOrder(orderData);
+            // El backend recibe userId/userData y crea el cliente; el tipo Order describe la respuesta, no esta petición
+            const newOrder = await createOrder(orderData as unknown as Order);
 
             metaPixelService.trackPurchase(newOrder.id, raffle.id, ticketsToOrder, total);
             setCustomerData({ name: data.name, phone: data.phone });

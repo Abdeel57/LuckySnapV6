@@ -33,7 +33,7 @@ const Reveal: React.FC<RevealProps> = ({ delay = 0, as = 'div', className = '', 
 
     return (
         <Tag
-            ref={ref}
+            ref={ref as React.RefObject<any>}
             className={`${shown ? 'animate-fade-up' : 'opacity-0'} ${className}`}
             style={{ animationDelay: delay ? `${delay}ms` : undefined, ...style }}
             {...rest}
