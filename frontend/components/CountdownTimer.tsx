@@ -5,6 +5,8 @@ interface CountdownTimerProps {
     targetDate: Date | string;
     /** `blocks`: cuatro celdas con etiqueta (hero/detalle). `inline`: una línea compacta (tarjetas, barra). */
     variant?: 'blocks' | 'inline';
+    /** false = no actualizar cada segundo (p. ej. fuera de pantalla); se refresca al volver a true. */
+    active?: boolean;
     className?: string;
 }
 
@@ -26,7 +28,7 @@ const getTimeLeft = (target: Date | null): TimeLeft => {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = 'blocks', className = '' }) => {
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = 'blocks', active = true, className = '' }) => {
     const target = useMemo(() => {
         const date = new Date(targetDate);
         return isNaN(date.getTime()) ? null : date;
@@ -36,10 +38,10 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, variant = '
 
     useEffect(() => {
         setTimeLeft(getTimeLeft(target));
-        if (!target) return;
+        if (!target || !active) return;
         const timer = setInterval(() => setTimeLeft(getTimeLeft(target)), 1000);
         return () => clearInterval(timer);
-    }, [target]);
+    }, [target, active]);
 
     if (!target) {
         return <p className={`text-sm text-slate-400 ${className}`}>Fecha del sorteo por confirmar</p>;

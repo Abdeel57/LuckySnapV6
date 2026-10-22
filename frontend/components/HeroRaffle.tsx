@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { useInView } from '../hooks/useInView';
 import { Calendar, Gift, Sparkles, Ticket } from 'lucide-react';
 import { Raffle } from '../types';
 import CountdownTimer from './CountdownTimer';
@@ -34,6 +35,9 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
     const images = useMemo(() => collectRaffleImages(raffle), [raffle.id, raffle.imageUrl, raffle.heroImage, raffle.gallery?.length]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+    // El contador solo se actualiza cada segundo mientras se ve
+    const countdownRef = useRef<HTMLDivElement>(null);
+    const countdownInView = useInView(countdownRef);
 
     const hasOpportunities = Boolean(raffle.boletosConOportunidades && raffle.numeroOportunidades > 1);
     const hasPacks = Boolean(raffle.packs && raffle.packs.length > 0);
@@ -50,7 +54,8 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
             {/* grid-cols-1 = minmax(0,1fr): sin él la fila de miniaturas ensancha la columna en móvil (360 px) */}
             <div className="grid grid-cols-1 gap-7 lg:grid-cols-12 lg:gap-10 lg:items-start">
                 {/* Imagen */}
-                <div className="lg:col-span-7 animate-fade-up">
+                {/* Sin fade de entrada: es el contenido principal (LCP) y debe pintarse de inmediato */}
+                <div className="lg:col-span-7">
                     <div className="relative">
                         {/* Aro de ruleta girando (decorativo, escritorio) */}
                         <svg className="hidden lg:block pointer-events-none absolute -top-12 -right-12 w-44 h-44 text-action/60 animate-spin-slow" viewBox="0 0 100 100" fill="none" aria-hidden>
@@ -109,7 +114,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                 </div>
 
                 {/* Contenido */}
-                <div className="lg:col-span-5 animate-fade-up" style={{ animationDelay: '120ms' }}>
+                <div className="lg:col-span-5">
                     <p className="inline-flex items-center text-xs font-bold uppercase tracking-[0.16em] text-accent mb-3">
                         <LiveDot />Sorteo activo
                     </p>
@@ -138,9 +143,9 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                         </p>
                     )}
 
-                    <div className="mt-5">
+                    <div className="mt-5" ref={countdownRef}>
                         <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400 mb-2">Cierra en</p>
-                        <CountdownTimer targetDate={raffle.drawDate} variant="blocks" />
+                        <CountdownTimer targetDate={raffle.drawDate} variant="blocks" active={countdownInView} />
                     </div>
 
                     {showSoldPercentage && (
