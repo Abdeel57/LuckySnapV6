@@ -14,7 +14,9 @@ const FALLBACK_MS = 2500;
  * Entra con un desvanecimiento hacia arriba la primera vez que se ve (IntersectionObserver).
  * Sin observer (o con prefers-reduced-motion, vía CSS) simplemente se muestra.
  */
-const Reveal: React.FC<RevealProps> = ({ delay = 0, as: Tag = 'div', className = '', style, children, ...rest }) => {
+const Reveal: React.FC<RevealProps> = ({ delay = 0, as = 'div', className = '', style, children, ...rest }) => {
+    // ElementType: las props genéricas de div valen para section/li sin pelear con los tipos por etiqueta
+    const Tag: React.ElementType = as;
     const ref = useRef<HTMLDivElement>(null);
     const [shown, setShown] = useState(false);
 
@@ -31,7 +33,7 @@ const Reveal: React.FC<RevealProps> = ({ delay = 0, as: Tag = 'div', className =
 
     return (
         <Tag
-            ref={ref as any}
+            ref={ref}
             className={`${shown ? 'animate-fade-up' : 'opacity-0'} ${className}`}
             style={{ animationDelay: delay ? `${delay}ms` : undefined, ...style }}
             {...rest}
