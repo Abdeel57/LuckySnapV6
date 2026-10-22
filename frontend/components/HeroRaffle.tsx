@@ -58,8 +58,7 @@ const HeroRaffle: React.FC<HeroRaffleProps> = ({ raffle, showSoldPercentage = fa
                             <circle cx="50" cy="50" r="34" stroke="rgb(var(--color-accent) / 0.5)" strokeWidth="1" strokeDasharray="2 6" />
                         </svg>
 
-                        {/* Marquesina de bombillas alrededor del premio */}
-                        <div className="marquee-frame mx-2.5 my-2.5">
+                        <div>
                             <div className="glow-border relative rounded-[20px] p-1.5 shadow-glow-action">
                                 <div className="relative overflow-hidden rounded-2xl bg-background-secondary aspect-[4/3]">
                                     <ResponsiveImage
