@@ -15,8 +15,6 @@ const FALLBACK_MS = 2500;
  * Sin observer (o con prefers-reduced-motion, vía CSS) simplemente se muestra.
  */
 const Reveal: React.FC<RevealProps> = ({ delay = 0, as = 'div', className = '', style, children, ...rest }) => {
-    // ElementType: las props genéricas de div valen para section/li sin pelear con los tipos por etiqueta
-    const Tag: React.ElementType = as;
     const ref = useRef<HTMLDivElement>(null);
     const [shown, setShown] = useState(false);
 
@@ -31,15 +29,16 @@ const Reveal: React.FC<RevealProps> = ({ delay = 0, as = 'div', className = '', 
         return () => { observer.disconnect(); clearTimeout(fallback); };
     }, []);
 
-    return (
-        <Tag
-            ref={ref as React.RefObject<any>}
-            className={`${shown ? 'animate-fade-up' : 'opacity-0'} ${className}`}
-            style={{ animationDelay: delay ? `${delay}ms` : undefined, ...style }}
-            {...rest}
-        >
-            {children}
-        </Tag>
+    // createElement con etiqueta de texto: las props de div valen para section/li sin pelear con los tipos por etiqueta
+    return React.createElement(
+        as,
+        {
+            ref,
+            className: `${shown ? 'animate-fade-up' : 'opacity-0'} ${className}`,
+            style: { animationDelay: delay ? `${delay}ms` : undefined, ...style },
+            ...rest,
+        },
+        children
     );
 };
 
