@@ -18,15 +18,17 @@ interface PackSelectorProps {
 const isSamePack = (a: Pack | null, b: Pack) => !!a && (a === b || (a.name === b.name && a.price === b.price && packTicketCount(a) === packTicketCount(b)));
 
 const optionClass = (selected: boolean) =>
-    `w-full text-left rounded-xl border-2 p-3.5 sm:p-4 transition-[border-color,background-color,box-shadow,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-secondary ${
-        selected ? 'border-action bg-action/10 shadow-glow-action' : 'border-white/10 bg-white/[0.03] hover:border-white/25 hover:-translate-y-0.5'
+    `w-full text-left rounded-xl border-2 bg-surface p-3.5 sm:p-4 transition-[border-color,background-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 ${
+        selected ? 'border-action bg-action/[0.04]' : 'border-line hover:border-ink/25'
     }`;
 
 const RadioMark = ({ checked }: { checked: boolean }) => (
-    <span className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${checked ? 'border-action bg-action' : 'border-slate-500'}`} aria-hidden>
-        {checked && <Check className="w-3 h-3 text-white" />}
+    <span className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center ${checked ? 'border-action bg-action' : 'border-ink/30 bg-surface'}`} aria-hidden>
+        {checked && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
     </span>
 );
+
+const stepperButton = 'w-11 h-11 inline-flex items-center justify-center text-ink disabled:opacity-40 hover:bg-ink/5';
 
 const PackSelector: React.FC<PackSelectorProps> = ({ packs, pricePerTicket, onPackSelect, selectedPack, selectedQuantity, availableTickets, className = '' }) => {
     const packsWithDiscount = useMemo(() => packs.map(pack => {
@@ -51,12 +53,12 @@ const PackSelector: React.FC<PackSelectorProps> = ({ packs, pricePerTicket, onPa
                         <RadioMark checked={!selectedPack} />
                         <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
                             <div>
-                                <p className="font-semibold text-white">Boletos individuales</p>
-                                <p className="text-sm text-slate-400">Elige tus números en la tabla</p>
+                                <p className="font-semibold text-ink">Boletos individuales</p>
+                                <p className="text-sm text-muted">Elige tus números en la tabla</p>
                             </div>
                             <p className="tnum text-right flex-shrink-0">
-                                <span className="block font-extrabold text-accent">{formatMoney(pricePerTicket)}</span>
-                                <span className="block text-xs text-slate-400">por boleto</span>
+                                <span className="block font-bold text-ink">{formatMoney(pricePerTicket)}</span>
+                                <span className="block text-xs text-muted">por boleto</span>
                             </p>
                         </div>
                     </div>
@@ -71,15 +73,15 @@ const PackSelector: React.FC<PackSelectorProps> = ({ packs, pricePerTicket, onPa
                                     <RadioMark checked={checked} />
                                     <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="font-semibold text-white">{packLabel(pack)}</p>
-                                            <p className="text-sm text-slate-400">
+                                            <p className="font-semibold text-ink">{packLabel(pack)}</p>
+                                            <p className="text-sm text-muted">
                                                 {pluralize(ticketCount, 'boleto')} · números al azar
-                                                {discount > 0 && <span className="text-accent font-semibold"> · ahorras {formatMoney(discount)} ({discountPercent.toFixed(0)} %)</span>}
+                                                {discount > 0 && <span className="text-accent-ink font-semibold"> · ahorras {formatMoney(discount)} ({discountPercent.toFixed(0)} %)</span>}
                                             </p>
                                         </div>
                                         <p className="tnum text-right flex-shrink-0">
-                                            <span className="block font-extrabold text-accent">{formatMoney(pack.price)}</span>
-                                            <span className="block text-xs text-slate-400">{formatMoney(perTicket)} c/u</span>
+                                            <span className="block font-bold text-ink">{formatMoney(pack.price)}</span>
+                                            <span className="block text-xs text-muted">{formatMoney(perTicket)} c/u</span>
                                         </p>
                                     </div>
                                 </div>
@@ -87,13 +89,13 @@ const PackSelector: React.FC<PackSelectorProps> = ({ packs, pricePerTicket, onPa
 
                             {checked && (
                                 <div className="mt-3 ml-8 flex items-center justify-between gap-3">
-                                    <span className="text-sm text-slate-300">Cantidad de paquetes</span>
-                                    <div className="inline-flex items-center rounded-xl border border-white/10 bg-background-primary" role="group" aria-label="Cantidad de paquetes">
-                                        <button type="button" onClick={() => onPackSelect(pack, Math.max(1, selectedQuantity - 1))} disabled={selectedQuantity <= 1} className="w-11 h-11 inline-flex items-center justify-center rounded-l-xl text-white disabled:opacity-40 hover:bg-white/[0.06]" aria-label="Menos paquetes">
+                                    <span className="text-sm text-muted">Cantidad de paquetes</span>
+                                    <div className="inline-flex items-center rounded-xl border border-line bg-surface overflow-hidden" role="group" aria-label="Cantidad de paquetes">
+                                        <button type="button" onClick={() => onPackSelect(pack, Math.max(1, selectedQuantity - 1))} disabled={selectedQuantity <= 1} className={stepperButton} aria-label="Menos paquetes">
                                             <Minus className="w-4 h-4" />
                                         </button>
-                                        <span className="tnum w-10 text-center font-extrabold text-white" aria-live="polite">{selectedQuantity}</span>
-                                        <button type="button" onClick={() => onPackSelect(pack, Math.min(maxQuantity, selectedQuantity + 1))} disabled={selectedQuantity >= maxQuantity} className="w-11 h-11 inline-flex items-center justify-center rounded-r-xl text-white disabled:opacity-40 hover:bg-white/[0.06]" aria-label="Más paquetes">
+                                        <span className="tnum w-10 text-center font-bold text-ink" aria-live="polite">{selectedQuantity}</span>
+                                        <button type="button" onClick={() => onPackSelect(pack, Math.min(maxQuantity, selectedQuantity + 1))} disabled={selectedQuantity >= maxQuantity} className={stepperButton} aria-label="Más paquetes">
                                             <Plus className="w-4 h-4" />
                                         </button>
                                     </div>

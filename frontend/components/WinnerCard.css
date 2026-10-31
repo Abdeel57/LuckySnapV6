@@ -1,0 +1,95 @@
+/* Tarjeta de ganador: placa de oro pulido hecha solo con CSS.
+   Mismo lenguaje que el contador de plata: metal cepillado, bisel con luz arriba,
+   canto en relieve hacia abajo y texto grabado (oscuro con 1 px de luz debajo).
+   El oro va claro donde está el texto para mantener el contraste (≥ 5:1). */
+
+.gold-card {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid #8a6516;
+  border-radius: 1.5rem;
+  color: #241802;
+  background:
+    /* rayado cepillado muy fino */
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.07) 0 1px, rgb(120 80 0 / 0.04) 1px 3px),
+    /* reflejo diagonal ancho */
+    linear-gradient(115deg, transparent 18%, rgb(255 255 255 / 0.38) 34%, transparent 50%),
+    /* cuerpo del oro: claro arriba, más cálido abajo */
+    linear-gradient(165deg, #fff1bf 0%, #f6dc8a 22%, #e8c460 48%, #f3d67c 66%, #dcae4c 100%);
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 0.95),
+    inset 1px 0 1px rgb(255 255 255 / 0.6),
+    inset -1px 0 1px rgb(110 70 0 / 0.25),
+    inset 0 -2px 2px rgb(120 80 8 / 0.55),
+    0 2px 0 #c0912f,
+    0 4px 0 #8f6418,
+    0 5px 0 #5e400b,
+    0 16px 28px -10px rgb(0 0 0 / 0.85);
+}
+
+/* Canto mecanizado: línea de luz arriba y de sombra abajo, un poco hacia dentro */
+.gold-card::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-right-color: rgb(110 70 0 / 0.18);
+  border-bottom-color: rgb(110 70 0 / 0.4);
+  border-radius: calc(1.5rem - 4px);
+  pointer-events: none;
+}
+
+/* Foto engastada: marco de oro más oscuro y hundido */
+.gold-card__photo {
+  padding: 3px;
+  border-radius: 0.875rem;
+  background: linear-gradient(160deg, #7a560f, #d9b04f 45%, #8f6719);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.65),
+    inset 0 2px 3px rgb(0 0 0 / 0.45);
+}
+
+.gold-card__photo img {
+  display: block;
+  border-radius: 0.6875rem;
+  background: #5e400b;
+}
+
+/* Texto grabado: tinta oscura y 1 px de luz debajo */
+.gold-card__label {
+  color: #6a4a08;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.55);
+}
+
+.gold-card__name {
+  color: #241802;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.5);
+}
+
+.gold-card__text {
+  color: #4f3a0c;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.4);
+}
+
+.gold-card__strong {
+  color: #241802;
+  font-weight: 700;
+}
+
+@media (forced-colors: active) {
+  .gold-card { background: Canvas; border-color: CanvasText; box-shadow: none; }
+  .gold-card::before { display: none; }
+  .gold-card__label,
+  .gold-card__name,
+  .gold-card__text,
+  .gold-card__strong { color: CanvasText; text-shadow: none; }
+}
+
+@media print {
+  .gold-card { box-shadow: none; }
+}

@@ -1,9 +1,9 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 
-/** Clases compartidas para inputs y selects nativos en tema oscuro. */
+/** Clases compartidas para inputs y selects nativos. */
 export const inputClass =
-    'w-full h-12 rounded-xl bg-white/[0.05] border border-white/10 px-4 text-white placeholder:text-slate-400 transition-colors focus:border-action focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-action/40 aria-[invalid=true]:border-red-400/70';
+    'w-full h-12 rounded-xl bg-surface border border-line px-4 text-ink placeholder:text-muted/70 transition-[border-color,box-shadow] focus:border-action focus:outline-none focus:ring-4 focus:ring-action/15 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:ring-red-100';
 
 interface FieldProps {
     id: string;
@@ -35,13 +35,13 @@ const Field: React.FC<FieldProps> = ({ id, label, hint, error, optional, addon, 
 
     return (
         <div className={className}>
-            <label htmlFor={id} className="flex items-baseline justify-between gap-3 mb-1.5 text-sm font-semibold text-slate-200">
+            <label htmlFor={id} className="flex items-baseline justify-between gap-3 mb-1.5 text-sm font-semibold text-ink">
                 <span>{label}</span>
-                {optional && <span className="text-xs font-medium text-slate-400">Opcional</span>}
+                {optional && <span className="text-xs font-medium text-muted">Opcional</span>}
             </label>
             {addon ? (
                 <div className="relative">
-                    <span className="absolute inset-y-0 left-4 flex items-center gap-1.5 text-sm font-semibold text-slate-400 pointer-events-none" aria-hidden>{addon}</span>
+                    <span className="absolute inset-y-0 left-4 flex items-center gap-1.5 text-sm font-semibold text-muted pointer-events-none" aria-hidden>{addon}</span>
                     {control}
                 </div>
             ) : control}
@@ -51,7 +51,7 @@ const Field: React.FC<FieldProps> = ({ id, label, hint, error, optional, addon, 
                     {error}
                 </p>
             ) : hint ? (
-                <p id={hintId} className="mt-1.5 text-sm text-slate-400">{hint}</p>
+                <p id={hintId} className="mt-1.5 text-sm text-muted">{hint}</p>
             ) : null}
         </div>
     );

@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Mail, MessageCircle } from 'lucide-react';
 import { getSettings } from '../services/api';
 import { Settings } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
-
-const TikTokIcon = ({ className = '' }: { className?: string }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden>
-        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
-    </svg>
-);
+import { FacebookIcon, InstagramIcon, TikTokIcon, WhatsAppIcon } from './icons/BrandIcons';
 
 const FOOTER_LINKS = [
     { to: '/verificador', text: 'Verificar boleto' },
@@ -17,8 +11,14 @@ const FOOTER_LINKS = [
     { to: '/terminos', text: 'Términos y condiciones' },
 ];
 
-const rowClass = 'flex items-center gap-3 h-11 text-sm text-slate-300 hover:text-white transition-colors rounded-lg';
+type IconLink = { href: string; label: string; icon: React.ReactNode };
 
+const linkClass = 'inline-flex items-center h-9 text-sm font-semibold text-ink/75 hover:text-ink transition-colors rounded-md';
+
+/**
+ * Pie compacto, pensado primero para móvil: marca + iconos de redes en una fila,
+ * enlaces en línea debajo y el aviso legal. En escritorio todo cabe en una sola fila.
+ */
 const Footer = () => {
     const [settings, setSettings] = useState<Settings | null>(null);
     const { appearance } = useTheme();
@@ -30,71 +30,55 @@ const Footer = () => {
     const siteName = appearance?.siteName || settings?.appearance?.siteName || 'Lucky Snap';
     const contactInfo = settings?.contactInfo;
     const socialLinks = settings?.socialLinks;
-    const hasContact = Boolean(contactInfo?.whatsapp || contactInfo?.email);
-    const hasSocial = Boolean(socialLinks?.facebookUrl || socialLinks?.instagramUrl || socialLinks?.tiktokUrl);
+
+    const iconLinks = [
+        contactInfo?.whatsapp && { href: `https://wa.me/${contactInfo.whatsapp.replace(/\D/g, '')}`, label: 'WhatsApp', icon: <WhatsAppIcon className="w-5 h-5" /> },
+        socialLinks?.facebookUrl && { href: socialLinks.facebookUrl, label: 'Facebook', icon: <FacebookIcon className="w-5 h-5" /> },
+        socialLinks?.instagramUrl && { href: socialLinks.instagramUrl, label: 'Instagram', icon: <InstagramIcon className="w-5 h-5" /> },
+        socialLinks?.tiktokUrl && { href: socialLinks.tiktokUrl, label: 'TikTok', icon: <TikTokIcon className="w-5 h-5" /> },
+    ].filter(Boolean) as IconLink[];
 
     return (
-        <footer className="relative mt-16 md:mt-24 bg-background-secondary/60">
-            <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" aria-hidden />
-            <div className="container mx-auto px-4 sm:px-6 max-w-6xl py-10 md:py-14">
-                <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-                    <div>
-                        <Link to="/" className="inline-flex items-center gap-2.5 rounded-lg">
-                            {appearance?.logo && <img src={appearance.logo} alt="" className="h-12 w-12 object-contain drop-shadow-[0_0_10px_rgb(var(--color-action)/0.45)]" />}
-                            <span className="text-lg font-extrabold text-white tracking-tight">{siteName}</span>
-                        </Link>
-                    </div>
+        <footer className="mt-12 md:mt-20 border-t border-line bg-surface">
+            <div className="container mx-auto px-4 sm:px-6 max-w-6xl py-6 md:py-8">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 md:gap-x-8">
+                    <Link to="/" className="inline-flex items-center gap-2 rounded-lg">
+                        {appearance?.logo && <img src={appearance.logo} alt="" className="h-9 w-9 object-contain" />}
+                        <span className="font-display text-lg font-bold text-ink tracking-tight">{siteName}</span>
+                    </Link>
 
-                    {hasContact && (
-                        <div>
-                            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Contacto</h2>
-                            <ul>
-                                {contactInfo?.whatsapp && (
-                                    <li>
-                                        <a href={`https://wa.me/${contactInfo.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className={rowClass}>
-                                            <MessageCircle className="w-4 h-4 text-[#25D366]" aria-hidden /> WhatsApp
-                                        </a>
-                                    </li>
-                                )}
-                                {contactInfo?.email && (
-                                    <li>
-                                        <a href={`mailto:${contactInfo.email}`} className={rowClass}>
-                                            <Mail className="w-4 h-4 text-slate-400" aria-hidden /> Correo
-                                        </a>
-                                    </li>
-                                )}
-                            </ul>
-                        </div>
-                    )}
-
-                    {hasSocial && (
-                        <div>
-                            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Síguenos</h2>
-                            <ul>
-                                {socialLinks?.facebookUrl && (
-                                    <li><a href={socialLinks.facebookUrl} target="_blank" rel="noopener noreferrer" className={rowClass}><Facebook className="w-4 h-4" aria-hidden /> Facebook</a></li>
-                                )}
-                                {socialLinks?.instagramUrl && (
-                                    <li><a href={socialLinks.instagramUrl} target="_blank" rel="noopener noreferrer" className={rowClass}><Instagram className="w-4 h-4" aria-hidden /> Instagram</a></li>
-                                )}
-                                {socialLinks?.tiktokUrl && (
-                                    <li><a href={socialLinks.tiktokUrl} target="_blank" rel="noopener noreferrer" className={rowClass}><TikTokIcon className="w-4 h-4" /> TikTok</a></li>
-                                )}
-                            </ul>
-                        </div>
-                    )}
-
-                    <div>
-                        <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">Enlaces</h2>
-                        <ul>
-                            {FOOTER_LINKS.map(link => (
-                                <li key={link.to}><Link to={link.to} className={rowClass}>{link.text}</Link></li>
+                    {iconLinks.length > 0 && (
+                        <ul className="flex items-center gap-1 md:order-last" aria-label="Contacto y redes sociales">
+                            {iconLinks.map(item => (
+                                <li key={item.label}>
+                                    <a
+                                        href={item.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={item.label}
+                                        title={item.label}
+                                        className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/[0.06] hover:bg-white/[0.12] transition-colors"
+                                    >
+                                        {item.icon}
+                                    </a>
+                                </li>
                             ))}
                         </ul>
-                    </div>
+                    )}
+
+                    <nav aria-label="Enlaces" className="w-full md:w-auto">
+                        <ul className="flex flex-wrap gap-x-5">
+                            {FOOTER_LINKS.map(link => (
+                                <li key={link.to}><Link to={link.to} className={linkClass}>{link.text}</Link></li>
+                            ))}
+                            {contactInfo?.email && (
+                                <li><a href={`mailto:${contactInfo.email}`} className={linkClass}>Correo</a></li>
+                            )}
+                        </ul>
+                    </nav>
                 </div>
 
-                <p className="mt-10 pt-6 border-t border-white/[0.06] text-xs text-slate-400">
+                <p className="mt-3 md:mt-5 text-xs text-muted">
                     © {new Date().getFullYear()} {siteName}. Todos los derechos reservados.
                 </p>
             </div>

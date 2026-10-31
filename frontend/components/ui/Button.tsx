@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'whatsapp';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'whatsapp' | 'rainbow' | 'hot';
 type Size = 'sm' | 'md' | 'lg';
 
 interface BaseProps {
@@ -10,8 +10,6 @@ interface BaseProps {
     size?: Size;
     fullWidth?: boolean;
     loading?: boolean;
-    /** Destello continuo (solo para la acción principal de la página). */
-    shine?: boolean;
     icon?: React.ReactNode;
     className?: string;
     children: React.ReactNode;
@@ -23,24 +21,29 @@ type ButtonAsAnchor = BaseProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElem
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsAnchor;
 
-const BASE = 'inline-flex items-center justify-center gap-2 font-bold rounded-xl whitespace-nowrap select-none transition-[background-color,color,box-shadow,transform,filter] duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-background-primary';
+// Pastilla con relieve: la base más oscura "se hunde" al pulsar (translate + sombra más corta)
+const BASE = 'inline-flex items-center justify-center gap-2 font-extrabold rounded-full whitespace-nowrap select-none transition-[background-color,color,box-shadow,transform,filter] duration-150 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2 focus-visible:ring-offset-page';
 
 const VARIANTS: Record<Variant, string> = {
-    primary: 'btn-shine bg-gradient-to-r from-action to-action/80 text-white shadow-glow-action hover:brightness-110 hover:-translate-y-0.5',
-    secondary: 'btn-shine bg-white/[0.06] text-white border border-white/15 hover:bg-white/10 hover:border-white/30',
-    ghost: 'text-slate-300 hover:text-white hover:bg-white/[0.06]',
-    whatsapp: 'btn-shine bg-[#25D366] text-[#073b1c] shadow-[0_0_28px_rgb(37_211_102/0.35)] hover:brightness-105 hover:-translate-y-0.5',
+    primary: 'bg-action text-white shadow-press-action hover:brightness-110 active:translate-y-[3px] active:shadow-press-action-down',
+    secondary: 'bg-surface-2 text-ink border border-line-strong hover:bg-surface-2/70 hover:border-line-strong active:translate-y-[1px]',
+    ghost: 'text-muted hover:text-ink hover:bg-white/[0.06]',
+    whatsapp: 'bg-[#25D366] text-[#073b1c] shadow-press-whatsapp hover:brightness-105 active:translate-y-[3px] active:shadow-press-whatsapp-down',
+    // Aro arcoíris giratorio (.rainbow-ring en styles.css); el relleno lo pone su ::after
+    rainbow: 'rainbow-ring text-ink active:translate-y-[1px]',
+    // Rojo intenso: el más vivo que mantiene texto blanco ≥ 4.5:1
+    hot: 'bg-[#EE0000] text-white shadow-press-hot hover:bg-[#FF0000] active:translate-y-[3px] active:shadow-press-hot-down',
 };
 
 const SIZES: Record<Size, string> = {
     sm: 'h-10 px-4 text-sm',
-    md: 'h-12 px-5 text-[15px]',
-    lg: 'h-14 px-6 text-base',
+    md: 'h-12 px-6 text-[15px]',
+    lg: 'h-14 px-7 text-base',
 };
 
 const Button: React.FC<ButtonProps> = (props) => {
-    const { variant = 'primary', size = 'md', fullWidth, loading, shine, icon, className = '', children, ...rest } = props as BaseProps & Record<string, any>;
-    const classes = `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${fullWidth ? 'w-full' : ''} ${shine ? 'btn-shine-loop' : ''} ${className}`;
+    const { variant = 'primary', size = 'md', fullWidth, loading, icon, className = '', children, ...rest } = props as BaseProps & Record<string, any>;
+    const classes = `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${fullWidth ? 'w-full' : ''} ${className}`;
     const content = (
         <>
             {loading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden /> : icon}

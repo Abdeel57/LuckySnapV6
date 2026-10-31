@@ -369,17 +369,17 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
     };
 
     const primaryButton = 'w-full h-12 rounded-xl bg-action text-white font-semibold hover:brightness-110 transition';
-    const secondaryButton = 'w-full h-12 rounded-xl bg-white/[0.06] border border-white/10 text-white font-semibold hover:bg-white/10 transition';
+    const secondaryButton = 'w-full h-12 rounded-xl bg-surface-2 border border-line text-ink font-semibold hover:bg-ink/5 transition';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[100] sm:p-4" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-            <div className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-background-secondary border border-white/10 shadow-2xl p-5 sm:p-6 pb-safe">
+            <div className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-surface border border-line shadow-2xl p-5 sm:p-6 pb-safe">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 id="qr-title" className="text-lg font-extrabold text-white">Escanear código QR</h3>
+                    <h3 id="qr-title" className="text-lg font-bold text-ink">Escanear código QR</h3>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="-mr-2 inline-flex items-center justify-center w-11 h-11 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                        className="-mr-2 inline-flex items-center justify-center w-11 h-11 rounded-xl text-muted hover:text-ink hover:bg-ink/5 transition-colors"
                         aria-label="Cerrar"
                     >
                         <X className="w-5 h-5" />
@@ -390,12 +390,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                 {permissionStatus === 'requesting' && (
                     <div className="text-center py-8" role="status">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-action/15 rounded-full mb-4">
-                            <Camera className="w-8 h-8 text-white animate-pulse" aria-hidden />
+                            <Camera className="w-8 h-8 text-action-ink animate-pulse" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-extrabold text-white mb-2">
+                        <h4 className="text-lg font-bold text-ink mb-2">
                             Solicitando permiso de cámara
                         </h4>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-muted">
                             Permite el acceso a la cámara cuando tu navegador lo pida.
                         </p>
                     </div>
@@ -404,7 +404,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                 {/* Estado: Permisos concedidos - Mostrar escáner */}
                 {permissionStatus === 'granted' && (
                     <>
-                        <p className="text-sm text-slate-400 text-center mb-4">
+                        <p className="text-sm text-muted text-center mb-4">
                             Apunta la cámara al código QR del boleto o del comprobante.
                         </p>
 
@@ -427,7 +427,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                         </div>
 
                         {isScanning && (
-                            <p className="mt-4 text-center text-sm text-slate-400 inline-flex w-full items-center justify-center gap-2" role="status">
+                            <p className="mt-4 text-center text-sm text-muted inline-flex w-full items-center justify-center gap-2" role="status">
                                 <span className="w-2 h-2 rounded-full bg-accent animate-pulse" aria-hidden />
                                 Escaneando…
                             </p>
@@ -439,12 +439,12 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                 {permissionStatus === 'denied' && (
                     <div className="text-center py-6">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/15 rounded-full mb-4">
-                            <AlertCircle className="w-8 h-8 text-red-400" aria-hidden />
+                            <AlertCircle className="w-8 h-8 text-red-300" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-extrabold text-white mb-2">
+                        <h4 className="text-lg font-bold text-ink mb-2">
                             Permiso de cámara denegado
                         </h4>
-                        <p className="text-sm text-slate-400 mb-5">
+                        <p className="text-sm text-muted mb-5">
                             {errorMessage || 'No se pudo acceder a la cámara. Permite el acceso en la configuración de tu navegador.'}
                         </p>
                         <div className="space-y-2">
@@ -460,10 +460,10 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-400/15 rounded-full mb-4">
                             <AlertCircle className="w-8 h-8 text-amber-300" aria-hidden />
                         </div>
-                        <h4 className="text-lg font-extrabold text-white mb-2">
+                        <h4 className="text-lg font-bold text-ink mb-2">
                             No se pudo usar la cámara
                         </h4>
-                        <p className="text-sm text-slate-400 mb-5">
+                        <p className="text-sm text-muted mb-5">
                             {errorMessage || 'Verifica que tengas una cámara conectada y disponible.'}
                         </p>
                         <div className="space-y-2">

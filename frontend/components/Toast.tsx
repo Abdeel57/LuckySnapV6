@@ -16,10 +16,10 @@ export interface ToastProps {
 const ICONS = { success: CheckCircle, error: XCircle, warning: AlertCircle, info: Info };
 
 const ICON_COLORS: Record<ToastType, string> = {
-  success: 'text-emerald-400',
-  error: 'text-red-400',
-  warning: 'text-amber-400',
-  info: 'text-sky-400',
+  success: 'text-emerald-300',
+  error: 'text-red-300',
+  warning: 'text-amber-300',
+  info: 'text-sky-300',
 };
 
 const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 5000, onClose }) => {
@@ -37,18 +37,18 @@ const Toast: React.FC<ToastProps> = ({ id, type, title, message, duration = 5000
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18 }}
-      className="w-full sm:w-96 rounded-2xl border border-white/10 bg-background-secondary shadow-2xl shadow-black/40 p-4 mb-3"
+      className="w-full sm:w-96 rounded-2xl border border-line bg-surface shadow-lift p-4 mb-3"
     >
       <div className="flex items-start gap-3">
         <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${ICON_COLORS[type]}`} aria-hidden />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-white">{title}</p>
-          {message && <p className="text-sm text-slate-400 mt-0.5">{message}</p>}
+          <p className="font-semibold text-sm text-ink">{title}</p>
+          {message && <p className="text-sm text-muted mt-0.5">{message}</p>}
         </div>
         <button
           type="button"
           onClick={() => onClose(id)}
-          className="-m-2 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+          className="-m-2 p-2 rounded-lg text-muted hover:text-ink hover:bg-ink/5 transition-colors"
           aria-label="Cerrar aviso"
         >
           <X className="w-4 h-4" />

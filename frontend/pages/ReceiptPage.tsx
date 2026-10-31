@@ -74,10 +74,10 @@ const ReceiptPage: React.FC = () => {
     if (loading) {
         return (
             <PageAnimator>
-                <div className="min-h-screen bg-background-primary flex items-center justify-center">
+                <div className="min-h-screen bg-page flex items-center justify-center">
                     <div className="text-center">
                         <Spinner size="lg" />
-                        <p className="text-sm text-slate-400">Cargando comprobante…</p>
+                        <p className="text-sm text-muted">Cargando comprobante…</p>
                     </div>
                 </div>
             </PageAnimator>
@@ -87,10 +87,10 @@ const ReceiptPage: React.FC = () => {
     if (error || !order) {
         return (
             <PageAnimator>
-                <div className="min-h-screen bg-background-primary flex items-center justify-center px-4">
-                    <div className="max-w-md w-full rounded-2xl border border-white/[0.08] bg-background-secondary p-6 text-center">
-                        <h1 className="text-xl font-extrabold text-white">Comprobante no disponible</h1>
-                        <p className="mt-2 text-slate-400">{error || 'No se pudo cargar el comprobante'}</p>
+                <div className="min-h-screen bg-page flex items-center justify-center px-4">
+                    <div className="max-w-md w-full rounded-3xl bg-surface shadow-soft lit p-6 text-center">
+                        <h1 className="text-xl font-bold text-ink">Comprobante no disponible</h1>
+                        <p className="mt-2 text-muted">{error || 'No se pudo cargar el comprobante'}</p>
                         <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
                             <Button onClick={() => navigate('/')}>Volver al inicio</Button>
                             <Button onClick={() => navigate('/verificador')} variant="secondary">Ir al verificador</Button>
@@ -134,27 +134,27 @@ const ReceiptPage: React.FC = () => {
                     .print-only { display: none; }
                 }
             `}</style>
-            <div className="min-h-screen bg-background-primary py-6 sm:py-10 px-4">
+            <div className="min-h-screen bg-page py-6 sm:py-10 px-4">
                 <div className="max-w-2xl mx-auto">
                     {/* Confirmación y acciones (no se imprimen) */}
                     <div className="no-print mb-5">
                         <div className="text-center">
-                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-400 mb-4">
+                            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-300 mb-4">
                                 <CheckCircle2 className="w-7 h-7" aria-hidden />
                             </div>
-                            <h1 className="text-title font-extrabold text-white">¡Gracias por tu compra!</h1>
-                            <p className="mt-2 text-slate-400">Tu pago está confirmado. Guarda este comprobante; incluye un QR para verificar tus boletos.</p>
+                            <h1 className="font-display text-title font-bold text-ink">¡Gracias por tu compra!</h1>
+                            <p className="mt-2 text-muted">Tu pago está confirmado. Guarda este comprobante; incluye un QR para verificar tus boletos.</p>
                         </div>
 
-                        <div className="mt-6 rounded-2xl border border-white/[0.08] bg-background-secondary p-4 sm:p-5 space-y-4">
+                        <div className="mt-6 rounded-3xl bg-surface shadow-soft lit p-4 sm:p-5 space-y-4">
                             <Button onClick={() => window.print()} size="lg" fullWidth icon={<Download className="w-5 h-5" aria-hidden />}>
                                 Descargar o imprimir
                             </Button>
                             <div>
-                                <p className="text-xs font-semibold text-slate-400 mb-1.5">Enlace permanente</p>
+                                <p className="text-xs font-semibold text-muted mb-1.5">Enlace permanente</p>
                                 <div className="flex items-center gap-2">
-                                    <input readOnly value={permalink} aria-label="Enlace del comprobante" className="tnum flex-1 min-w-0 h-11 rounded-xl bg-white/[0.05] border border-white/10 px-3 text-sm text-slate-200" />
-                                    <button type="button" onClick={copyLink} className="flex-shrink-0 inline-flex items-center gap-1.5 h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-sm font-semibold text-white hover:bg-white/10">
+                                    <input readOnly value={permalink} aria-label="Enlace del comprobante" className="tnum flex-1 min-w-0 h-11 rounded-xl bg-surface-2 border border-line px-3 text-sm text-ink" />
+                                    <button type="button" onClick={copyLink} className="flex-shrink-0 inline-flex items-center gap-1.5 h-11 px-3 rounded-xl bg-surface border border-line text-sm font-semibold text-ink hover:bg-ink/5">
                                         {copied ? <Check className="w-4 h-4" aria-hidden /> : <Copy className="w-4 h-4" aria-hidden />}
                                         {copied ? 'Copiado' : 'Copiar'}
                                     </button>
@@ -164,7 +164,7 @@ const ReceiptPage: React.FC = () => {
                     </div>
 
                     {/* Comprobante imprimible (fondo blanco a propósito) */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+                    <div className="bg-white rounded-3xl shadow-lift p-6 sm:p-8">
                         <div className="text-center mb-8 pb-6 border-b-2 border-gray-200">
                             {logoUrl && (
                                 <img
@@ -174,14 +174,14 @@ const ReceiptPage: React.FC = () => {
                                     style={{ mixBlendMode: 'normal' }}
                                 />
                             )}
-                            <h2 className="text-2xl font-extrabold text-gray-900">{siteName}</h2>
+                            <h2 className="font-display text-2xl font-bold text-gray-900">{siteName}</h2>
                             <p className="text-gray-600 mt-1 text-sm font-semibold tracking-wide">COMPROBANTE DE PAGO</p>
                         </div>
 
                         <div className="space-y-3 mb-6">
                             <div className="flex justify-between items-center">
                                 <span className="font-semibold text-gray-700">Folio:</span>
-                                <span className="tnum text-gray-900 font-extrabold text-lg">{order.folio || 'N/A'}</span>
+                                <span className="tnum text-gray-900 font-bold text-lg">{order.folio || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="font-semibold text-gray-700">Fecha de pago:</span>
@@ -194,7 +194,7 @@ const ReceiptPage: React.FC = () => {
                         </div>
 
                         <div className="bg-gray-50 rounded-xl p-5 mb-6">
-                            <h3 className="text-base font-extrabold text-gray-900 mb-3 pb-2 border-b border-gray-300">Cliente</h3>
+                            <h3 className="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-300">Cliente</h3>
                             <div className="space-y-1.5 text-gray-900">
                                 <p><span className="font-semibold text-gray-700">Nombre: </span>{order.customer?.name || 'N/A'}</p>
                                 <p><span className="font-semibold text-gray-700">Teléfono: </span>{order.customer?.phone || 'N/A'}</p>
@@ -203,12 +203,12 @@ const ReceiptPage: React.FC = () => {
                         </div>
 
                         <div className="bg-gray-50 rounded-xl p-5 mb-6">
-                            <h3 className="text-base font-extrabold text-gray-900 mb-3 pb-2 border-b border-gray-300">Sorteo</h3>
+                            <h3 className="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-300">Sorteo</h3>
                             <p className="text-gray-900">{order.raffleTitle || (order as any).raffle?.title || 'No disponible'}</p>
                         </div>
 
                         <div className="mb-6">
-                            <h3 className="text-base font-extrabold text-gray-900 mb-3 pb-2 border-b border-gray-300">Boletos ({order.tickets?.length || 0})</h3>
+                            <h3 className="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-300">Boletos ({order.tickets?.length || 0})</h3>
                             <div className="flex flex-wrap gap-2">
                                 {order.tickets?.map((ticket, index) => (
                                     <span key={index} className="tnum inline-block px-3 py-1.5 bg-gray-900 text-white rounded-lg font-bold text-sm">
@@ -219,13 +219,13 @@ const ReceiptPage: React.FC = () => {
                         </div>
 
                         <div className="bg-gray-50 rounded-xl p-5 mb-6">
-                            <h3 className="text-base font-extrabold text-gray-900 mb-3 pb-2 border-b border-gray-300">Pago</h3>
+                            <h3 className="text-base font-bold text-gray-900 mb-3 pb-2 border-b border-gray-300">Pago</h3>
                             {order.paymentMethod && (
                                 <p className="mb-3 text-gray-900"><span className="font-semibold text-gray-700">Método: </span>{order.paymentMethod}</p>
                             )}
                             <div className="pt-3 border-t-2 border-gray-300 flex justify-between items-center">
-                                <span className="text-lg font-extrabold text-gray-900">Total pagado</span>
-                                <span className="tnum text-2xl font-extrabold text-green-600">{formatMoney(order.total || order.totalAmount)}</span>
+                                <span className="text-lg font-bold text-gray-900">Total pagado</span>
+                                <span className="tnum text-2xl font-bold text-green-600">{formatMoney(order.total || order.totalAmount)}</span>
                             </div>
                         </div>
 

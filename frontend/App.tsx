@@ -23,6 +23,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const ReceiptPage = lazy(() => import('./pages/ReceiptPage'));
+const PaymentResultPage = lazy(() => import('./pages/PaymentResultPage'));
 
 // Admin Pages
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
@@ -31,6 +32,7 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage')
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 const AdminRafflesPage = lazy(() => import('./pages/admin/AdminRafflesPage'));
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
+const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'));
 const AdminCustomersPage = lazy(() => import('./pages/admin/AdminCustomersPage'));
 const AdminWinnersPage = lazy(() => import('./pages/admin/AdminWinnersPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
@@ -47,7 +49,7 @@ const App: React.FC = () => {
                 <Suspense fallback={null}>
                   <ToastContainer />
                 </Suspense>
-                <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-background-primary"><Spinner /></div>}>
+                <Suspense fallback={<div className="w-full h-screen flex items-center justify-center bg-page"><Spinner /></div>}>
                   <Routes>
               {/* Public Routes - Receipt page sin layout para mejor impresión */}
               <Route path="comprobante/:folio" element={<ReceiptPage />} />
@@ -57,6 +59,8 @@ const App: React.FC = () => {
                 <Route index element={<HomePage />} />
                 <Route path="sorteo/:slug" element={<RaffleDetailPage />} />
                 <Route path="comprar/:slug" element={<PurchasePage />} />
+                {/* Retorno del checkout alojado (ROKI): success_url / cancel_url */}
+                <Route path="pago/:orderId" element={<PaymentResultPage />} />
                 <Route path="verificador" element={<VerifierPage />} />
                 <Route path="cuentas-de-pago" element={<PaymentAccountsPage />} />
                 <Route path="terminos" element={<TermsPage />} />
@@ -85,6 +89,7 @@ const App: React.FC = () => {
                 } />
                 {/* Rutas accesibles para todos los roles autenticados */}
                 <Route path="apartados" element={<AdminOrdersPage />} />
+                <Route path="pagos" element={<AdminPaymentsPage />} />
                 <Route path="clientes" element={<AdminCustomersPage />} />
                 {/* Rutas solo para admin/superadmin */}
                 <Route path="ganadores" element={

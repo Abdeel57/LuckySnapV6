@@ -191,6 +191,13 @@ const AdminOrdersPage: React.FC = () => {
                     className: 'bg-blue-100 text-blue-700 border-blue-300',
                     iconColor: 'text-blue-600'
                 };
+            case 'roki':
+                return {
+                    label: 'Tarjeta (ROKI)',
+                    icon: CreditCard,
+                    className: 'bg-purple-100 text-purple-700 border-purple-300',
+                    iconColor: 'text-purple-600'
+                };
             case 'transfer':
             case 'transferencia':
                 return {
@@ -439,6 +446,7 @@ const AdminOrdersPage: React.FC = () => {
                             >
                                 <option value="">Todos los métodos</option>
                                 <option value="paypal">Tarjeta (PayPal)</option>
+                                <option value="roki">Tarjeta (ROKI)</option>
                                 <option value="transfer">Transferencia</option>
                             </select>
                         </div>

@@ -42,12 +42,11 @@ const StickyPurchaseBar: React.FC<StickyPurchaseBarProps> = (props) => {
                     {isOpen && (
                         <div className="fixed inset-0 bg-black/60" onClick={() => setIsOpen(false)} aria-hidden />
                     )}
-                    <div className="relative bg-background-secondary shadow-raised">
-                        <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-action via-accent to-action" aria-hidden />
+                    <div className="relative bg-surface border-t border-line shadow-raised">
                         {isOpen && (
                             <div role="dialog" aria-label="Detalle de tu selección" className="max-h-[60vh] overflow-y-auto px-4 pt-4 pb-2">
                                 <div className="flex justify-end -mt-1 mb-1">
-                                    <button type="button" onClick={() => setIsOpen(false)} className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08]" aria-label="Cerrar detalle">
+                                    <button type="button" onClick={() => setIsOpen(false)} className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-muted hover:text-ink hover:bg-ink/5" aria-label="Cerrar detalle">
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -61,15 +60,14 @@ const StickyPurchaseBar: React.FC<StickyPurchaseBarProps> = (props) => {
                                 className="flex-1 min-w-0 text-left rounded-xl -mx-2 px-2 py-1"
                                 aria-expanded={isOpen}
                             >
-                                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                                <span className="flex items-center gap-1.5 text-xs font-semibold text-muted">
                                     {pluralize(ticketsCount, 'boleto')}
-                                    {boletosAdicionales > 0 && <span className="text-accent">+{boletosAdicionales} regalo</span>}
+                                    {boletosAdicionales > 0 && <span className="text-accent-ink">+{boletosAdicionales} regalo</span>}
                                     <ChevronUp className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
                                 </span>
-                                {/* key por total: el importe "salta" al cambiar la selección */}
-                                <span key={totalPrice} className="tnum neon-accent-text block text-xl font-extrabold text-accent leading-tight animate-pop">{formatMoney(totalPrice)}</span>
+                                <span className="tnum block font-display text-xl font-semibold text-accent leading-tight">{formatMoney(totalPrice)}</span>
                             </button>
-                            <Button to={checkoutUrl} size="md" shine className="flex-shrink-0 px-6">
+                            <Button to={checkoutUrl} size="md" className="flex-shrink-0 px-6">
                                 Continuar
                             </Button>
                         </div>

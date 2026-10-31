@@ -63,16 +63,16 @@ const SECTIONS: { title: string; paragraphs?: string[]; items?: string[] }[] = [
 const TermsPage = () => (
   <PageAnimator>
     <div className="container mx-auto px-4 sm:px-6 max-w-3xl pt-8 md:pt-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Legal</p>
-      <h1 className="text-display font-extrabold text-white">Términos y condiciones</h1>
+      <p className="text-sm font-extrabold text-action-ink mb-1.5">Legal</p>
+      <h1 className="font-display text-display font-semibold text-ink">Términos y condiciones</h1>
 
       <div className="mt-8 space-y-8">
         {SECTIONS.map(section => (
           <section key={section.title}>
-            <h2 className="text-lg font-extrabold text-white mb-2">{section.title}</h2>
-            {section.paragraphs?.map(p => <p key={p} className="text-[15px] text-slate-300">{p}</p>)}
+            <h2 className="text-lg font-bold text-ink mb-2">{section.title}</h2>
+            {section.paragraphs?.map(p => <p key={p} className="text-[15px] text-ink/80">{p}</p>)}
             {section.items && (
-              <ul className="list-disc pl-5 space-y-1.5 text-[15px] text-slate-300 marker:text-slate-400">
+              <ul className="list-disc pl-5 space-y-1.5 text-[15px] text-ink/80 marker:text-muted">
                 {section.items.map(item => <li key={item}>{item}</li>)}
               </ul>
             )}

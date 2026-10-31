@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Check, CheckCircle2, Clock, Copy, CreditCard, Landmark, MessageCircle, Phone } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle2, Clock, Copy, CreditCard } from 'lucide-react';
+import { WhatsAppIcon } from '../components/icons/BrandIcons';
 import { getRaffleBySlug, createOrder, fetchPublicSettings, getOccupiedTickets } from '../services/api';
+import { getRokiConfig, startRokiCheckout, goToRokiCheckout, type RokiPublicConfig } from '../services/rokiApi';
 import { Raffle, Order, PaymentAccount, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -78,6 +80,9 @@ const expirationLabel = (minutes?: number): string | null => {
     return `${Math.round(hours / 24)} días`;
 };
 
+const copyButtonClass = 'flex-shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-surface border border-line text-xs font-semibold text-ink hover:bg-ink/5';
+const noticeBoxClass = 'rounded-xl bg-surface-2 p-3 text-sm text-ink/80';
+
 const PurchasePage = () => {
     const { slug } = useParams<{ slug: string }>();
     const [searchParams] = useSearchParams();
@@ -101,7 +106,12 @@ const PurchasePage = () => {
     const [customerData, setCustomerData] = useState<{ name: string; phone: string } | null>(null);
     // PayPal deshabilitado por defecto; activar con VITE_PAYPAL_ENABLED=true en el entorno
     const paypalEnabled = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_PAYPAL_ENABLED === 'true';
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer'>(paypalEnabled ? 'paypal' : 'transfer');
+    // Pago con tarjeta (ROKI): lo decide el backend con sus variables de entorno; el frontend solo pregunta
+    const [rokiConfig, setRokiConfig] = useState<RokiPublicConfig | null>(null);
+    const rokiEnabled = rokiConfig?.enabled === true;
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'paypal' | 'transfer' | 'roki'>(paypalEnabled ? 'paypal' : 'transfer');
+    const [cardRedirecting, setCardRedirecting] = useState(false);
+    const [preferTransfer, setPreferTransfer] = useState(false);
     const [assignedPackTickets, setAssignedPackTickets] = useState<number[]>([]);
     const [occupiedTickets, setOccupiedTickets] = useState<number[]>([]);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -128,6 +138,12 @@ const PurchasePage = () => {
             });
         return () => { active = false; };
     }, [slug, reloadKey]);
+
+    useEffect(() => {
+        let active = true;
+        getRokiConfig().then(config => { if (active) setRokiConfig(config); });
+        return () => { active = false; };
+    }, []);
 
     const loadPaymentSettings = useCallback(() => {
         setSettingsStatus('loading');
@@ -226,6 +242,20 @@ const PurchasePage = () => {
         }
     };
 
+    // Pide al backend el enlace de pago (importe y moneda reales del pedido) y redirige al checkout alojado
+    const startCardPayment = async (order: Order) => {
+        if (cardRedirecting || !order.id || !order.folio) return;
+        setCardRedirecting(true);
+        try {
+            const checkout = await startRokiCheckout(order.id, order.folio);
+            if (!goToRokiCheckout(checkout.checkoutUrl)) throw new Error('El enlace de pago no es válido.');
+        } catch (err) {
+            console.error('❌ Error iniciando pago con tarjeta:', err);
+            toast.error('No se pudo abrir el pago con tarjeta', err instanceof Error ? err.message : 'Puedes intentarlo de nuevo o pagar por transferencia.');
+            setCardRedirecting(false);
+        }
+    };
+
     const onSubmit = async (data: FormData) => {
         if (submittingRef.current || !raffle || (initialTickets.length === 0 && !selectedPack)) return;
         if (selectedPack && assignedPackTickets.length < packTicketCount(selectedPack) * packQuantity) {
@@ -266,6 +296,8 @@ const PurchasePage = () => {
             metaPixelService.trackPurchase(newOrder.id, raffle.id, ticketsToOrder, total);
             setCustomerData({ name: data.name, phone: data.phone });
             setCreatedOrder(newOrder);
+            // Con tarjeta se va directo al checkout; si falla, la pantalla del apartado ofrece reintentar o transferir
+            if (selectedPaymentMethod === 'roki') void startCardPayment(newOrder);
         } catch (err) {
             console.error('❌ Error creating order:', err);
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -282,8 +314,8 @@ const PurchasePage = () => {
         return (
             <PageAnimator>
                 <div className="container mx-auto px-4 max-w-lg py-20 text-center" role="alert">
-                    <h1 className="text-title font-extrabold text-white">No pudimos cargar el sorteo</h1>
-                    <p className="mt-2 text-slate-400">Revisa tu conexión e inténtalo de nuevo. Tu selección se conserva.</p>
+                    <h1 className="font-display text-title font-bold text-ink">No pudimos cargar el sorteo</h1>
+                    <p className="mt-2 text-muted">Revisa tu conexión e inténtalo de nuevo. Tu selección se conserva.</p>
                     <Button variant="secondary" className="mt-6" onClick={() => setReloadKey(k => k + 1)}>Reintentar</Button>
                 </div>
             </PageAnimator>
@@ -293,7 +325,7 @@ const PurchasePage = () => {
         return (
             <PageAnimator>
                 <div className="container mx-auto px-4 max-w-lg py-20 text-center">
-                    <h1 className="text-title font-extrabold text-white">Sorteo no encontrado</h1>
+                    <h1 className="font-display text-title font-bold text-ink">Sorteo no encontrado</h1>
                     <Button to="/" variant="secondary" className="mt-6">Ver sorteos activos</Button>
                 </div>
             </PageAnimator>
@@ -307,6 +339,7 @@ const PurchasePage = () => {
     if (createdOrder) {
         const orderPaymentMethod = (createdOrder as any).paymentMethod || selectedPaymentMethod;
         const isPaypalPayment = orderPaymentMethod === 'paypal';
+        const isCardPayment = orderPaymentMethod === 'roki' && !preferTransfer;
         const isPaid = createdOrder.status === 'PAID';
         const orderTickets = createdOrder.tickets || [];
         const orderTicketsCount = orderTickets.length || baseTicketsCount;
@@ -325,37 +358,28 @@ const PurchasePage = () => {
         const whatsappUrl = contactWhatsapp
             ? `https://wa.me/${contactWhatsapp.replace(/\D/g, '')}?text=${encodeWhatsAppMessage(formatWhatsAppMessage(customerName, customerPhone, folio, raffle.title, orderTickets, orderTotal))}`
             : '';
+        const firstName = (customerData?.name || '').trim().split(/\s+/)[0] || '';
+        const greeting = firstName ? `, ${firstName}` : '';
 
         return (
             <PageAnimator>
                 <div className="container mx-auto px-4 sm:px-6 max-w-2xl pt-6 md:pt-10">
                     <div className="text-center mb-6">
-                        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 animate-pop ${isPaid ? 'bg-emerald-500/15 text-emerald-400 shadow-[0_0_28px_rgb(16_185_129/0.45)]' : 'bg-action/15 text-white shadow-glow-action'}`}>
+                        <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 ${isPaid ? 'bg-emerald-500/15 text-emerald-300' : 'bg-action/20 text-action-ink'}`}>
                             {isPaid ? <CheckCircle2 className="w-7 h-7" aria-hidden /> : <Clock className="w-7 h-7" aria-hidden />}
                         </div>
                         {/* Saludo con el nombre de pila: el apartado es de una persona, no de un folio */}
-                        {(() => {
-                            const firstName = (customerData?.name || '').trim().split(/\s+/)[0] || '';
-                            const greeting = firstName ? `, ${firstName}` : '';
-                            return (
-                                <>
-                                    <h1 className="font-display text-[clamp(1.5rem,2.4vw+0.6rem,2.25rem)] leading-[1.1] font-bold text-white neon-text">{isPaid ? `¡Pago confirmado${greeting}!` : `¡Listo${greeting}!`}</h1>
-                                    <p className="mt-2 text-slate-300">
-                                        {isPaid ? 'Tu compra quedó confirmada. Mucha suerte en el sorteo.' : isPaypalPayment ? 'Tus boletos quedaron apartados a tu nombre. Completa el pago con tarjeta para confirmarlos.' : 'Tus boletos quedaron apartados a tu nombre. Completa el pago para confirmarlos.'}
-                                    </p>
-                                </>
-                            );
-                        })()}
+                        <h1 className="font-display text-title font-bold text-ink">{isPaid ? `¡Pago confirmado${greeting}!` : `¡Listo${greeting}!`}</h1>
+                        <p className="mt-2 text-muted">
+                            {isPaid ? 'Tu compra quedó confirmada. Mucha suerte en el sorteo.' : (isPaypalPayment || isCardPayment) ? 'Tus boletos quedaron apartados a tu nombre. Completa el pago con tarjeta para confirmarlos.' : 'Tus boletos quedaron apartados a tu nombre. Completa el pago para confirmarlos.'}
+                        </p>
                     </div>
 
-                    <Card glow className="relative overflow-hidden mb-4">
-                        {isPaid && (
-                            <div className="confetti" aria-hidden>{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div>
-                        )}
+                    <Card className="mb-4">
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                                <p className="text-xs font-semibold text-slate-400">Folio del apartado</p>
-                                <p className="tnum mt-0.5 text-2xl font-extrabold text-white tracking-tight break-all">{folio}</p>
+                                <p className="text-xs font-semibold text-muted">Folio del apartado</p>
+                                <p className="tnum mt-0.5 font-display text-2xl font-bold text-ink tracking-tight break-all">{folio}</p>
                             </div>
                             <Badge tone={isPaid ? 'success' : 'warning'} className="flex-shrink-0 mt-1">{isPaid ? 'Pagado' : 'Pendiente de pago'}</Badge>
                         </div>
@@ -363,36 +387,35 @@ const PurchasePage = () => {
                             <button
                                 type="button"
                                 onClick={() => copyText(folio, 'folio', 'Folio copiado')}
-                                className="mt-2 inline-flex items-center gap-1.5 h-9 text-sm font-semibold text-accent hover:underline"
+                                className="mt-2 inline-flex items-center gap-1.5 h-9 text-sm font-semibold text-action-ink hover:underline"
                             >
                                 {copiedKey === 'folio' ? <Check className="w-4 h-4" aria-hidden /> : <Copy className="w-4 h-4" aria-hidden />}
                                 {copiedKey === 'folio' ? 'Copiado' : 'Copiar folio'}
                             </button>
                         )}
 
-                        <dl className="mt-4 pt-4 border-t border-white/[0.08] grid grid-cols-2 gap-4">
+                        <dl className="mt-4 pt-4 border-t border-line grid grid-cols-2 gap-4">
                             <div>
-                                <dt className="text-xs font-semibold text-slate-400">Boletos</dt>
-                                <dd className="tnum text-lg font-extrabold text-white">
+                                <dt className="text-xs font-semibold text-muted">Boletos</dt>
+                                <dd className="tnum text-lg font-bold text-ink">
                                     {orderPurchasedTickets}
-                                    {orderGiftTickets > 0 && <span className="text-accent text-sm font-semibold"> +{orderGiftTickets} regalo</span>}
+                                    {orderGiftTickets > 0 && <span className="text-accent-ink text-sm font-semibold"> +{orderGiftTickets} regalo</span>}
                                 </dd>
                             </div>
                             <div className="text-right">
-                                <dt className="text-xs font-semibold text-slate-400">Total</dt>
-                                <dd className="tnum text-lg font-extrabold text-accent">{formatMoney(orderTotal)}</dd>
+                                <dt className="text-xs font-semibold text-muted">Total</dt>
+                                <dd className="tnum text-lg font-bold text-ink">{formatMoney(orderTotal)}</dd>
                             </div>
                         </dl>
                         {orderTickets.length > 0 && (
                             <ul className="mt-3 flex flex-wrap gap-1.5 max-h-28 overflow-y-auto no-scrollbar" aria-label="Números de boleto">
                                 {[...orderTickets].sort((a, b) => a - b).map(ticket => (
-                                    <li key={ticket} className="tnum inline-flex items-center h-8 px-2.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-semibold text-white">{formatTicket(ticket, raffle.tickets)}</li>
+                                    <li key={ticket} className="tnum inline-flex items-center h-8 px-2.5 rounded-lg bg-surface-2 text-xs font-semibold text-ink">{formatTicket(ticket, raffle.tickets)}</li>
                                 ))}
                             </ul>
                         )}
                         {!isPaid && (expiresAt || expiration) && (
-                            <p className="mt-4 flex items-start gap-2 text-sm text-amber-300">
-                                <Clock className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden />
+                            <p className="mt-4 text-sm text-amber-300">
                                 {expiresAt ? `Paga antes del ${expiresAt}. Si no se recibe el pago, los boletos se liberan.` : `Tienes ${expiration} para pagar. Si no se recibe el pago, los boletos se liberan.`}
                             </p>
                         )}
@@ -400,17 +423,23 @@ const PurchasePage = () => {
 
                     {isPaid ? (
                         <Card className="text-center">
-                            <p className="text-slate-300">Guarda tu comprobante; incluye un código QR para verificar tus boletos.</p>
+                            <p className="text-muted">Guarda tu comprobante; incluye un código QR para verificar tus boletos.</p>
                             <Button onClick={() => navigate(`/comprobante/${folio}`)} size="lg" fullWidth className="mt-5">Ver comprobante</Button>
+                        </Card>
+                    ) : isCardPayment ? (
+                        <Card>
+                            <h2 className="font-bold text-ink">Pago con tarjeta</h2>
+                            <p className="mt-1 text-sm text-muted">Te llevamos al pago seguro de ROKI (Visa o Mastercard). Al terminar vuelves aquí con la confirmación.</p>
+                            <Button size="lg" fullWidth className="mt-5" onClick={() => startCardPayment(createdOrder)} loading={cardRedirecting} icon={<CreditCard className="w-5 h-5" aria-hidden />}>
+                                {cardRedirecting ? 'Abriendo pago seguro…' : `Pagar ${formatMoney(orderTotal)} con tarjeta`}
+                            </Button>
+                            <button type="button" onClick={() => setPreferTransfer(true)} className="mt-3 w-full h-9 text-sm font-semibold text-action-ink hover:underline">Prefiero pagar por transferencia</button>
                         </Card>
                     ) : isPaypalPayment ? (
                         <Card>
-                            <div className="flex items-center gap-3 mb-5">
-                                <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-action/15 text-white"><CreditCard className="w-5 h-5" aria-hidden /></span>
-                                <div>
-                                    <h2 className="font-extrabold text-white">Pago con tarjeta</h2>
-                                    <p className="text-sm text-slate-400">Procesado de forma segura por PayPal</p>
-                                </div>
+                            <div className="mb-5">
+                                <h2 className="font-bold text-ink">Pago con tarjeta</h2>
+                                <p className="text-sm text-muted">Procesado de forma segura por PayPal</p>
                             </div>
                             <PayPalCheckout
                                 orderId={createdOrder.id}
@@ -427,27 +456,23 @@ const PurchasePage = () => {
                         </Card>
                     ) : (
                         <Card>
-                            <h2 className="font-extrabold text-white">Cómo completar tu pago</h2>
+                            <h2 className="font-bold text-ink">Cómo completar tu pago</h2>
                             <ol className="mt-4 space-y-5">
                                 <li className="flex gap-3">
-                                    <span className="tnum flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-action text-white text-sm font-extrabold" aria-hidden>1</span>
+                                    <span className="tnum flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-action text-white text-sm font-bold" aria-hidden>1</span>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-white">Transfiere <span className="tnum text-accent">{formatMoney(orderTotal)}</span> a una de estas cuentas</p>
-                                        <p className="text-sm text-slate-400">Usa el folio <span className="tnum font-semibold text-slate-200">{folio}</span> como referencia.</p>
+                                        <p className="font-semibold text-ink">Transfiere <span className="tnum">{formatMoney(orderTotal)}</span> a una de estas cuentas</p>
+                                        <p className="text-sm text-muted">Usa el folio <span className="tnum font-semibold text-ink">{folio}</span> como referencia.</p>
                                         {paymentAccounts.length > 0 ? (
                                             <ul className="mt-3 space-y-2">
                                                 {paymentAccounts.map(acc => (
-                                                    <li key={acc.id} className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
-                                                        <div className="flex items-center gap-2 text-sm font-extrabold text-white"><Landmark className="w-4 h-4 text-slate-400" aria-hidden />{acc.bank}</div>
-                                                        <p className="mt-1 text-sm text-slate-400">{acc.accountHolder}</p>
+                                                    <li key={acc.id} className="rounded-xl bg-surface-2 p-3.5">
+                                                        <p className="text-sm font-bold text-ink">{acc.bank}</p>
+                                                        <p className="mt-1 text-sm text-muted">{acc.accountHolder}</p>
                                                         {acc.accountNumber && (
                                                             <div className="mt-2 flex items-center justify-between gap-3">
-                                                                <span className="tnum text-base font-extrabold text-white break-all select-all">{acc.accountNumber}</span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => copyText(acc.accountNumber, acc.id, 'Número de cuenta copiado')}
-                                                                    className="flex-shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-semibold text-white hover:bg-white/10"
-                                                                >
+                                                                <span className="tnum text-base font-bold text-ink break-all select-all">{acc.accountNumber}</span>
+                                                                <button type="button" onClick={() => copyText(acc.accountNumber, acc.id, 'Número de cuenta copiado')} className={copyButtonClass}>
                                                                     {copiedKey === acc.id ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Copy className="w-3.5 h-3.5" aria-hidden />}
                                                                     {copiedKey === acc.id ? 'Copiado' : 'Copiar'}
                                                                 </button>
@@ -457,24 +482,24 @@ const PurchasePage = () => {
                                                 ))}
                                             </ul>
                                         ) : settingsStatus === 'error' ? (
-                                            <div role="alert" className="mt-3 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-                                                <p className="text-sm text-slate-300">No pudimos cargar las cuentas de pago. Tu apartado ya está registrado con el folio {folio}.</p>
+                                            <div role="alert" className={`mt-3 ${noticeBoxClass}`}>
+                                                <p>No pudimos cargar las cuentas de pago. Tu apartado ya está registrado con el folio {folio}.</p>
                                                 <Button variant="secondary" size="sm" className="mt-3" onClick={loadPaymentSettings}>Reintentar</Button>
                                             </div>
                                         ) : settingsStatus === 'loading' ? (
-                                            <p role="status" className="mt-3 text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">Cargando cuentas de pago…</p>
+                                            <p role="status" className={`mt-3 ${noticeBoxClass}`}>Cargando cuentas de pago…</p>
                                         ) : (
-                                            <p className="mt-3 text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">No hay cuentas configuradas para transferencia. Escríbenos por WhatsApp.</p>
+                                            <p className={`mt-3 ${noticeBoxClass}`}>No hay cuentas configuradas para transferencia. Escríbenos por WhatsApp.</p>
                                         )}
                                     </div>
                                 </li>
                                 <li className="flex gap-3">
-                                    <span className="tnum flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-action text-white text-sm font-extrabold" aria-hidden>2</span>
+                                    <span className="tnum flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-action text-white text-sm font-bold" aria-hidden>2</span>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-white">Envía el comprobante por WhatsApp</p>
-                                        <p className="text-sm text-slate-400">El mensaje ya incluye tu folio y tus boletos; solo adjunta la captura.</p>
+                                        <p className="font-semibold text-ink">Envía el comprobante por WhatsApp</p>
+                                        <p className="text-sm text-muted">El mensaje ya incluye tu folio y tus boletos; solo adjunta la captura.</p>
                                         {whatsappUrl && (
-                                            <Button href={whatsappUrl} target="_blank" rel="noopener noreferrer" variant="whatsapp" size="lg" fullWidth className="mt-3" icon={<MessageCircle className="w-5 h-5" aria-hidden />}>
+                                            <Button href={whatsappUrl} target="_blank" rel="noopener noreferrer" variant="whatsapp" size="lg" fullWidth className="mt-3" icon={<WhatsAppIcon className="w-5 h-5" tone="current" />}>
                                                 Enviar comprobante
                                             </Button>
                                         )}
@@ -484,8 +509,8 @@ const PurchasePage = () => {
                         </Card>
                     )}
 
-                    <p className="mt-6 text-center text-sm text-slate-400">
-                        Puedes consultar tus boletos en cualquier momento en el <Link to="/verificador" className="text-accent font-semibold hover:underline">verificador</Link> con tu folio.
+                    <p className="mt-6 text-center text-sm text-muted">
+                        Puedes consultar tus boletos en cualquier momento en el <Link to="/verificador" className="text-action-ink font-semibold hover:underline">verificador</Link> con tu folio.
                     </p>
                 </div>
             </PageAnimator>
@@ -494,72 +519,75 @@ const PurchasePage = () => {
 
     // ─────────────────────────── Formulario de confirmación ───────────────────────────
     const summary = (
-        <Card glow>
+        <Card>
             <div className="flex gap-3">
                 {/* Es la foto completa (~0.7 MB, sin miniatura en el backend): decodificación asíncrona
                     para no retener el pintado de la página mientras se decodifica */}
-                {raffleImage && <img src={raffleImage} alt="" decoding="async" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-background-primary" />}
+                {raffleImage && <img src={raffleImage} alt="" decoding="async" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-surface-2" />}
                 <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-400">Sorteo</p>
-                    <p className="font-extrabold text-white line-clamp-2">{raffle.title}</p>
+                    <p className="text-xs font-semibold text-muted">Sorteo</p>
+                    <p className="font-bold text-ink line-clamp-2">{raffle.title}</p>
                 </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/[0.08]">
+            <div className="mt-4 pt-4 border-t border-line">
                 {selectedPack ? (
-                    <p className="text-sm text-slate-300">
-                        <span className="font-semibold text-white">{packLabel(selectedPack)}{packQuantity > 1 ? ` × ${packQuantity}` : ''}</span>
+                    <p className="text-sm text-muted">
+                        <span className="font-semibold text-ink">{packLabel(selectedPack)}{packQuantity > 1 ? ` × ${packQuantity}` : ''}</span>
                         {' · '}{pluralize(baseTicketsCount, 'boleto')} con números al azar
                     </p>
                 ) : (
                     <>
-                        <p className="text-sm font-semibold text-white mb-2">{pluralize(baseTicketsCount, 'boleto')}</p>
+                        <p className="text-sm font-semibold text-ink mb-2">{pluralize(baseTicketsCount, 'boleto')}</p>
                         <ul className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto no-scrollbar" aria-label="Boletos elegidos">
                             {sortedTickets.map(ticket => (
-                                <li key={ticket} className="tnum inline-flex items-center h-8 px-2.5 rounded-lg bg-action/15 border border-action/40 text-xs font-semibold text-white">{formatTicket(ticket, raffle.tickets)}</li>
+                                <li key={ticket} className="tnum inline-flex items-center h-8 px-2.5 rounded-lg bg-action/20 text-xs font-semibold text-action-ink">{formatTicket(ticket, raffle.tickets)}</li>
                             ))}
                         </ul>
                     </>
                 )}
             </div>
 
-            <dl className="mt-4 pt-4 border-t border-white/[0.08] space-y-2 text-sm">
+            <dl className="mt-4 pt-4 border-t border-line space-y-2 text-sm">
                 {selectedPack ? (
-                    <div className="flex justify-between"><dt className="text-slate-400">{packQuantity > 1 ? `Paquete × ${packQuantity}` : 'Paquete'}</dt><dd className="tnum font-semibold text-white">{formatMoney(total)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-muted">{packQuantity > 1 ? `Paquete × ${packQuantity}` : 'Paquete'}</dt><dd className="tnum font-semibold text-ink">{formatMoney(total)}</dd></div>
                 ) : matchedPack ? (
                     <>
-                        <div className="flex justify-between"><dt className="text-slate-400">{baseTicketsCount} × {formatMoney(pricePerTicket)}</dt><dd className="tnum font-semibold text-white">{formatMoney(baseTicketsCount * pricePerTicket)}</dd></div>
-                        <div className="flex justify-between"><dt className="text-slate-400">Descuento · {packLabel(matchedPack)}</dt><dd className="tnum font-semibold text-accent">−{formatMoney(savingsFromPack)}</dd></div>
+                        <div className="flex justify-between"><dt className="text-muted">{baseTicketsCount} × {formatMoney(pricePerTicket)}</dt><dd className="tnum font-semibold text-ink">{formatMoney(baseTicketsCount * pricePerTicket)}</dd></div>
+                        <div className="flex justify-between"><dt className="text-muted">Descuento · {packLabel(matchedPack)}</dt><dd className="tnum font-semibold text-accent-ink">−{formatMoney(savingsFromPack)}</dd></div>
                     </>
                 ) : (
-                    <div className="flex justify-between"><dt className="text-slate-400">{baseTicketsCount} × {formatMoney(pricePerTicket)}</dt><dd className="tnum font-semibold text-white">{formatMoney(total)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-muted">{baseTicketsCount} × {formatMoney(pricePerTicket)}</dt><dd className="tnum font-semibold text-ink">{formatMoney(total)}</dd></div>
                 )}
                 {boletosAdicionales > 0 && (
-                    <div className="flex justify-between"><dt className="text-slate-400">Boletos de regalo</dt><dd className="tnum font-semibold text-accent">+{boletosAdicionales}</dd></div>
+                    <div className="flex justify-between"><dt className="text-muted">Boletos de regalo</dt><dd className="tnum font-semibold text-accent-ink">+{boletosAdicionales}</dd></div>
                 )}
-                <div className="flex justify-between items-baseline pt-3 border-t border-white/[0.08]">
-                    <dt className="text-base font-extrabold text-white">Total a pagar</dt>
-                    <dd className="tnum text-2xl font-extrabold text-accent">{formatMoney(total)}</dd>
+                <div className="flex justify-between items-baseline pt-3 border-t border-line">
+                    <dt className="text-base font-bold text-ink">Total a pagar</dt>
+                    <dd className="tnum font-display text-2xl font-semibold text-accent">{formatMoney(total)}</dd>
                 </div>
             </dl>
         </Card>
     );
 
+    const methodClass = (selected: boolean) =>
+        `cursor-pointer rounded-xl border-2 bg-surface p-4 transition-colors ${selected ? 'border-action bg-action/[0.04]' : 'border-line hover:border-ink/25'}`;
+
     return (
         <PageAnimator>
             <div className="container mx-auto px-4 sm:px-6 max-w-6xl pt-4 md:pt-8">
-                <Link to={`/sorteo/${raffle.slug}`} className="inline-flex items-center gap-1.5 h-10 text-sm font-semibold text-slate-400 hover:text-white">
+                <Link to={`/sorteo/${raffle.slug}`} className="inline-flex items-center gap-1.5 h-10 text-sm font-semibold text-muted hover:text-ink">
                     <ArrowLeft className="w-4 h-4" aria-hidden /> Volver al sorteo
                 </Link>
-                <h1 className="mt-2 text-title font-extrabold text-white">Confirma tu compra</h1>
-                <p className="mt-1 text-slate-400">Tus datos, el método de pago y listo.</p>
+                <h1 className="mt-2 font-display text-title font-bold text-ink">Confirma tu compra</h1>
+                <p className="mt-1 text-muted">Tus datos, el método de pago y listo.</p>
 
                 <div className="mt-6 grid gap-6 lg:grid-cols-12 lg:gap-10 lg:items-start">
                     <div className="lg:col-span-5 lg:order-2 lg:sticky lg:top-20">{summary}</div>
 
                     <form onSubmit={handleSubmit(onSubmit)} noValidate className="lg:col-span-7 lg:order-1 space-y-5">
                         <Card>
-                            <h2 className="font-extrabold text-white mb-4">Tus datos</h2>
+                            <h2 className="font-bold text-ink mb-4">Tus datos</h2>
                             <div className="space-y-4">
                                 <Field id="name" label="Nombre completo" error={errors.name?.message}>
                                     <input
@@ -569,7 +597,7 @@ const PurchasePage = () => {
                                         autoComplete="name"
                                     />
                                 </Field>
-                                <Field id="phone" label="Teléfono" hint="8 dígitos, sin el prefijo +504." error={errors.phone?.message} addon={<><Phone className="w-4 h-4" />+504</>}>
+                                <Field id="phone" label="Teléfono" hint="8 dígitos, sin el prefijo +504." error={errors.phone?.message} addon="+504">
                                     <input
                                         type="tel"
                                         inputMode="numeric"
@@ -592,26 +620,36 @@ const PurchasePage = () => {
                         </Card>
 
                         <Card>
-                            <h2 className="font-extrabold text-white mb-4">Método de pago</h2>
-                            <div className={`grid gap-3 ${paypalEnabled ? 'sm:grid-cols-2' : ''}`} role="radiogroup" aria-label="Método de pago">
-                                <label className={`cursor-pointer rounded-xl border-2 p-4 transition-colors ${selectedPaymentMethod === 'transfer' ? 'border-action bg-action/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'}`}>
+                            <h2 className="font-bold text-ink mb-4">Método de pago</h2>
+                            <div className={`grid gap-3 ${paypalEnabled || rokiEnabled ? 'sm:grid-cols-2' : ''}`} role="radiogroup" aria-label="Método de pago">
+                                <label className={methodClass(selectedPaymentMethod === 'transfer')}>
                                     <input type="radio" name="paymentMethod" value="transfer" className="sr-only" checked={selectedPaymentMethod === 'transfer'} onChange={() => setSelectedPaymentMethod('transfer')} />
                                     <div className="flex items-start gap-3">
-                                        <Landmark className="w-5 h-5 mt-0.5 text-slate-300 flex-shrink-0" aria-hidden />
                                         <div>
-                                            <p className="font-semibold text-white">Transferencia bancaria</p>
-                                            <p className="text-sm text-slate-400">Te mostramos las cuentas al confirmar. Envías el comprobante por WhatsApp.</p>
+                                            <p className="font-semibold text-ink">Transferencia bancaria</p>
+                                            <p className="text-sm text-muted">Te mostramos las cuentas al confirmar. Envías el comprobante por WhatsApp.</p>
                                         </div>
                                     </div>
                                 </label>
                                 {paypalEnabled && (
-                                    <label className={`cursor-pointer rounded-xl border-2 p-4 transition-colors ${selectedPaymentMethod === 'paypal' ? 'border-action bg-action/10' : 'border-white/10 bg-white/[0.03] hover:border-white/25'}`}>
+                                    <label className={methodClass(selectedPaymentMethod === 'paypal')}>
                                         <input type="radio" name="paymentMethod" value="paypal" className="sr-only" checked={selectedPaymentMethod === 'paypal'} onChange={() => setSelectedPaymentMethod('paypal')} />
                                         <div className="flex items-start gap-3">
-                                            <CreditCard className="w-5 h-5 mt-0.5 text-slate-300 flex-shrink-0" aria-hidden />
                                             <div>
-                                                <p className="font-semibold text-white">Tarjeta (PayPal)</p>
-                                                <p className="text-sm text-slate-400">Pago inmediato con tarjeta o cuenta PayPal.</p>
+                                                <p className="font-semibold text-ink">Tarjeta (PayPal)</p>
+                                                <p className="text-sm text-muted">Pago inmediato con tarjeta o cuenta PayPal.</p>
+                                            </div>
+                                        </div>
+                                    </label>
+                                )}
+                                {rokiEnabled && (
+                                    <label className={methodClass(selectedPaymentMethod === 'roki')}>
+                                        <input type="radio" name="paymentMethod" value="roki" className="sr-only" checked={selectedPaymentMethod === 'roki'} onChange={() => setSelectedPaymentMethod('roki')} />
+                                        <div className="flex items-start gap-3">
+                                            <CreditCard className="w-5 h-5 mt-0.5 flex-shrink-0 text-action-ink" aria-hidden />
+                                            <div>
+                                                <p className="font-semibold text-ink">Tarjeta de crédito o débito</p>
+                                                <p className="text-sm text-muted">Visa o Mastercard, pago seguro con confirmación inmediata.{rokiConfig?.environment === 'sandbox' ? ' Modo pruebas.' : ''}</p>
                                             </div>
                                         </div>
                                     </label>
@@ -620,7 +658,7 @@ const PurchasePage = () => {
                         </Card>
 
                         {selectedPack && occupiedStatus === 'error' && (
-                            <div role="alert" className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-sm text-slate-300">
+                            <div role="alert" className={noticeBoxClass}>
                                 No pudimos comprobar qué boletos siguen disponibles para tu paquete.
                                 <Button variant="secondary" size="sm" className="mt-3" onClick={() => setOccupiedReloadKey(k => k + 1)}>Reintentar</Button>
                             </div>
@@ -632,9 +670,9 @@ const PurchasePage = () => {
                             loading={isSubmitting || (!!selectedPack && occupiedStatus === 'loading')}
                             disabled={(initialTickets.length === 0 && !selectedPack) || (!!selectedPack && occupiedStatus !== 'ready')}
                         >
-                            {isSubmitting ? 'Apartando boletos…' : `Apartar boletos · ${formatMoney(total)}`}
+                            {isSubmitting ? 'Apartando boletos…' : selectedPaymentMethod === 'roki' ? `Continuar al pago · ${formatMoney(total)}` : `Apartar boletos · ${formatMoney(total)}`}
                         </Button>
-                        <p className="text-center text-xs text-slate-400">Al continuar aceptas los <Link to="/terminos" className="text-slate-300 underline underline-offset-2">términos y condiciones</Link>.</p>
+                        <p className="text-center text-xs text-muted">Al continuar aceptas los <Link to="/terminos" className="text-ink underline underline-offset-2">términos y condiciones</Link>.</p>
                     </form>
                 </div>
             </div>

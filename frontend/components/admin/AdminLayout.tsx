@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Home, Ticket, Calendar, Cog, Users, LogOut, Trophy, BarChart3 } from 'lucide-react';
+import { Home, Ticket, Calendar, Cog, Users, LogOut, Trophy, BarChart3, CreditCard } from 'lucide-react';
 import MobileAdminNavAdaptive from './MobileAdminNavAdaptive';
 
 export const navLinks = [
@@ -9,6 +9,7 @@ export const navLinks = [
     { to: "/admin/analytics", text: "Analytics", icon: BarChart3 },
     { to: "/admin/sorteos", text: "Rifas", icon: Ticket },
     { to: "/admin/apartados", text: "Apartados", icon: Calendar },
+    { to: "/admin/pagos", text: "Pagos tarjeta", icon: CreditCard },
     { to: "/admin/clientes", text: "Clientes", icon: Users },
     { to: "/admin/ganadores", text: "Ganadores", icon: Trophy },
     { to: "/admin/usuarios", text: "Usuarios", icon: Users },
@@ -30,7 +31,8 @@ const AdminLayout = () => {
         // Vendedores solo ven Apartados y Clientes
         if (user.role === 'ventas') {
             const filtered = navLinks.filter(link => 
-                link.to === '/admin/apartados' || 
+                link.to === '/admin/apartados' ||
+                link.to === '/admin/pagos' || 
                 link.to === '/admin/clientes' ||
                 link.to === '/admin' // Inicio siempre visible
             );

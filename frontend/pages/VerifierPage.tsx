@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { QrCode, Search } from 'lucide-react';
 import { searchTickets, getRaffles } from '../services/api';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
@@ -143,13 +142,13 @@ const VerifierPage = () => {
     return (
         <PageAnimator>
             <div className="container mx-auto px-4 sm:px-6 max-w-3xl pt-8 md:pt-14">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent mb-2">Boletos</p>
-                <h1 className="text-display font-extrabold text-white">Verificar boleto</h1>
-                <p className="mt-3 text-slate-400 max-w-xl">Busca por folio o por número de boleto, o escanea el código QR de tu comprobante.</p>
+                <p className="text-sm font-extrabold text-action-ink mb-1.5">Boletos</p>
+                <h1 className="font-display text-display font-semibold text-ink">Verificar boleto</h1>
+                <p className="mt-3 text-muted max-w-xl">Busca por folio o por número de boleto, o escanea el código QR de tu comprobante.</p>
 
                 <Card className="mt-6">
                     <form onSubmit={handleSearch} className="space-y-4" noValidate>
-                        <div className="inline-flex p-1 rounded-xl bg-white/[0.05] border border-white/10" role="radiogroup" aria-label="Buscar por">
+                        <div className="inline-flex p-1 rounded-xl bg-surface-2" role="radiogroup" aria-label="Buscar por">
                             {SEARCH_TYPES.map(type => (
                                 <button
                                     key={type.value}
@@ -157,7 +156,7 @@ const VerifierPage = () => {
                                     role="radio"
                                     aria-checked={searchType === type.value}
                                     onClick={() => { setSearchType(type.value); setSearchValue(''); }}
-                                    className={`h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${searchType === type.value ? 'bg-action text-white' : 'text-slate-300 hover:text-white'}`}
+                                    className={`h-10 px-4 rounded-lg text-sm font-semibold transition-colors ${searchType === type.value ? 'bg-action text-white' : 'text-muted hover:text-ink'}`}
                                 >
                                     {type.label}
                                 </button>
@@ -177,7 +176,7 @@ const VerifierPage = () => {
                                     required
                                 />
                             </Field>
-                            <Button type="submit" loading={isLoading} icon={<Search className="w-4 h-4" aria-hidden />} className="sm:flex-shrink-0">
+                            <Button type="submit" loading={isLoading} className="sm:flex-shrink-0">
                                 Buscar
                             </Button>
                         </div>
@@ -194,12 +193,12 @@ const VerifierPage = () => {
                         </Field>
 
                         <div className="flex items-center gap-3" aria-hidden>
-                            <div className="flex-grow border-t border-white/[0.08]" />
-                            <span className="text-xs font-semibold text-slate-400">o</span>
-                            <div className="flex-grow border-t border-white/[0.08]" />
+                            <div className="flex-grow border-t border-line" />
+                            <span className="text-xs font-semibold text-muted">o</span>
+                            <div className="flex-grow border-t border-line" />
                         </div>
 
-                        <Button type="button" variant="secondary" fullWidth onClick={() => setShowQRScanner(true)} icon={<QrCode className="w-5 h-5" aria-hidden />}>
+                        <Button type="button" variant="secondary" fullWidth onClick={() => setShowQRScanner(true)}>
                             Escanear código QR
                         </Button>
                     </form>
@@ -209,27 +208,27 @@ const VerifierPage = () => {
                     {isLoading && (
                         <div className="py-10 text-center">
                             <Spinner />
-                            <p className="text-sm text-slate-400">Buscando boletos…</p>
+                            <p className="text-sm text-muted">Buscando boletos…</p>
                         </div>
                     )}
 
                     {hasResults && (
                         <>
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-muted">
                                 {pluralize(resultados.totalOrdenes, 'orden', 'órdenes')} encontradas
                                 {resultados.totalClientes > 1 && ` · ${pluralize(resultados.totalClientes, 'cliente')}`}
                             </p>
                             {resultados.clientes.map((cliente: any) => (
                                 <Card key={cliente.clienteId}>
-                                    <div className="flex flex-wrap items-start justify-between gap-2 pb-4 mb-4 border-b border-white/[0.08]">
+                                    <div className="flex flex-wrap items-start justify-between gap-2 pb-4 mb-4 border-b border-line">
                                         <div>
-                                            <h2 className="text-lg font-extrabold text-white">{cliente.nombre}</h2>
-                                            <p className="tnum text-sm text-slate-400">{pluralize(cliente.totalOrdenes, 'orden', 'órdenes')} · {pluralize(cliente.totalBoletos, 'boleto')}</p>
+                                            <h2 className="text-lg font-bold text-ink">{cliente.nombre}</h2>
+                                            <p className="tnum text-sm text-muted">{pluralize(cliente.totalOrdenes, 'orden', 'órdenes')} · {pluralize(cliente.totalBoletos, 'boleto')}</p>
                                         </div>
                                         {cliente.totalPagado > 0 && (
                                             <p className="text-right">
-                                                <span className="block text-xs font-semibold text-slate-400">Total pagado</span>
-                                                <span className="tnum font-extrabold text-accent">{formatMoney(cliente.totalPagado)}</span>
+                                                <span className="block text-xs font-semibold text-muted">Total pagado</span>
+                                                <span className="tnum font-bold text-ink">{formatMoney(cliente.totalPagado)}</span>
                                             </p>
                                         )}
                                     </div>
@@ -250,8 +249,8 @@ const VerifierPage = () => {
 
                     {noResults && (
                         <Card tone="subtle" className="text-center">
-                            <p className="font-extrabold text-white">Sin resultados</p>
-                            <p className="mt-1 text-sm text-slate-400">Revisa que el folio o el número estén bien escritos e intenta de nuevo.</p>
+                            <p className="font-bold text-ink">Sin resultados</p>
+                            <p className="mt-1 text-sm text-muted">Revisa que el folio o el número estén bien escritos e intenta de nuevo.</p>
                         </Card>
                     )}
                 </div>

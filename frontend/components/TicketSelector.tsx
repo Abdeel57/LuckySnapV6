@@ -27,6 +27,7 @@ type ScrollGridData = {
 };
 
 const CELL_GAP = 8;
+const MIN_CELL = 44; // objetivo táctil mínimo
 const MIN_SCROLL_HEIGHT = 320;
 const TICKETS_PER_PAGE = 50;
 
@@ -48,13 +49,12 @@ const VirtualTicketCell: React.FC<GridChildComponentProps<ScrollGridData>> = ({ 
     );
 };
 
-// Sin máscaras ni transform en las 50 celdas: con CPU lenta cada toque costaba el doble
-// (recálculo de estilos y pintado). El "pop" solo corre una vez en la celda que se selecciona.
-const CELL_BASE = 'tnum relative w-full h-full flex items-center justify-center rounded-lg text-sm font-bold border transition-[background-color,border-color,color] duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70';
+// Solo cambian color y borde: barato de pintar incluso con cientos de celdas en móvil
+const CELL_BASE = 'tnum relative w-full h-full flex items-center justify-center rounded-xl text-sm font-extrabold border transition-[background-color,border-color,color] duration-150 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action';
 const CELL_STATES = {
-    available: 'bg-white/[0.05] border-white/10 text-slate-200 hover:border-action hover:bg-action/15 active:bg-action/25',
-    selected: 'bg-gradient-to-br from-action to-action/70 border-action text-white ring-2 ring-inset ring-white/40 animate-pop',
-    occupied: 'ticket-sold bg-transparent border-white/[0.05] text-slate-600 line-through cursor-not-allowed',
+    available: 'bg-surface-2 border-transparent text-ink hover:bg-action/25 active:bg-action/40',
+    selected: 'bg-action border-action text-white',
+    occupied: 'ticket-sold bg-transparent border-line text-muted/60 line-through cursor-not-allowed',
 };
 
 interface TicketCellProps {
@@ -79,19 +79,20 @@ const TicketCell = React.memo(({ ticket, label, isOccupied, isSelected, onTicket
             aria-label={`Boleto ${label}${isOccupied ? ', vendido' : isSelected ? ', seleccionado' : ''}`}
         >
             {label}
-            {/* El check va en la esquina: las muescas laterales recortarían un icono en línea */}
             {isSelected && <Check className="absolute top-1 right-1.5 w-3 h-3" strokeWidth={3} aria-hidden />}
         </button>
     );
 });
 
 const Legend = () => (
-    <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-bold text-slate-400" aria-label="Leyenda">
-        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md border bg-white/[0.05] border-white/10" aria-hidden /> Disponible</li>
-        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md border bg-action border-action flex items-center justify-center text-white" aria-hidden><Check className="w-3 h-3" /></span> Seleccionado</li>
-        <li className="flex items-center gap-2"><span className="ticket-sold w-5 h-5 rounded-md border border-white/[0.08]" aria-hidden /> Vendido</li>
+    <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-muted" aria-label="Leyenda">
+        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md bg-surface-2" aria-hidden /> Disponible</li>
+        <li className="flex items-center gap-2"><span className="w-5 h-5 rounded-md bg-action flex items-center justify-center text-white" aria-hidden><Check className="w-3 h-3" /></span> Seleccionado</li>
+        <li className="flex items-center gap-2"><span className="ticket-sold w-5 h-5 rounded-md border border-line" aria-hidden /> Vendido</li>
     </ul>
 );
+
+const pagerClass = 'inline-flex items-center gap-1 h-11 px-3 rounded-xl bg-surface border border-line text-sm font-semibold text-ink shadow-soft disabled:opacity-40 hover:bg-surface-2';
 
 const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTicketClick, listingMode = 'paginado', hideOccupied = false, showAvailability = false }: TicketSelectorProps) => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -152,18 +153,22 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
     }, [listingMode, orderedTickets, totalDisplayTickets, currentPage, occupiedSet, selectedSet, createTicketNode]);
 
     const columns = useMemo(() => {
-        if (containerWidth >= 900) return 10;
-        if (containerWidth >= 720) return 9;
-        if (containerWidth >= 640) return 8;
-        if (containerWidth >= 520) return 7;
-        if (containerWidth >= 400) return 6;
-        return 5;
+        const preferred = containerWidth >= 900 ? 10
+            : containerWidth >= 720 ? 9
+            : containerWidth >= 640 ? 8
+            : containerWidth >= 520 ? 7
+            : containerWidth >= 400 ? 6
+            : 5;
+        // Nunca más columnas de las que caben con celdas de 44 px: antes, a 320 px el mínimo
+        // de la celda ensanchaba la fila y la última columna quedaba recortada.
+        const maxThatFit = Math.max(1, Math.floor((containerWidth + CELL_GAP) / (MIN_CELL + CELL_GAP)));
+        return containerWidth > 0 ? Math.min(preferred, maxThatFit) : preferred;
     }, [containerWidth]);
 
     const cellWidth = useMemo(() => {
         if (columns <= 0 || containerWidth <= 0) return 56;
         const availableWidth = Math.max(containerWidth - CELL_GAP * (columns - 1), 0);
-        return Math.max(Math.floor(availableWidth / columns), 44);
+        return Math.max(Math.floor(availableWidth / columns), MIN_CELL);
     }, [columns, containerWidth]);
 
     const gridWidth = useMemo(() => Math.min(containerWidth, columns * (cellWidth + CELL_GAP) - CELL_GAP), [columns, containerWidth, cellWidth]);
@@ -187,8 +192,8 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <Legend />
                 {showAvailability && (
-                    <p className="tnum text-xs font-semibold text-slate-400">
-                        <span className="text-white">{availableCount.toLocaleString('es-HN')}</span> disponibles de {totalTickets.toLocaleString('es-HN')}
+                    <p className="tnum text-xs font-semibold text-muted">
+                        <span className="text-ink">{availableCount.toLocaleString('es-HN')}</span> disponibles de {totalTickets.toLocaleString('es-HN')}
                     </p>
                 )}
             </div>
@@ -204,39 +209,33 @@ const TicketSelector = ({ totalTickets, occupiedTickets, selectedTickets, onTick
                             rowHeight={cellWidth + CELL_GAP}
                             width={gridWidth}
                             itemData={itemData}
-                            className="mx-auto"
+                            // Sin barras: la vertical restaba ancho y empujaba la última columna fuera; la horizontal
+                            // aparecía solo por el hueco final de la última columna. El desplazamiento vertical sigue
+                            // funcionando por toque/rueda.
+                            className="mx-auto no-scrollbar"
+                            style={{ overflowX: 'hidden' }}
                         >
                             {VirtualTicketCell}
                         </Grid>
                     ) : (
-                        <p className="text-center text-sm text-slate-400 py-8">
+                        <p className="text-center text-sm text-muted py-8">
                             {totalDisplayTickets > 0 ? 'Cargando boletos…' : 'No hay boletos disponibles en este momento.'}
                         </p>
                     )
                 ) : totalDisplayTickets > 0 ? (
                     <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">{paginatedTickets}</div>
                 ) : (
-                    <p className="text-center text-sm text-slate-400 py-8">No hay boletos disponibles en este momento.</p>
+                    <p className="text-center text-sm text-muted py-8">No hay boletos disponibles en este momento.</p>
                 )}
             </div>
 
             {listingMode === 'paginado' && totalPages > 1 && (
                 <nav className="flex items-center justify-between gap-3 mt-4" aria-label="Páginas de boletos">
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="inline-flex items-center gap-1 h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-sm font-semibold text-white disabled:opacity-40 hover:bg-white/10"
-                    >
+                    <button type="button" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className={pagerClass}>
                         <ChevronLeft className="w-4 h-4" aria-hidden /> Anterior
                     </button>
-                    <span className="tnum text-sm text-slate-400">Página <span className="text-white font-semibold">{currentPage}</span> de {totalPages}</span>
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="inline-flex items-center gap-1 h-11 px-3 rounded-xl bg-white/[0.06] border border-white/10 text-sm font-semibold text-white disabled:opacity-40 hover:bg-white/10"
-                    >
+                    <span className="tnum text-sm text-muted">Página <span className="text-ink font-semibold">{currentPage}</span> de {totalPages}</span>
+                    <button type="button" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className={pagerClass}>
                         Siguiente <ChevronRight className="w-4 h-4" aria-hidden />
                     </button>
                 </nav>

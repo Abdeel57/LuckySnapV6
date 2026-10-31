@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Calendar, Gift, Shuffle } from 'lucide-react';
 import { getRaffleBySlug, getOccupiedTickets, getSettings } from '../services/api';
 import { Raffle, Pack } from '../types';
 import PageAnimator from '../components/PageAnimator';
 import Spinner from '../components/Spinner';
-import CountdownTimer from '../components/CountdownTimer';
+import SilverCountdown from '../components/SilverCountdown/SilverCountdown';
+import { useInView } from '../hooks/useInView';
 import StickyPurchaseBar from '../components/StickyPurchaseBar';
 import PurchaseSummary from '../components/PurchaseSummary';
 import TicketSelector from '../components/TicketSelector';
@@ -16,7 +16,7 @@ import LuckyMachine from '../components/LuckyMachine';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
-import { collectRaffleImages, LiveDot } from '../components/HeroRaffle';
+import { collectRaffleImages } from '../components/HeroRaffle';
 import metaPixelService from '../services/metaPixel';
 import { useToast } from '../hooks/useToast';
 import { formatDate, formatMoney } from '../utils/format';
@@ -41,6 +41,9 @@ const RaffleDetailPage = () => {
     // Inicia oculto para no mostrar el porcentaje antes de conocer la preferencia del admin
     const [showSoldPercentage, setShowSoldPercentage] = useState<boolean>(false);
     const [luckyOpen, setLuckyOpen] = useState(false);
+    // El contador solo se actualiza cada segundo mientras se ve
+    const countdownRef = useRef<HTMLDivElement>(null);
+    const countdownInView = useInView(countdownRef);
     const toast = useToast();
 
     // Referencias estables para que handleTicketClick no cambie en cada selección:
@@ -199,8 +202,8 @@ const RaffleDetailPage = () => {
         return (
             <PageAnimator>
                 <div className="container mx-auto px-4 max-w-lg py-20 text-center" role="alert">
-                    <h1 className="text-title font-extrabold text-white">No pudimos cargar el sorteo</h1>
-                    <p className="mt-2 text-slate-400">Revisa tu conexión e inténtalo de nuevo.</p>
+                    <h1 className="font-display text-title font-bold text-ink">No pudimos cargar el sorteo</h1>
+                    <p className="mt-2 text-muted">Revisa tu conexión e inténtalo de nuevo.</p>
                     <Button variant="secondary" className="mt-6" onClick={() => setRaffleReloadKey(k => k + 1)}>Reintentar</Button>
                 </div>
             </PageAnimator>
@@ -210,8 +213,8 @@ const RaffleDetailPage = () => {
         return (
             <PageAnimator>
                 <div className="container mx-auto px-4 max-w-lg py-20 text-center">
-                    <h1 className="text-title font-extrabold text-white">Sorteo no encontrado</h1>
-                    <p className="mt-2 text-slate-400">Puede que haya finalizado o que el enlace no sea correcto.</p>
+                    <h1 className="font-display text-title font-bold text-ink">Sorteo no encontrado</h1>
+                    <p className="mt-2 text-muted">Puede que haya finalizado o que el enlace no sea correcto.</p>
                     <Button to="/" variant="secondary" className="mt-6">Ver sorteos activos</Button>
                 </div>
             </PageAnimator>
@@ -231,10 +234,10 @@ const RaffleDetailPage = () => {
     return (
         <PageAnimator>
             <div className={`container mx-auto px-4 sm:px-6 max-w-6xl pt-4 md:pt-8 ${hasSelection ? 'pb-28 lg:pb-0' : ''}`}>
-                <nav className="mb-3 flex items-center min-w-0 text-sm" aria-label="Migas de pan">
-                    <Link to="/" className="flex-shrink-0 text-slate-400 hover:text-white">Sorteos</Link>
-                    <span className="mx-2 flex-shrink-0 text-slate-600" aria-hidden>/</span>
-                    <span className="truncate text-slate-300">{raffle.title}</span>
+                <nav className="mb-4 flex items-center min-w-0 text-sm" aria-label="Migas de pan">
+                    <Link to="/" className="flex-shrink-0 text-muted hover:text-ink">Sorteos</Link>
+                    <span className="mx-2 flex-shrink-0 text-ink/30" aria-hidden>/</span>
+                    <span className="truncate text-ink/80">{raffle.title}</span>
                 </nav>
 
                 {/* En móvil es una columna (orden por `order-*`); en escritorio dos columnas con panel fijo a la derecha */}
@@ -248,9 +251,9 @@ const RaffleDetailPage = () => {
                         <section className="order-3" id="boletos" aria-labelledby="tickets-title">
                             <Card>
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <h2 id="tickets-title" className="text-lg font-extrabold text-white flex items-center gap-2"><span className="h-5 w-1 rounded-full bg-gradient-to-b from-action to-accent" aria-hidden />Elige tus boletos</h2>
+                                    <h2 id="tickets-title" className="text-lg font-bold text-ink">Elige tus boletos</h2>
                                     {!selectedPack && (
-                                        <Button variant="secondary" size="sm" onClick={() => setLuckyOpen(true)} disabled={occupiedStatus !== 'ready'} icon={<Shuffle className="w-4 h-4" aria-hidden />}>
+                                        <Button variant="rainbow" size="sm" onClick={() => setLuckyOpen(true)} disabled={occupiedStatus !== 'ready'}>
                                             Elegir al azar
                                         </Button>
                                     )}
@@ -269,12 +272,12 @@ const RaffleDetailPage = () => {
                                 )}
 
                                 {selectedPack ? (
-                                    <p className="text-sm text-slate-400 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3">
+                                    <p className="text-sm text-muted rounded-xl bg-surface-2 px-4 py-3">
                                         Con un paquete, los números se asignan al azar entre los disponibles al confirmar tu compra.
                                     </p>
                                 ) : occupiedStatus === 'error' ? (
-                                    <div role="alert" className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 text-center">
-                                        <p className="text-sm text-slate-300">No pudimos comprobar qué boletos siguen disponibles.</p>
+                                    <div role="alert" className="flex min-h-[200px] flex-col items-center justify-center gap-3 rounded-xl bg-surface-2 px-4 text-center">
+                                        <p className="text-sm text-ink/80">No pudimos comprobar qué boletos siguen disponibles.</p>
                                         <Button variant="secondary" size="sm" onClick={() => setOccupiedReloadKey(k => k + 1)}>Reintentar</Button>
                                     </div>
                                 ) : occupiedStatus === 'ready' && prefsReady ? (
@@ -288,7 +291,7 @@ const RaffleDetailPage = () => {
                                         onTicketClick={handleTicketClick}
                                     />
                                 ) : (
-                                    <div role="status" className="flex min-h-[320px] items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] text-sm text-slate-400">
+                                    <div role="status" className="flex min-h-[320px] items-center justify-center rounded-xl bg-surface-2 text-sm text-muted">
                                         Cargando boletos disponibles…
                                     </div>
                                 )}
@@ -298,8 +301,8 @@ const RaffleDetailPage = () => {
                         {/* Sobre el premio */}
                         {(raffle.description || (raffle.bonuses && raffle.bonuses.length > 0)) && (
                             <section className="order-4" aria-labelledby="about-title">
-                                <h2 id="about-title" className="text-lg font-extrabold text-white mb-3">Sobre el premio</h2>
-                                {raffle.description && <p className="text-[15px] text-slate-300 whitespace-pre-line">{raffle.description}</p>}
+                                <h2 id="about-title" className="text-lg font-bold text-ink mb-3">Sobre el premio</h2>
+                                {raffle.description && <p className="text-[15px] text-ink/80 whitespace-pre-line">{raffle.description}</p>}
                                 <BonusesCard bonuses={raffle.bonuses || []} className={raffle.description ? 'mt-5' : ''} />
                             </section>
                         )}
@@ -309,38 +312,46 @@ const RaffleDetailPage = () => {
                         <div className="contents lg:block lg:sticky lg:top-20 lg:space-y-5">
                             {/* Título y datos clave */}
                             <div className="order-2">
-                                <p className="inline-flex items-center text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2"><LiveDot />Sorteo activo</p>
-                                <h1 className="text-title neon-text font-extrabold text-white">{raffle.title}</h1>
-                                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                                <h1 className="font-display text-title font-semibold text-ink">{raffle.title}</h1>
+                                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-line py-4">
                                     <div>
-                                        <dt className="text-xs font-bold text-slate-400">Precio por boleto</dt>
-                                        <dd className="tnum neon-accent-text text-2xl font-extrabold text-accent leading-tight">{formatMoney(pricePerTicket)}</dd>
+                                        <dt className="text-xs font-extrabold text-muted">Precio por boleto</dt>
+                                        <dd className="tnum mt-1 font-display text-3xl font-semibold text-accent leading-none">{formatMoney(pricePerTicket)}</dd>
                                     </div>
                                     <div>
-                                        <dt className="text-xs font-bold text-slate-400">Fecha del sorteo</dt>
-                                        <dd className="flex items-center gap-1.5 text-sm font-bold text-white mt-1"><Calendar className="w-4 h-4 text-accent" aria-hidden />{formatDate(raffle.drawDate)}</dd>
+                                        <dt className="text-xs font-extrabold text-muted">Fecha del sorteo</dt>
+                                        <dd className="mt-1 text-sm font-extrabold text-ink">{formatDate(raffle.drawDate)}</dd>
                                     </div>
                                 </dl>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                {/* Cuenta hasta drawDate (fecha del sorteo, que es cuando cierra); el backend decide el estado real */}
+                                <div className="mt-4" ref={countdownRef}>
+                                    <SilverCountdown
+                                        targetDate={raffle.drawDate}
+                                        title="EL SORTEO CIERRA EN"
+                                        completedText="Sorteo finalizado."
+                                        invalidText="Fecha del sorteo por confirmar."
+                                        active={countdownInView}
+                                    />
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                                     {hasOpportunities && (
-                                        <Badge tone="accent" icon={<Gift className="w-3.5 h-3.5" aria-hidden />}>
+                                        <Badge tone="accent">
                                             {raffle.numeroOportunidades} oportunidades por boleto
                                         </Badge>
                                     )}
-                                    <span className="text-sm text-slate-400">Cierra en <CountdownTimer targetDate={raffle.drawDate} variant="inline" /></span>
                                 </div>
                                 {hasOpportunities && (
-                                    <p className="mt-2 text-sm text-slate-400">
+                                    <p className="mt-2 text-sm text-muted">
                                         Por cada boleto que compres recibes {raffle.numeroOportunidades - 1} {raffle.numeroOportunidades - 1 === 1 ? 'boleto adicional' : 'boletos adicionales'} de regalo.
                                     </p>
                                 )}
                                 {showSoldPercentage && (
                                     <div className="mt-4">
-                                        <div className="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
+                                        <div className="flex justify-between text-xs font-semibold text-muted mb-1.5">
                                             <span>{progress.toFixed(0)} % vendido</span>
                                         </div>
-                                        <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Boletos vendidos">
-                                            <div className="h-full rounded-full bg-gradient-to-r from-accent to-action shadow-neon-accent" style={{ width: `${progress}%` }} />
+                                        <div className="h-2 rounded-full bg-ink/[0.08] overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100} aria-label="Boletos vendidos">
+                                            <div className="h-full rounded-full bg-accent" style={{ width: `${progress}%` }} />
                                         </div>
                                     </div>
                                 )}
@@ -348,7 +359,7 @@ const RaffleDetailPage = () => {
 
                             {/* Resumen (solo escritorio; en móvil vive en la barra inferior) */}
                             <div className="hidden lg:block">
-                                <Card glow className={hasSelection ? 'shadow-glow-action' : ''}>
+                                <Card>
                                     <PurchaseSummary {...summaryProps} />
                                 </Card>
                             </div>

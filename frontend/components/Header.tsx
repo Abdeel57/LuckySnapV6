@@ -34,36 +34,27 @@ const Header = () => {
         return () => window.removeEventListener('keydown', onKey);
     }, [isMenuOpen]);
 
+    // Enlaces como pastillas: la activa se rellena
     const linkClass = ({ isActive }: { isActive: boolean }) =>
-        `relative inline-flex items-center h-10 px-3 rounded-lg text-sm font-bold transition-colors ${
-            isActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+        `inline-flex items-center h-10 px-4 rounded-full text-sm font-extrabold transition-colors ${
+            isActive ? 'bg-white/10 text-ink' : 'text-muted hover:text-ink hover:bg-white/[0.06]'
         }`;
 
     return (
-        <header className="sticky top-0 z-50 bg-background-primary/80 backdrop-blur-md">
-            {/* Línea de luz inferior */}
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-action/70 to-transparent" aria-hidden />
+        <header className="sticky top-0 z-50 bg-page/80 backdrop-blur-md border-b border-line">
             <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
                 <div className="flex items-center justify-between h-16">
-                    <Link to="/" className="flex items-center gap-2.5 min-w-0 rounded-lg group" aria-label={`${siteName} — Inicio`}>
+                    <Link to="/" className="group flex items-center gap-2.5 min-w-0 rounded-full" aria-label={`${siteName} — Inicio`}>
                         {appearance?.logo ? (
-                            <span className="relative flex-shrink-0">
-                                <span className="absolute inset-1 rounded-full bg-action/30 blur-md opacity-60 group-hover:opacity-100 transition-opacity" aria-hidden />
-                                <img src={appearance.logo} alt="" className={`relative h-11 w-11 object-contain ${logoAnimation}`} />
-                            </span>
+                            <img src={appearance.logo} alt="" className={`h-11 w-11 flex-shrink-0 object-contain transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105 ${logoAnimation}`} />
                         ) : null}
-                        <span className="text-lg font-extrabold text-white tracking-tight truncate">{siteName}</span>
+                        <span className="font-display text-xl font-semibold text-ink truncate">{siteName}</span>
                     </Link>
 
                     <nav className="hidden md:flex items-center gap-1" aria-label="Principal">
                         {NAV_LINKS.map(link => (
                             <NavLink key={link.to} to={link.to} end={link.end} className={linkClass}>
-                                {({ isActive }) => (
-                                    <>
-                                        {link.text}
-                                        {isActive && <span className="absolute left-3 right-3 -bottom-[13px] h-0.5 rounded-full bg-accent shadow-neon-accent" aria-hidden />}
-                                    </>
-                                )}
+                                {link.text}
                             </NavLink>
                         ))}
                     </nav>
@@ -71,7 +62,7 @@ const Header = () => {
                     <button
                         type="button"
                         onClick={() => setIsMenuOpen(open => !open)}
-                        className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl text-white border border-white/10 bg-white/[0.04] hover:bg-white/[0.1] transition-colors"
+                        className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-full text-ink bg-white/[0.06] hover:bg-white/10 transition-colors"
                         aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                         aria-expanded={isMenuOpen}
                         aria-controls="mobile-nav"
@@ -85,16 +76,16 @@ const Header = () => {
             {isMenuOpen && (
                 <>
                     <div className="md:hidden fixed inset-0 top-16 bg-black/60" onClick={() => setIsMenuOpen(false)} aria-hidden />
-                    <nav id="mobile-nav" aria-label="Principal" className="md:hidden absolute inset-x-0 top-16 bg-background-secondary border-b border-white/[0.08] shadow-raised animate-drop-in">
+                    <nav id="mobile-nav" aria-label="Principal" className="md:hidden absolute inset-x-0 top-16 bg-surface border-b border-line shadow-lift animate-drop-in">
                         <ul className="container mx-auto px-4 py-2 max-w-6xl">
                             {NAV_LINKS.map((link, index) => (
-                                <li key={link.to} className="animate-fade-up" style={{ animationDelay: `${index * 50}ms` }}>
+                                <li key={link.to} className="animate-fade-up" style={{ animationDelay: `${index * 40}ms` }}>
                                     <NavLink
                                         to={link.to}
                                         end={link.end}
                                         className={({ isActive }) =>
-                                            `flex items-center h-12 px-3 rounded-xl text-base font-bold ${
-                                                isActive ? 'text-white bg-action/15 border border-action/40' : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+                                            `flex items-center h-12 px-4 rounded-full text-base font-extrabold ${
+                                                isActive ? 'text-action-ink bg-action/15' : 'text-ink hover:bg-white/[0.06]'
                                             }`
                                         }
                                     >
