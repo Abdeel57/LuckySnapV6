@@ -80,6 +80,7 @@ model Order {
 
   raffle Raffle @relation(fields: [raffleId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
+  payments Payment[]
 
   @@map("orders")
 }
@@ -158,4 +159,76 @@ enum OrderStatus {
   CANCELLED
   EXPIRED
   RELEASED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pagos con pasarela (ROKI Connect). El estado financiero vive aquí; la
+// asignación de boletos sigue siendo Order.status. Un pedido puede tener varios
+// intentos (p. ej. el primero expiró), pero solo uno puede confirmarlo.
+// ─────────────────────────────────────────────────────────────────────────────
+model Payment {
+  id                String    @id @default(cuid())
+  orderId           String
+  provider          String    @default("roki")
+  environment       String                        // sandbox | live
+  merchantId        String?                       // id devuelto por GET /me al crear el pago
+  status            String    @default("pending") // pending | paid | failed | expired | voided | refunded | partially_refunded | disabled
+  providerPaymentId Int?                          // Payment.id de ROKI
+  transactionId     String?                       // UUID del cobro (null hasta que se paga)
+  externalReference String                        // folio del pedido enviado como external_reference
+  idempotencyKey    String    @unique
+  amountExpected    Float
+  currencyCode      String                        // ISO 4217 numérico ("340" = HNL)
+  currencyIso       String                        // "HNL"
+  amountConfirmed   Float?
+  checkoutUrl       String?
+  requestSnapshot   Json                          // cuerpo exacto enviado a POST /payments
+  providerSnapshot  Json?                         // último objeto Payment recibido del proveedor
+  expiresAt         DateTime?                     // expires_at del enlace de pago
+  paidAt            DateTime?                     // paid_at reportado por el proveedor
+  confirmedAt       DateTime?                     // momento en que este pago confirmó el pedido
+  lastCheckedAt     DateTime?
+  nextCheckAt       DateTime?
+  checkCount        Int       @default(0)
+  failureCount      Int       @default(0)
+  reviewReason      String?                       // incidencia pendiente (pago tardío, importe distinto, etc.)
+  reviewDetails     Json?
+  reviewResolvedAt  DateTime?
+  reviewResolution  String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  order  Order          @relation(fields: [orderId], references: [id])
+  events PaymentEvent[]
+
+  @@unique([provider, environment, providerPaymentId])
+  @@index([orderId])
+  @@index([status, nextCheckAt])
+  @@index([reviewReason, reviewResolvedAt])
+  @@map("payments")
+}
+
+// Bandeja duradera de webhooks: se guarda antes de responder 2xx y se procesa
+// después. La unicidad por evento hace idempotentes los reintentos del proveedor.
+model PaymentEvent {
+  id                String    @id @default(cuid())
+  provider          String    @default("roki")
+  environment       String
+  eventId           String
+  eventType         String
+  providerPaymentId Int?
+  paymentId         String?
+  rawBody           String
+  headers           Json?
+  status            String    @default("received") // received | processed | ignored | failed
+  error             String?
+  attempts          Int       @default(0)
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([provider, environment, eventId])
+  @@index([status, receivedAt])
+  @@map("payment_events")
 }

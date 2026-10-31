@@ -10,6 +10,7 @@ import { MetaModule } from './meta/meta.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { UploadModule } from './upload/upload.module';
 import { PaymentModule } from './payment/payment.module';
+import { RokiModule } from './roki/roki.module';
 import { InitController } from './init.controller';
 import { InitDatabaseService } from './init-database';
 
@@ -22,7 +23,8 @@ import { InitDatabaseService } from './init-database';
     MetaModule, 
     TrackingModule,
     UploadModule,
-    PaymentModule
+    PaymentModule,
+    RokiModule
   ],
   controllers: [AppController, InitController],
   providers: [AppService, InitDatabaseService],
