@@ -11,6 +11,9 @@ async function bootstrap() {
 
   // Configure body parser with increased limit for images
   const express = require('express');
+  // El webhook de ROKI verifica una firma HMAC sobre el cuerpo crudo exacto: en esa
+  // ruta se conserva el Buffer y el json global la omite (ya tiene body).
+  app.use('/api/payments/roki/webhook', express.raw({ type: () => true, limit: '1mb' }));
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

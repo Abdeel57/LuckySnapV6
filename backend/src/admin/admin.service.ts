@@ -24,14 +24,39 @@ export class AdminService implements OnModuleInit {
       const now = new Date();
       console.log(`⏰ [AutoExpire] checking for orders expired before ${now.toISOString()}...`);
       
-      const expiredOrders = await this.prisma.order.findMany({
-        where: {
-          status: 'PENDING',
-          expiresAt: { lt: now },
-          NOT: { notes: { contains: '[NO_AUTO_RELEASE]' } }
-        },
-        select: { id: true, folio: true, raffleId: true }
-      });
+      // Pagos con tarjeta (ROKI): no liberar mientras el enlace siga vigente (con 10 min
+      // de gracia para quien está terminando el 3DS), ni si hay un cobro pagado sin
+      // confirmar o una incidencia abierta. La conciliación cierra esos casos.
+      const cardGraceCutoff = new Date(now.getTime() - 10 * 60 * 1000);
+      const baseWhere = {
+        status: 'PENDING' as const,
+        expiresAt: { lt: now },
+        NOT: { notes: { contains: '[NO_AUTO_RELEASE]' } },
+      };
+      let expiredOrders: Array<{ id: string; folio: string; raffleId: string }>;
+      try {
+        expiredOrders = await this.prisma.order.findMany({
+          where: {
+            ...baseWhere,
+            payments: {
+              none: {
+                provider: 'roki',
+                OR: [
+                  { status: 'pending', expiresAt: { gt: cardGraceCutoff } },
+                  { status: 'paid', confirmedAt: null },
+                  { reviewReason: { not: null }, reviewResolvedAt: null },
+                ],
+              },
+            },
+          },
+          select: { id: true, folio: true, raffleId: true }
+        });
+      } catch (error) {
+        // Si la tabla de pagos aún no existe (migración sin aplicar), no dejar de liberar apartados
+        if ((error as { code?: string })?.code !== 'P2021') throw error;
+        console.warn('⚠️ [AutoExpire] Tabla "payments" ausente; se libera sin considerar pagos con tarjeta');
+        expiredOrders = await this.prisma.order.findMany({ where: baseWhere, select: { id: true, folio: true, raffleId: true } });
+      }
 
       if (expiredOrders.length === 0) {
         return;
@@ -70,7 +95,7 @@ export class AdminService implements OnModuleInit {
    * IMPORTANTE: las rifas con "múltiples oportunidades" generan boletos extra > raffle.tickets.
    * Para el progreso usamos únicamente los boletos del rango base 1..raffle.tickets.
    */
-  private async recomputeAndPersistSold(raffleId: string): Promise<number> {
+  async recomputeAndPersistSold(raffleId: string): Promise<number> {
     const raffle = await this.prisma.raffle.findUnique({
       where: { id: raffleId },
       select: { id: true, tickets: true },
