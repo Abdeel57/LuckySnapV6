@@ -63,7 +63,7 @@ Proveedor: `https://aura.roki.systems/api/connect/v1` · Portal: `https://aura.r
 
 ### A. Despliegue del código (una vez)
 
-El código vive en la rama `roki/produccion`, hecha desde `main` **solo con el backend** (el rediseño de la tienda no se publica). Al integrarla en `main`, Railway ejecuta `prisma migrate deploy`, que crea las tablas `payments` y `payment_events` (SQL idempotente, solo agrega). Sin las variables de ROKI todo queda **inactivo** y la tienda no cambia.
+El código vive en `main` **solo con el backend** (el rediseño de la tienda no se publica). Las tablas `payments` y `payment_events` las crea el propio servidor al arrancar (`backend/src/roki/roki.schema.ts`: SQL idempotente con candado, solo agrega). No se usa una migración de Prisma porque la tabla `_prisma_migrations` de producción no tiene la estructura estándar y `prisma migrate deploy` falla al registrar cualquier migración nueva (build del 2026-10-30). Sin las variables de ROKI todo queda **inactivo** y la tienda no cambia.
 
 ### B. Producción controlada (prueba con cobro real)
 
@@ -163,7 +163,7 @@ cd backend
 npm install
 npx tsc --noEmit
 npm test          # 43 pruebas unitarias
-# Base Postgres de PRUEBAS (nunca la de Railway):
+# Base Postgres de PRUEBAS (nunca la de Railway), con las tablas creadas (arrancar el servidor una vez o `npx prisma db push`):
 TEST_DATABASE_URL=<url> TEST_DATABASE_URL_NO_PAYMENTS=<url con esquema anterior> npm run test:roki-db
 ```
 
@@ -174,12 +174,12 @@ TEST_DATABASE_URL=<url> TEST_DATABASE_URL_NO_PAYMENTS=<url con esquema anterior>
 | `tsc --noEmit` y `nest build` sobre `main` + ROKI | ✅ |
 | `npm test` | ✅ 43/43: firma HMAC, idempotencia, zona horaria, decisión de confirmación, precio legítimo, configuración, página HTML, endpoints de enlace y regreso |
 | `npm run test:roki-db` (Postgres 17 local) | ✅ 3/3: 6 confirmaciones simultáneas → 1 PAID; webhook duplicado; pago tardío con boletos revendidos; importe distinto; liberador automático respeta pagos en curso; sigue liberando sin la tabla nueva |
-| Migración sobre un esquema igual al de `main` | ✅ se aplica sola, segunda ejecución sin cambios, SQL idempotente, la base resultante coincide exactamente con `schema.prisma` |
-| Punta a punta: servidor real + Postgres + ROKI simulado, configuración de producción (`live`, oculto, `receipt`) | ✅ 19/19 (lista abajo) |
+| Tablas creadas al arrancar, sobre un esquema y un historial de migraciones iguales a los de `main` | ✅ `prisma migrate deploy` sin pendientes (como en Railway), tablas creadas en el primer arranque, segundo arranque sin cambios, la base resultante coincide exactamente con `schema.prisma` |
+| Punta a punta: servidor real + Postgres + ROKI simulado, configuración de producción (`live`, oculto, `receipt`) | ✅ 20/20 en base nueva y 20/20 en un segundo arranque (lista abajo) |
 | Frontend del rediseño (tsc, build, navegador con backend simulado) | ✅ sin errores nuevos; 8 estados de `/#/pago`; panel admin |
 | Cobro real en producción | ⏳ pendiente de las credenciales live (sección 4B) |
 
-Escenarios punta a punta: opción oculta en la tienda · diagnóstico sin secretos · enlace por folio con importe real y `https` · doble clic sin duplicar · total manipulado rechazado · paquete legítimo aceptado · regreso cancelado · pago + webhook firmado (duplicado incluido) → PAID una vez y `sold` recalculado · regreso → comprobante · enlace de pedido pagado → comprobante · firma inválida → 400 · webhook perdido → confirma el regreso · webhook perdido sin regreso → confirma la conciliación · rechazo del banco → sigue apartado · pago tardío → incidencia y confirmación del admin · pedido editado → `order_changed` · ping `webhook.test` · folio inexistente → 404 · ningún secreto en los registros.
+Escenarios punta a punta: tablas creadas al arrancar · opción oculta en la tienda · diagnóstico sin secretos · enlace por folio con importe real y `https` · doble clic sin duplicar · total manipulado rechazado · paquete legítimo aceptado · regreso cancelado · pago + webhook firmado (duplicado incluido) → PAID una vez y `sold` recalculado · regreso → comprobante · enlace de pedido pagado → comprobante · firma inválida → 400 · webhook perdido → confirma el regreso · webhook perdido sin regreso → confirma la conciliación · rechazo del banco → sigue apartado · pago tardío → incidencia y confirmación del admin · pedido editado → `order_changed` · ping `webhook.test` · folio inexistente → 404 · ningún secreto en los registros.
 
 ---
 
@@ -196,5 +196,6 @@ Escenarios punta a punta: opción oculta en la tienda · diagnóstico sin secret
 1. Llave `sk_live_…` y `whsec_…` del webhook de producción (sección 4B).
 2. Confirmar la moneda de la terminal (HNL = 340).
 3. Pedir a ROKI que asigne el terminal sandbox para pruebas futuras.
-4. **Seguridad (preexistente):** `backend/.env` con `DATABASE_URL` y `JWT_SECRET` está versionado en Git. Conviene sacarlo del repositorio y rotar la contraseña de la base de datos en Railway.
-5. **Seguridad (preexistente):** el backend acepta el `total` que envía el navegador al crear un pedido. Con tarjeta ya se valida; con transferencia sigue dependiendo de la revisión humana.
+4. **Despliegues (preexistente):** la tabla `_prisma_migrations` de producción no es estándar (tiene una columna de más y alguna obligatoria sin valor por defecto). Cualquier migración de Prisma futura romperá el build de Railway igual que el 2026-10-30. Se corrige con un `ALTER TABLE` puntual tras revisar su definición.
+5. **Seguridad (preexistente):** `backend/.env` con `DATABASE_URL` y `JWT_SECRET` está versionado en Git. Conviene sacarlo del repositorio y rotar la contraseña de la base de datos en Railway.
+6. **Seguridad (preexistente):** el backend acepta el `total` que envía el navegador al crear un pedido. Con tarjeta ya se valida; con transferencia sigue dependiendo de la revisión humana.

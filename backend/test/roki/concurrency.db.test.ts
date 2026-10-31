@@ -2,8 +2,8 @@
  * Prueba de concurrencia REAL sobre Postgres: varias confirmaciones simultáneas
  * del mismo pago deben producir exactamente un pedido PAID y una sola anotación.
  *
- * Requiere una base de datos de PRUEBAS con las migraciones aplicadas:
- *   DATABASE_URL=<url de pruebas> npx prisma migrate deploy
+ * Requiere una base de datos de PRUEBAS con las tablas creadas:
+ *   DATABASE_URL=<url de pruebas> npx prisma db push   (o arrancar el servidor una vez)
  *   TEST_DATABASE_URL=<url de pruebas> npm run test:roki-db
  * Se omite si TEST_DATABASE_URL no está definida y se niega a usar la URL de producción.
  */

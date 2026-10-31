@@ -1,6 +1,6 @@
 /**
  * Liberador automático de apartados (AdminService.autoExpireOrders) sobre Postgres real.
- * Requiere TEST_DATABASE_URL (base con migraciones aplicadas). Opcional:
+ * Requiere TEST_DATABASE_URL (base con las tablas de pagos creadas). Opcional:
  * TEST_DATABASE_URL_NO_PAYMENTS = base con el esquema anterior (sin tabla payments)
  * para comprobar que, si la migración no se aplicara, se sigue liberando.
  */
