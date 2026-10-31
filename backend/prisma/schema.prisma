@@ -208,6 +208,19 @@ model Payment {
   @@map("payments")
 }
 
+// Copia permanente de las imágenes subidas (el disco de Railway es efímero sin
+// Volume). La tabla la crea ImageStoreService al arrancar.
+model StoredImage {
+  filename  String   @id
+  mimeType  String
+  size      Int
+  sha256    String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@map("stored_images")
+}
+
 // Bandeja duradera de webhooks: se guarda antes de responder 2xx y se procesa
 // después. La unicidad por evento hace idempotentes los reintentos del proveedor.
 model PaymentEvent {

@@ -49,4 +49,11 @@ export class UploadController {
       throw new BadRequestException('Error al subir la imagen');
     }
   }
+
+  /** Restaura una imagen perdida con su nombre original (ver ImageUploadService.restoreImage). */
+  @Post('restore')
+  async restoreImage(@Body() body: { filename?: string; imageData?: string }) {
+    const url = await this.imageUploadService.restoreImage(String(body?.filename ?? ''), String(body?.imageData ?? ''));
+    return { success: true, url, message: 'Imagen restaurada' };
+  }
 }

@@ -18,7 +18,7 @@
     "test:db": "node test-database.js",
     "backup": "node backup-data.js",
     "typecheck": "npx tsc --noEmit",
-    "test": "node --no-experimental-strip-types --test --require ./test/register.cjs test/roki/signature.test.ts test/roki/decision.test.ts test/roki/config.test.ts test/roki/pricing.test.ts test/roki/public-controller.test.ts",
+    "test": "node --no-experimental-strip-types --test --require ./test/register.cjs test/roki/signature.test.ts test/roki/decision.test.ts test/roki/config.test.ts test/roki/pricing.test.ts test/roki/public-controller.test.ts test/images/store.test.ts",
     "test:roki-db": "node --no-experimental-strip-types --test --require ./test/register.cjs test/roki/concurrency.db.test.ts test/roki/auto-expire.db.test.ts"
   },
   "dependencies": {

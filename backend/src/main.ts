@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as path from 'path';
 import * as fs from 'fs';
+import { ImageStoreService, SAFE_IMAGE_NAME } from './services/imageStore.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -45,6 +46,32 @@ async function bootstrap() {
       },
     }),
   );
+  // Si la imagen no está en disco (redespliegue sin Volume), servir la copia permanente de la base
+  const imageStore = app.get(ImageStoreService);
+  app.use('/uploads', async (req: any, res: any, next: any) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    let name = '';
+    try {
+      name = decodeURIComponent(String(req.path || '').replace(/^\/+/, ''));
+    } catch {
+      return next();
+    }
+    if (!SAFE_IMAGE_NAME.test(name)) return next();
+    try {
+      const image = await imageStore.load(name);
+      if (!image) return next();
+      imageStore.cacheToDisk(name, image.data);
+      res.setHeader('Content-Type', image.mimeType);
+      res.setHeader('Content-Length', String(image.data.length));
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      return req.method === 'HEAD' ? res.end() : res.end(image.data);
+    } catch (error) {
+      console.error(`⚠️ No se pudo servir ${name} desde la base:`, error instanceof Error ? error.message : error);
+      return next();
+    }
+  });
   
   // Enable CORS with specific configuration
   const allowedOrigins = [

@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { ImageStoreService, GENERATED_IMAGE_NAME, detectImageMime, mimeForFilename } from './imageStore.service';
 
 /**
  * Almacenamiento local de imágenes en el sistema de archivos.
@@ -33,7 +34,7 @@ const MIME_TO_EXT: Record<string, string> = {
 export class ImageUploadService {
   private readonly storagePath: string;
 
-  constructor() {
+  constructor(private readonly store: ImageStoreService) {
     const configured = process.env.IMAGE_STORAGE_PATH;
     this.storagePath = configured
       ? path.resolve(configured)
@@ -98,9 +99,40 @@ export class ImageUploadService {
       throw new BadRequestException('No se pudo guardar la imagen en el servidor');
     }
 
+    // Copia permanente en la base: sin ella la imagen se perdería en el próximo despliegue
+    try {
+      await this.store.save(filename, detectImageMime(bytes) ?? mimeForFilename(filename), bytes);
+    } catch (e) {
+      console.error('❌ Error guardando la copia permanente de la imagen:', e);
+      await fs.promises.unlink(fullPath).catch(() => undefined);
+      throw new BadRequestException('No se pudo guardar la imagen de forma permanente. Inténtalo de nuevo.');
+    }
+
     const relativeUrl = `/uploads/${filename}`;
     console.log(`✅ Imagen guardada (${bytes.length} bytes): ${relativeUrl}`);
     return relativeUrl;
+  }
+
+  /**
+   * Restaura una imagen perdida con su nombre original, para que las URLs ya
+   * guardadas en sorteos, ganadores o ajustes vuelvan a funcionar sin tocarlos.
+   * Solo acepta nombres generados por este servicio, que estén referenciados en
+   * la base, que no existan ya, y cuyo contenido sea realmente una imagen del
+   * tipo de su extensión.
+   */
+  async restoreImage(filename: string, imageData: string): Promise<string> {
+    if (!GENERATED_IMAGE_NAME.test(filename || '')) throw new BadRequestException('Nombre de archivo no válido');
+    if (!imageData || !this.validateImageSize(imageData)) throw new BadRequestException('Imagen vacía o mayor de 10MB');
+    const payload = imageData.startsWith('data:') ? imageData.split(',')[1] || '' : imageData;
+    const bytes = Buffer.from(payload, 'base64');
+    const mime = detectImageMime(bytes);
+    if (!mime || mime !== mimeForFilename(filename)) throw new BadRequestException('El contenido no corresponde a la extensión del archivo');
+    if (await this.store.exists(filename)) throw new ConflictException('Esa imagen ya existe');
+    if (!(await this.store.isReferenced(filename))) throw new BadRequestException('Ningún sorteo, ganador o ajuste usa esa imagen');
+    await this.store.save(filename, mime, bytes);
+    await fs.promises.writeFile(path.join(this.storagePath, filename), bytes, { flag: 'wx' }).catch(() => undefined);
+    console.log(`♻️ Imagen restaurada (${bytes.length} bytes): /uploads/${filename}`);
+    return `/uploads/${filename}`;
   }
 
   validateImageSize(imageData: string | Buffer): boolean {
@@ -135,6 +167,7 @@ export class ImageUploadService {
       return;
     }
     const fullPath = path.join(this.storagePath, filename);
+    await this.store.remove(filename).catch((e) => console.warn('⚠️ No se pudo eliminar la copia permanente:', e?.message ?? e));
     try {
       await fs.promises.unlink(fullPath);
       console.log(`🗑️ Imagen eliminada: ${filename}`);
